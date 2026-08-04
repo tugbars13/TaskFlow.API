@@ -1,7 +1,7 @@
-import TasksPage from "./Pages/TasksPage";
+import AppRoutes from "./routes/AppRoutes";
 
 function App() {
-    return <TasksPage />;
+  return <AppRoutes />;
 }
 
 export default App;

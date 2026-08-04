@@ -1,0 +1,122 @@
+import { Link } from "react-router-dom";
+import Button from "@/components/ui/Button";
+export default function TasksHeader({
+    isTeamBoard,
+    currentTeam,
+    teams,
+    teamId,
+    navigate,
+    teamMembers,
+    totalCount,
+    completedCount,
+    canCreateTasks,
+    handleOpenNewTaskModal,
+}) {
+    return (
+        <>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-md border-b border-outline-variant/10 pb-lg">
+                <div>
+                    {isTeamBoard ? (
+                        <>
+                            <div className="flex items-center gap-sm text-on-surface-variant font-medium text-sm mb-xs">
+                                <Link to="/team" className="hover:text-primary transition-colors">Teams</Link>
+                                <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                                <span className="text-primary">{currentTeam?.name || "Backend Team"}</span>
+                                <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                                <span>Tasks</span>
+                            </div>
+                            <div className="flex items-center gap-sm">
+                                <span className="material-symbols-outlined text-primary text-[28px]">groups</span>
+                                {teams.length > 1 ? (
+                                    <select
+                                        className="font-display-lg text-display-lg font-bold text-on-surface bg-transparent border-none outline-none cursor-pointer hover:text-primary appearance-none pr-md"
+                                        value={teamId || ""}
+                                        onChange={(e) => navigate(`/teams/${e.target.value}/tasks`)}
+                                    >
+                                        {teams.map((t) => (
+                                            <option key={t.id} value={t.id} className="text-body-md font-medium text-on-surface">
+                                                {t.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <h1 className="font-display-lg text-display-lg font-bold text-on-surface">
+                                        {currentTeam?.name || "Team"}
+                                    </h1>
+                                )}
+                            </div>
+                            <p className="font-body-md text-body-md text-on-surface-variant mt-xs">
+                                Shared team board. Manage deliverables and workflow progress.
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-sm">
+                                <span className="material-symbols-outlined text-primary text-[28px]">view_kanban</span>
+                                <h1 className="font-display-lg text-display-lg font-bold text-on-surface">
+                                    Tasks
+                                </h1>
+                            </div>
+                            <p className="font-body-md text-body-md text-on-surface-variant mt-xs">
+                                Manage agile deliverables, assignees, and workflow progress.
+                            </p>
+                        </>
+                    )}
+                </div>
+
+                {/* Dynamic Team Avatars & Stats */}
+                <div className="flex items-center gap-md flex-wrap">
+                    {isTeamBoard && (
+                        <div className="flex items-center gap-md mr-md">
+                            <div className="flex flex-col items-center px-sm border-r border-outline-variant/10">
+                                <span className="text-xl font-bold text-on-surface">{currentTeam?.memberCount || teamMembers.length}</span>
+                                <span className="text-[11px] text-on-surface-variant uppercase tracking-wide">Members</span>
+                            </div>
+                            <div className="flex flex-col items-center px-sm border-r border-outline-variant/10">
+                                <span className="text-xl font-bold text-on-surface">{totalCount}</span>
+                                <span className="text-[11px] text-on-surface-variant uppercase tracking-wide">Total</span>
+                            </div>
+                            <div className="flex flex-col items-center px-sm">
+                                <span className="text-xl font-bold text-green-600">{completedCount}</span>
+                                <span className="text-[11px] text-on-surface-variant uppercase tracking-wide">Done</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Progress Bar (if Team Board) */}
+                    {isTeamBoard && totalCount > 0 && (
+                        <div className="flex flex-col gap-xs mr-md min-w-[120px]">
+                            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wide">
+                                <span className="text-on-surface-variant">Progress</span>
+                                <span className="text-primary">{Math.round((completedCount / totalCount) * 100)}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-primary transition-all duration-500 rounded-full"
+                                    style={{ width: `${Math.round((completedCount / totalCount) * 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Filters */}
+                    {/* Filters Removed */}
+
+
+
+                    {canCreateTasks && (
+                        <Button
+                            variant="filled"
+                            icon="add"
+                            onClick={handleOpenNewTaskModal}
+                            className="flex items-center gap-xs px-lg py-md rounded-2xl shadow-md active:scale-95 transition-transform"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">add</span>
+                            New Task
+                        </Button>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+}
