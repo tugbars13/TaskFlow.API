@@ -6,7 +6,7 @@ import App from "./App";
 import ErrorBoundary from "./ErrorBoundary";
 import AppProviders from "./providers/AppProviders";
 
-import "./index.css";
+import "./styles/globals.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

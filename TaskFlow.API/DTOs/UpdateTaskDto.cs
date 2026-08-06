@@ -1,13 +1,15 @@
-﻿namespace TaskFlow.API.DTOs;
+using TaskFlow.API.Models;
+
+namespace TaskFlow.API.DTOs;
 
 public class UpdateTaskDto
 {
-    // Güncellenecek görev başlığı.
     public string Title { get; set; } = string.Empty;
-
-    // Güncellenecek açıklama.
     public string Description { get; set; } = string.Empty;
-
-    // Tamamlanma durumu.
     public bool IsCompleted { get; set; }
+    public TaskFlow.API.Models.TaskStatus Status { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+    public TaskCategory Category { get; set; }
+    public int? AssignedUserId { get; set; }
 }

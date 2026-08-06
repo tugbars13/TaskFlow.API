@@ -10,8 +10,10 @@ export default function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col md:flex-row md:items-center md:justify-between gap-lg border-b border-outline-variant/10 pb-lg",
-        className
+          "flex flex-col gap-lg",
+          "md:flex-row md:items-center md:justify-between",
+          "border-b border-outline-variant/10 pb-lg",
+          className
       )}
     >
       <div>

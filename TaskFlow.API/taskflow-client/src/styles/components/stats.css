@@ -1,0 +1,35 @@
+/* ==========================================
+   Stat Component
+========================================== */
+
+.stat {
+    @apply flex items-start gap-md;
+}
+
+.stat-icon {
+    @apply text-lg mt-1;
+    color: color-mix(in srgb, var(--color-on-surface-variant) 75%, transparent);
+}
+
+.stat-content {
+    @apply flex flex-col;
+}
+
+.stat-header {
+    @apply flex items-center gap-sm;
+}
+
+.stat-value {
+    @apply text-display-lg font-semibold leading-none;
+    color: var(--color-on-surface);
+}
+
+.stat-label {
+    @apply text-body-sm font-medium;
+    color: var(--color-on-surface-variant);
+}
+
+.stat-context {
+    @apply mt-xs text-label-sm;
+    color: color-mix(in srgb, var(--color-on-surface-variant) 70%, transparent);
+}

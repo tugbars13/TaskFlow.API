@@ -9,6 +9,8 @@ export default function useAuthActions({
   const login = async (tokens, userData = null) => {
     if (typeof tokens === "string") {
       tokenStorage.setAccessToken(tokens);
+      console.log("TOKEN AFTER SAVE:",
+      tokenStorage.getAccessToken());
     } else if (tokens?.accessToken) {
       tokenStorage.setTokens(tokens.accessToken, tokens.refreshToken);
     }

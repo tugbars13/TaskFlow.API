@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import AuthLayout from "@/components/layout/AuthLayout";
+import AuthLayout from "@/layout/AuthLayout";
 
 import useAuth from "@/features/auth/hooks/useAuth";
 import { validateEmail } from "@/features/auth/utils/validators";

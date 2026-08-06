@@ -1,9 +1,10 @@
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
-import { getTeamMembers } from "@/features/teams/api/teamService";
+import { getTeamMembers } from "@/features/teams/api/team.service";
 
 const DEFAULT_CATEGORIES = [
   "General",

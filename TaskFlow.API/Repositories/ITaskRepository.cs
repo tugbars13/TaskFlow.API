@@ -1,12 +1,30 @@
-﻿using TaskFlow.API.Models;
+using TaskFlow.API.DTOs;
+using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Repositories;
 
 public interface ITaskRepository
 {
     Task<List<TaskItem>> GetAllAsync();
+    Task<List<TaskItem>> GetAllByUserIdAsync(int userId);
+    Task<List<TaskItem>> GetByTeamIdAsync(int teamId);
     Task<TaskItem?> GetByIdAsync(int id);
     Task<TaskItem> CreateAsync(TaskItem task);
     Task<bool> UpdateAsync(int id, TaskItem task);
     Task<bool> DeleteAsync(int id);
+    Task<List<TaskItem>> FilterAsync(
+    int userId,
+    TaskFilterDto filter);
+    Task<List<TaskItem>> SearchAsync(
+    int userId,
+    string keyword);
+    Task<List<TaskItem>> GetPagedAsync(
+    int userId,
+    PaginationDto pagination);
+    Task<DashboardDto> GetDashboardAsync(int userId);
+    Task<List<TaskItem>> GetDashboardTasksAsync(int userId);
+    Task<List<TaskItem>> SortAsync(
+    int userId,
+    TaskSortDto sort);
+
 }

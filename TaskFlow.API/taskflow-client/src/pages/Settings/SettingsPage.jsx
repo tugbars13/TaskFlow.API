@@ -2,8 +2,12 @@ import useSettings from "@/features/settings/hooks/useSettings";
 import SettingsSidebar from "@/features/settings/components/SettingsSidebar";
 import ProfileSettings from "@/features/settings/components/ProfileSettings";
 import WorkspaceSettings from "@/features/settings/components/WorkspaceSettings";
-import Spinner from "@/components/ui/Spinner";
-import Button from "@/components/ui/Button";
+import {
+  PageHeader,
+  PageLoading,
+  PageError,
+  SaveIndicator,
+} from "@/components/common";
 
 export default function SettingsPage() {
   const {

@@ -6,9 +6,11 @@ using Microsoft.IdentityModel.Tokens;
 using TaskFlow.API.Configurations;
 using TaskFlow.API.Models;
 
+
 namespace TaskFlow.API.Services;
 
 public class TokenService : ITokenService
+
 {
     private readonly JwtSettings _jwtSettings; // JWT ayarlarını tutar.
 
@@ -23,8 +25,13 @@ public class TokenService : ITokenService
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+
             new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Email, user.Email)
+
+            new Claim(ClaimTypes.Email, user.Email),
+
+            // Kullanıcının rolünü JWT içine ekle.
+            new Claim(ClaimTypes.Role, user.Role)
         };
 
         // SecretKey'i byte dizisine dönüştür.
@@ -43,7 +50,7 @@ public class TokenService : ITokenService
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.Now.AddMinutes(_jwtSettings.ExpirationMinutes),
+            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
             signingCredentials: credentials
         );
 

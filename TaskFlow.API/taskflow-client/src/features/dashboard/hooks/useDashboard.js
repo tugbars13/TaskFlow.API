@@ -35,8 +35,9 @@ export default function useDashboard() {
   };
 
   return {
-    data: metrics,
     metrics,
+    todayPriorities: metrics?.todayPriorities ?? [],
+    highPriorityTasks: metrics?.highPriorityTasks ?? 0,
     loading,
     error,
     refetch: fetchDashboardData,

@@ -1,7 +1,5 @@
+import { useId } from "react";
 import { cn } from "@/utils/cn";
-
-const BASE_INPUT =
-  "w-full rounded-2xl bg-surface-container-high/50 text-on-surface placeholder:text-outline/60 apple-shadow transition-all focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function Input({
   id,
@@ -15,27 +13,52 @@ export default function Input({
   icon,
   required = false,
   disabled = false,
+  readOnly = false,
+  description,
+  hideLabel = false,
+  size = "md",
+  variant = "default",
+  startAdornment,
+  endAdornment,
+  containerClassName = "",
+  inputClassName = "",
   className = "",
+  "aria-describedby": nativeDescribedBy,
+  "aria-invalid": nativeAriaInvalid,
   ...props
 }) {
-  const inputId = id || name;
+  const generatedId = useId();
+  const inputId = id || name || generatedId;
+  const descriptionId = description ? `${inputId}-description` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [nativeDescribedBy, descriptionId, errorId]
+    .filter(Boolean)
+    .join(" ") || undefined;
+  const resolvedSize = size === "sm" ? "sm" : "md";
+  const resolvedVariant = variant === "search" ? "search" : "default";
+  const legacyIcon = icon ? (
+    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+      {icon}
+    </span>
+  ) : null;
+  const resolvedStartAdornment = startAdornment || legacyIcon;
 
   return (
-    <div className="w-full space-y-xs">
+    <div className={cn("input-field", containerClassName)}>
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-label-md font-label-md font-semibold text-on-surface"
+          className={cn("input-label", hideLabel && "sr-only")}
         >
           {label}
-          {required && <span className="ml-1 text-error">*</span>}
+          {required && <span className="input-required" aria-hidden="true">*</span>}
         </label>
       )}
 
-      <div className="relative">
-        {icon && (
-          <span className="material-symbols-outlined pointer-events-none absolute left-md top-1/2 -translate-y-1/2 text-[20px] text-outline">
-            {icon}
+      <div className="input-control">
+        {resolvedStartAdornment && (
+          <span className="input-adornment input-adornment--start">
+            {resolvedStartAdornment}
           </span>
         )}
 
@@ -48,18 +71,37 @@ export default function Input({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
+          readOnly={readOnly}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : nativeAriaInvalid}
           className={cn(
-            BASE_INPUT,
-            icon ? "pl-10 pr-md py-[10px]" : "px-md py-[10px]",
-            error && "ring-2 ring-error/40",
+            "input apple-shadow",
+            `input--${resolvedSize}`,
+            `input--${resolvedVariant}`,
+            resolvedStartAdornment && "input--has-start-adornment",
+            endAdornment && "input--has-end-adornment",
+            error && "input--error",
+            inputClassName,
             className
           )}
           {...props}
         />
+
+        {endAdornment && (
+          <span className="input-adornment input-adornment--end">
+            {endAdornment}
+          </span>
+        )}
       </div>
 
+      {description && (
+        <p id={descriptionId} className="input-description">
+          {description}
+        </p>
+      )}
+
       {error && (
-        <p className="text-xs font-body-sm text-error">
+        <p id={errorId} className="input-error">
           {error}
         </p>
       )}

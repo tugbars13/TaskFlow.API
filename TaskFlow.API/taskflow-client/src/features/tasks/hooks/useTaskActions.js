@@ -1,5 +1,4 @@
 import {
-  getTasks,
   createTask,
   updateTask,
   deleteTask,
@@ -29,7 +28,6 @@ export default function useTaskActions({
       throw err;
     }
   };
-
   const editTask = async (id, updatedFields) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updatedFields } : t))

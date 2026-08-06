@@ -1,0 +1,49 @@
+/* ==========================================================
+   Dashboard - KPI Strip
+========================================================== */
+
+.dashboard-kpi-strip {
+  @apply w-full flex flex-col md:flex-row border-y py-lg;
+  border-color: color-mix(in srgb, var(--color-outline-variant) 10%, transparent);
+}
+
+.dashboard-kpi-item {
+  @apply flex-1 flex flex-col items-start px-lg;
+}
+
+.dashboard-kpi-item + .dashboard-kpi-item {
+  @apply border-t md:border-t-0 md:border-l pt-md md:pt-0 mt-md md:mt-0;
+  border-color: color-mix(in srgb, var(--color-outline-variant) 10%, transparent);
+}
+
+.dashboard-kpi-content {
+  @apply flex items-start gap-md;
+}
+
+.dashboard-kpi-icon {
+  @apply text-lg mt-1;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 75%, transparent);
+}
+
+.dashboard-kpi-info {
+  @apply flex flex-col;
+}
+
+.dashboard-kpi-title {
+  @apply flex items-center gap-sm;
+}
+
+.dashboard-kpi-value {
+  @apply text-display-lg font-semibold leading-none;
+  color: var(--color-on-surface);
+}
+
+.dashboard-kpi-label {
+  @apply text-body-sm font-medium;
+  color: var(--color-on-surface-variant);
+}
+
+.dashboard-kpi-context {
+  @apply mt-xs text-label-sm;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 70%, transparent);
+}

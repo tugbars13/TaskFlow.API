@@ -5,7 +5,7 @@ import {
   inviteTeamMember,
   updateTeamMember,
     deleteTeamMember,
-} from "../api/teamService";
+} from "../api/team.service";
 
 export default function useTeam() {
   const [teams, setTeams] = useState([]);

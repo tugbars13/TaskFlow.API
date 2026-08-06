@@ -1,5 +1,5 @@
 import { cn } from "@/utils/cn";
-
+import { SAVE_STATUS } from "@/constants/saveStatus";
 export default function SaveIndicator({
   status,
   className = "",
@@ -20,7 +20,7 @@ export default function SaveIndicator({
     );
   }
 
-  if (status === "success") {
+  if (status === SAVE_STATUS.SUCCESS) {
     return (
       <span
         className={cn(

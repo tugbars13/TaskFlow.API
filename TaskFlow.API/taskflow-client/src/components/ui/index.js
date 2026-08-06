@@ -9,3 +9,4 @@ export { default as PasswordInput } from "./PasswordInput";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as Spinner } from "./Spinner";
 export { default as StatCard } from "./StatCard";
+export { default as EmptyState } from "./EmptyState";

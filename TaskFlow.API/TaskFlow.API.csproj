@@ -7,14 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="DTOs\NewFolder\**" />
-    <Content Remove="DTOs\NewFolder\**" />
-    <EmbeddedResource Remove="DTOs\NewFolder\**" />
-    <None Remove="DTOs\NewFolder\**" />
+    <Compile Remove="taskflow-client\src\components\task\**" />
+    <Content Remove="taskflow-client\src\components\task\**" />
+    <EmbeddedResource Remove="taskflow-client\src\components\task\**" />
+    <None Remove="taskflow-client\src\components\task\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
@@ -24,6 +23,14 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Mappings\" />
+    <Folder Include="taskflow-client\src\components\NewFolder1\" />
+    <Folder Include="taskflow-client\src\components\NewFolder\" />
+    <Folder Include="taskflow-client\src\components\Tasks\TaskDetailsModal\" />
+    <Folder Include="taskflow-client\src\features\tasks\components\" />
   </ItemGroup>
 
 </Project>

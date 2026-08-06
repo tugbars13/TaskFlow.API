@@ -3,6 +3,7 @@ import { useLocation, matchPath } from "react-router-dom";
 import normalizeStatus from "../utils/normalizeStatus";
 import useTaskActions from "../hooks/useTaskActions";
 import useTaskLoader from "../hooks/useTaskLoader";
+import useAuth from "@/features/auth/hooks/useAuth";
 export const TaskContext = createContext();
 export default function TaskProvider({ children }) {
   const [tasks, setTasks] = useState([]);
@@ -14,6 +15,7 @@ export default function TaskProvider({ children }) {
     setLastUpdated(Date.now());
   };
   const location = useLocation();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
     const currentTeamId =
         matchPath({ path: "/teams/:teamId/tasks" }, location.pathname)?.params
@@ -38,8 +40,20 @@ export default function TaskProvider({ children }) {
   currentTeamId,
 });
   useEffect(() => {
-    loadTasks(currentTeamId);
-  }, [loadTasks, currentTeamId]);
+  if (authLoading) return;
+
+  if (!isAuthenticated) {
+    setLoading(false);
+    return;
+  }
+
+  loadTasks(currentTeamId);
+}, [
+  authLoading,
+  isAuthenticated,
+  loadTasks,
+  currentTeamId,
+]);
 
 
   return (

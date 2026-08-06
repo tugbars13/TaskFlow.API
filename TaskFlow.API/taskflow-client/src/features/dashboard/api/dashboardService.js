@@ -1,4 +1,4 @@
-import api from "@/api/axios";
+import api from "@/api/client/axios";
 
 export const getDashboardMetrics = async () => {
   try {

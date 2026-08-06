@@ -4,10 +4,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import KanbanColumn from "@/features/tasks/components/KanbanColumn";
 import TaskDetailsModal from "@/features/tasks/components/TaskDetailsModal";
 import TaskFormModal from "@/features/tasks/components/TaskFormModal";
-import SelectTeamModal from "@/features/tasks/teams/components/SelectTeamModal";
+import SelectTeamModal from "@/features/teams/components/SelectTeamModal";
 import { PageLoading } from "@/components/common";
 import TasksHeader from "@/features/tasks/components/TasksHeader";
-import { getTaskPermissions } from "@/features/tasks/utils/taskPermissions";
 import useTaskBoard from "@/features/tasks/hooks/useTaskBoard";
 import useTaskBoardData from "@/features/tasks/hooks/useTaskBoardData";
 import useTasks from "@/features/tasks/hooks/useTasks";
@@ -37,11 +36,8 @@ export default function TasksPage() {
         teamId,
         isTeamBoard,
     });
-    const { canCreateTasks, canEditTask } = getTaskPermissions(
-        currentTeam,
-        user,
-        isTeamBoard
-    );
+    const canCreateTasks = true;
+    const canEditTask = () => true;
 
     const {
         selectedTaskDetails,

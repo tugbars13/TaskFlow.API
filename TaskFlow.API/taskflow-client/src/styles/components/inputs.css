@@ -1,0 +1,69 @@
+/* ==========================================
+   Input
+========================================== */
+
+@layer components {
+  .input-field {
+    @apply w-full space-y-xs;
+  }
+
+  .input-label {
+    @apply block font-label-md text-label-md font-semibold text-on-surface;
+  }
+
+  .input-required {
+    @apply ml-1 text-error;
+  }
+
+  .input-control {
+    @apply relative;
+  }
+
+  .input {
+    @apply w-full rounded-2xl bg-surface-container-high/50 font-body-md text-body-md text-on-surface placeholder:text-outline/60 transition-all focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input--sm {
+    @apply px-md py-xs font-body-sm text-body-sm;
+  }
+
+  .input--md {
+    @apply px-md py-[10px];
+  }
+
+  .input--search {
+    @apply rounded-full;
+  }
+
+  .input--has-start-adornment {
+    @apply pl-10;
+  }
+
+  .input--has-end-adornment {
+    @apply pr-10;
+  }
+
+  .input--error {
+    @apply ring-2 ring-error/40 focus:ring-error/40;
+  }
+
+  .input-adornment {
+    @apply absolute top-1/2 inline-flex -translate-y-1/2 items-center justify-center text-outline;
+  }
+
+  .input-adornment--start {
+    @apply left-md pointer-events-none;
+  }
+
+  .input-adornment--end {
+    @apply right-md;
+  }
+
+  .input-description {
+    @apply font-body-sm text-body-sm text-on-surface-variant;
+  }
+
+  .input-error {
+    @apply font-body-sm text-body-sm text-error;
+  }
+}

@@ -1,51 +1,83 @@
 import { cn } from "@/utils/cn";
 
-const BASE =
-  "transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
-
 const VARIANTS = {
-  filled: `${BASE} bg-primary text-on-primary rounded-lg font-label-md hover:opacity-90`,
-
-  secondary: `${BASE} bg-secondary text-on-secondary rounded-full font-label-md flex items-center gap-xs`,
-
-  ghost: `${BASE} text-primary rounded-full font-label-md flex items-center gap-xs hover:bg-primary/5`,
-
-  text: `${BASE} text-primary font-label-md hover:underline`,
-
-  icon: `${BASE} text-on-surface-variant hover:text-primary`,
+  primary: "button--primary",
+  // Deprecated compatibility alias. Migrate consumers to `primary` later.
+  filled: "button--primary",
+  secondary: "button--secondary",
+  tonal: "button--tonal",
+  outline: "button--outline",
+  ghost: "button--ghost",
+  text: "button--text",
+  destructive: "button--destructive",
 };
 
 const SIZES = {
-  sm: "px-md py-xs text-sm",
-  md: "px-lg py-sm",
-  lg: "px-xl py-md text-lg",
+  sm: "button--sm",
+  md: "button--md",
+  lg: "button--lg",
 };
 
 export default function Button({
   children,
-  variant = "filled",
+  variant = "primary",
   size = "md",
   type = "button",
   className = "",
   onClick,
   ariaLabel,
   disabled = false,
+  startIcon,
+  endIcon,
+  iconOnly = false,
+  loading = false,
+  loadingText,
+  icon: _legacyIcon,
+  "aria-label": nativeAriaLabel,
   ...props
 }) {
+  const accessibleLabel = ariaLabel || nativeAriaLabel;
+  const isDisabled = disabled || loading;
+  const resolvedVariant = VARIANTS[variant] || VARIANTS.primary;
+  const resolvedSize = SIZES[size] || SIZES.md;
+  const visibleContent = loading && loadingText ? loadingText : children;
+  const iconContent = startIcon || endIcon || children;
+
+  if (iconOnly && !accessibleLabel) {
+    throw new Error("Button with iconOnly requires an ariaLabel.");
+  }
+
   return (
     <button
+      {...props}
       type={type}
       onClick={onClick}
-      aria-label={ariaLabel}
-      disabled={disabled}
+      aria-label={accessibleLabel}
+      aria-busy={loading || undefined}
+      disabled={isDisabled}
       className={cn(
-        VARIANTS[variant],
-        SIZES[size],
+        "button",
+        resolvedVariant,
+        resolvedSize,
+        iconOnly && "button--icon-only",
         className
       )}
-      {...props}
     >
-      {children}
+      {loading && <span className="button__spinner" aria-hidden="true" />}
+
+      {iconOnly ? (
+        !loading && <span className="button__icon" aria-hidden="true">{iconContent}</span>
+      ) : (
+        <>
+          {!loading && startIcon && (
+            <span className="button__icon" aria-hidden="true">{startIcon}</span>
+          )}
+          <span className="button__label">{visibleContent}</span>
+          {!loading && endIcon && (
+            <span className="button__icon" aria-hidden="true">{endIcon}</span>
+          )}
+        </>
+      )}
     </button>
   );
 }

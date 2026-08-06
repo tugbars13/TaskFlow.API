@@ -1,4 +1,4 @@
-import TaskItem from "@/features/tasks/components/TaskItem";
+import DashboardTaskRow from "@/features/tasks/components/DashboardTaskRow";
 import Spinner from "@/components/ui/Spinner";
 
 export default function TodayPriorities({
@@ -16,17 +16,17 @@ export default function TodayPriorities({
       if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
       return 0;
     })
-    .slice(0, 3);
+    .slice(0, 6);
 
   if (loading) {
     return (
-      <div className="space-y-md h-full flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-sm">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-sm">
+          <h3 className="text-headline-md font-bold text-on-surface flex items-center gap-xs">
             Today's Priorities
           </h3>
         </div>
-        <div className="p-xl bg-surface-container-lowest rounded-2xl apple-shadow border border-outline-variant/10 flex flex-col items-center justify-center min-h-[200px]">
+        <div className="py-xl flex flex-col items-center justify-center min-h-[200px]" aria-busy="true" aria-live="polite">
           <Spinner size="md" />
           <p className="text-body-sm text-on-surface-variant mt-sm">Loading priorities...</p>
         </div>
@@ -35,33 +35,37 @@ export default function TodayPriorities({
   }
 
   return (
-    <div className="space-y-md h-full flex flex-col justify-between">
-      <div className="flex items-center justify-between">
-        <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-sm">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-sm">
+        <h3 className="text-headline-md font-bold text-on-surface flex items-center gap-xs">
           Today's Priorities
-          <span className="bg-surface-container-high text-primary px-2.5 py-0.5 rounded-full text-xs font-bold">
+          <span className="bg-surface-container-high text-on-surface-variant px-sm py-0.5 rounded-full text-label-sm font-medium">
             {displayedTasks.length}
           </span>
         </h3>
-        <button type="button" onClick={onViewAll} className="text-primary font-label-md text-xs font-bold hover:underline cursor-pointer">
-          View All &rarr;
+        <button type="button" onClick={onViewAll} className="text-on-surface-variant font-medium text-label-sm hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-sm">
+          View All
         </button>
       </div>
 
-      <div className="space-y-sm flex-1">
+      <div className="flex-1 border-t border-outline-variant/10 divide-y divide-outline-variant/10">
         {displayedTasks.length === 0 ? (
-          <div className="p-xl bg-surface-container-lowest rounded-2xl apple-shadow border border-outline-variant/10 text-center text-on-surface-variant text-xs">
-            No priority tasks found for today. Great job clearing your queue!
+          <div className="py-xl flex flex-col items-center justify-center text-center">
+            <span className="material-symbols-outlined text-outline mb-sm text-[24px]">inventory_2</span>
+            <h4 className="text-body-lg font-medium text-on-surface mb-xs">No priorities today</h4>
+            <p className="text-body-sm text-on-surface-variant">Everything scheduled for today is complete.</p>
           </div>
         ) : (
           displayedTasks.map((task) => (
-            <TaskItem
+            <DashboardTaskRow
               key={task.id}
+              id={task.id}
               title={task.title}
               description={task.description}
-              teamName={task.teamName || "Backend Team"}
+              teamName={task.teamName}
               priority={task.priority}
               dueDate={task.dueDate}
+              assignee={task.assignee}
             />
           ))
         )}

@@ -14,7 +14,7 @@ const CalendarPage = lazy(() => import("../pages/Calendar/CalendarPage"));
 const Analytics = lazy(() => import("../pages/Analytics/Analytics"));
 const TeamPage = lazy(() => import("../pages/Team/TeamPage"));
 const SettingsPage = lazy(() => import("../pages/Settings/SettingsPage"));
-const MainLayout = lazy(() => import("../components/layout/MainLayout"));
+const MainLayout = lazy(() => import("../layout/MainLayout"));
 
 export default function AppRoutes() {
   return (

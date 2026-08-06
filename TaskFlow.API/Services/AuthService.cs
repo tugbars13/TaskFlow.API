@@ -1,83 +1,104 @@
-﻿using TaskFlow.API.Data;
-using TaskFlow.API.DTOs;
+﻿using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
-using Microsoft.EntityFrameworkCore; // FirstOrDefaultAsync gibi EF Core metotları için
+using TaskFlow.API.Repositories;
 using BCrypt.Net;
 
 namespace TaskFlow.API.Services;
 
-// Kullanıcı kayıt ve giriş işlemlerini yöneten servis.
 public class AuthService : IAuthService
 {
-    private readonly AppDbContext _context;      // Veritabanına erişim.
-    private readonly ITokenService _tokenService; // JWT üretmek için.
+    private readonly IUserRepository _userRepository;
+    private readonly ITokenService _tokenService;
 
-    // Dependency Injection ile gerekli servisleri alıyoruz.
     public AuthService(
-        AppDbContext context,
+        IUserRepository userRepository,
         ITokenService tokenService)
     {
-        _context = context;           // DbContext'i sakla.
-        _tokenService = tokenService; // Token servisini sakla.
+        _userRepository = userRepository;
+        _tokenService = tokenService;
     }
 
-    // Kullanıcı kayıt işlemi (bir sonraki adımda dolduracağız).
-    public async Task<string?> RegisterAsync(RegisterDto dto)
+    public async Task<LoginResponseDto?> RegisterAsync(RegisterDto dto)
     {
-        // Aynı email ile kayıtlı kullanıcı var mı kontrol et.
-        var existingUser = await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == dto.Email);
+        var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
 
         if (existingUser != null)
         {
-            // Email zaten kayıtlı.
             return null;
         }
 
-        // Kullanıcının şifresini güvenli şekilde hash'liyoruz.
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-        // Yeni User nesnesi oluşturuyoruz.
         var user = new User
         {
             FullName = dto.FullName,
             Email = dto.Email,
             PasswordHash = passwordHash,
-            CreatedDate = DateTime.Now
+            CreatedDate = DateTime.UtcNow
         };
 
-        // Kullanıcıyı veritabanına ekle.
-        _context.Users.Add(user);
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
 
-        // Değişiklikleri kaydet.
-        await _context.SaveChangesAsync();
+        var token = _tokenService.CreateToken(user);
 
-        // Kayıt başarılıysa JWT üret ve geri döndür.
-        return _tokenService.CreateToken(user);
+        return new LoginResponseDto
+        {
+            Token = token,
+            User = MapToUserDto(user)
+        };
     }
 
-    // Kullanıcı giriş işlemi (bir sonraki adımda dolduracağız).
-    // Kullanıcı giriş işlemi
-    public async Task<string?> LoginAsync(LoginDto dto)
+    public async Task<LoginResponseDto?> LoginAsync(LoginDto dto)
     {
-        // Email'e göre kullanıcıyı bul.
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == dto.Email); // Email eşleşen kullanıcıyı getir.
+        var user = await _userRepository.GetByEmailAsync(dto.Email);
 
-        // Kullanıcı bulunamadıysa giriş başarısız.
         if (user == null)
             return null;
 
-        // Girilen şifre ile veritabanındaki hash'i karşılaştır.
         bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(
             dto.Password,
             user.PasswordHash);
 
-        // Şifre yanlışsa giriş başarısız.
         if (!isPasswordCorrect)
             return null;
 
-        // Şifre doğruysa JWT oluştur.
-        return _tokenService.CreateToken(user);
+        var token = _tokenService.CreateToken(user);
+
+        return new LoginResponseDto
+        {
+            Token = token,
+            User = MapToUserDto(user)
+        };
+    }
+
+    public async Task<UserDto?> GetCurrentUserAsync(int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user == null)
+            return null;
+
+        return MapToUserDto(user);
+    }
+
+    // BU METOT EKSİKSE, EN ALTA EKLE
+    private static UserDto MapToUserDto(User user)
+    {
+        var nameParts = (user.FullName ?? "")
+            .Trim()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var firstName = nameParts.Length > 0 ? nameParts[0] : user.FullName;
+        var lastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "";
+
+        return new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = user.Email
+        };
     }
 }

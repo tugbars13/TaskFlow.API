@@ -1,64 +1,78 @@
-import StatCard from "@/components/ui/StatCard";
-import ProgressBar from "@/components/ui/ProgressBar";
-
+import {
+  FiCheckSquare,
+  FiCheckCircle,
+  FiCalendar,
+} from "react-icons/fi";
 export default function StatsOverview({ metrics }) {
   const {
     totalTasks = 0,
     completedTasks = 0,
     upcomingDeadlines = 0,
-    productivityScore = 0,
     highPriorityTasks = 0,
   } = metrics || {};
 
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
   const stats = [
-    {
-      id: "total",
-      label: "Total Tasks",
-      value: String(totalTasks),
-      delta: totalTasks > 0 ? `+${totalTasks}` : "0 Tasks",
-      deltaClassName: "text-green-600 font-bold",
-      icon: "assignment",
-      iconClassName: "text-primary bg-primary/10",
-    },
-    {
-      id: "completed",
-      label: "Completed",
-      value: String(completedTasks),
-      delta: completedTasks > 0 ? `+${completedTasks}` : "0 Done",
-      deltaClassName: "text-green-600 font-bold",
-      icon: "task_alt",
-      iconClassName: "text-secondary bg-secondary/10",
-    },
-    {
-      id: "deadlines",
-      label: "Upcoming Deadlines",
-      value: String(upcomingDeadlines),
-      delta: `${highPriorityTasks} Urgent`,
-      deltaClassName: highPriorityTasks > 0 ? "text-error font-bold" : "text-on-surface-variant font-medium",
-      icon: "event_busy",
-      iconClassName: "text-error bg-error-container/30",
-    },
-  ];
+  {
+    id: "total",
+    icon: <FiCheckSquare />,
+    label: "Tasks",
+    value: String(totalTasks),
+    context: totalTasks > 0 ? `+${totalTasks} active` : "0 active",
+  },
+  {
+    id: "completed",
+    icon: <FiCheckCircle />,
+    label: "Completed",
+    value: String(completedTasks),
+    context: `${completionRate}% done`,
+  },
+  {
+    id: "deadlines",
+    icon: <FiCalendar />,
+    label: "Deadlines",
+    value: String(upcomingDeadlines),
+    context: highPriorityTasks > 0 ? `${highPriorityTasks} urgent` : "On track",
+  },
+];
 
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-lg items-stretch">
+    <section className="dashboard-kpi-strip">
       {stats.map((stat) => (
-        <StatCard
+        <div
           key={stat.id}
-          icon={stat.icon}
-          iconClassName={stat.iconClassName}
-          label={stat.label}
-          value={stat.value}
-          delta={stat.delta}
-          deltaClassName={stat.deltaClassName}
-        />
-      ))}
+          className="dashboard-kpi-item"
+        >
+          <div className="dashboard-kpi-content">
 
-      {/* Featured Productivity Score Card */}
-      <Card
-        padding="md"
-        className="bg-primary text-on-primary relative overflow-hidden h-full flex flex-col justify-between transition-all hover:apple-shadow-hover"
-      ></Card>
+  <span className="dashboard-kpi-icon">
+    {stat.icon}
+  </span>
+
+  <div className="dashboard-kpi-info">
+
+    <div className="dashboard-kpi-title">
+
+      <span className="dashboard-kpi-value">
+        {stat.value}
+      </span>
+
+      <span className="dashboard-kpi-label">
+        {stat.label}
+      </span>
+
+    </div>
+
+    <span className="dashboard-kpi-context">
+      {stat.context}
+    </span>
+
+  </div>
+
+</div>
+        </div>
+      ))}
     </section>
   );
 }

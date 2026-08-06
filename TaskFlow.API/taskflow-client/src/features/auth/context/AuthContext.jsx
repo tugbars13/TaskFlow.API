@@ -1,6 +1,7 @@
 import { createContext, useState } from "react";
 import { tokenStorage } from "@/utils/tokenStorage";
 import useAuthActions from "../hooks/useAuthActions";
+import useAuthSession from "@/features/auth/hooks/useAuthSession";
 
 export const AuthContext = createContext();
 
@@ -15,7 +16,7 @@ export default function AuthProvider({ children }) {
     setRole,
     setIsLoading,
   });
-  const { login, logout } = useAuthActions({
+  const { login, logout, register } = useAuthActions({
     setUser,
     setRole,
     setPermissions,
@@ -42,6 +43,7 @@ export default function AuthProvider({ children }) {
         isLoading,
         login,
         logout,
+        register,
         hasRole,
         hasPermission,
       }}

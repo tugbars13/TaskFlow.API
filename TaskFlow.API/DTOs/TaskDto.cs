@@ -1,19 +1,22 @@
-﻿namespace TaskFlow.API.DTOs;
+using TaskFlow.API.Models;
+namespace TaskFlow.API.DTOs;
 
 public class TaskDto
 {
-    // Görevin benzersiz kimliği.
     public int Id { get; set; }
-
-    // Görev başlığı.
     public string Title { get; set; } = string.Empty;
-
-    // Görev açıklaması.
     public string Description { get; set; } = string.Empty;
-
-    // Tamamlanma bilgisi.
     public bool IsCompleted { get; set; }
-
-    // Oluşturulma tarihi.
+    public TaskFlow.API.Models.TaskStatus Status { get; set; }
     public DateTime CreatedDate { get; set; }
+    public TaskPriority Priority { get; set; }
+    public DateTime? DueDate { get; set; }
+    public TaskCategory Category { get; set; }
+    public int Progress { get; set; }
+    public int CommentsCount { get; set; }
+    public int AttachmentsCount { get; set; }
+    public int? AssignedUserId { get; set; }
+    public string? AssignedUserFullName { get; set; }
+    public int? TeamId { get; set; }
+    public string? TeamName { get; set; }
 }

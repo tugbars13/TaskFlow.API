@@ -11,7 +11,10 @@ export default function PageError({
   return (
     <div
       className={cn(
-        "my-xl space-y-md rounded-3xl border border-error/20 bg-surface p-xl text-center apple-shadow",
+        "my-xl space-y-md",
+        "rounded-3xl border border-error/20",
+        "bg-surface p-xl",
+        "text-center apple-shadow",
         className
       )}
     >

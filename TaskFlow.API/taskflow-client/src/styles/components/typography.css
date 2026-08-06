@@ -1,0 +1,63 @@
+/* ==========================================
+   Typography
+
+   These classes are presentation roles only. They deliberately do not set
+   foreground colors so each surface, state, or feature can provide the
+   appropriate semantic color.
+========================================== */
+
+@layer components {
+  /* Type scale */
+  .type-display-lg {
+    @apply font-display-lg text-display-lg font-extrabold leading-tight tracking-tight;
+  }
+
+  .type-headline-lg {
+    @apply font-headline-lg text-headline-lg font-bold leading-tight tracking-tight;
+  }
+
+  .type-headline-lg-mobile {
+    @apply font-headline-lg-mobile text-headline-lg-mobile font-bold leading-tight tracking-tight;
+  }
+
+  .type-headline-md {
+    @apply font-headline-md text-headline-md font-bold leading-snug;
+  }
+
+  .type-body-lg {
+    @apply font-body-lg text-body-lg font-normal leading-relaxed;
+  }
+
+  .type-body-md {
+    @apply font-body-md text-body-md font-normal leading-relaxed;
+  }
+
+  .type-body-sm {
+    @apply font-body-sm text-body-sm font-normal leading-normal;
+  }
+
+  .type-label-md {
+    @apply font-label-md text-label-md font-semibold leading-normal;
+  }
+
+  .type-label-sm {
+    @apply font-label-sm text-label-sm font-medium leading-normal;
+  }
+
+  /* Semantic aliases for future component adoption. */
+  .type-page-title {
+    @apply font-display-lg text-display-lg font-extrabold leading-tight tracking-tight;
+  }
+
+  .type-section-title {
+    @apply font-headline-md text-headline-md font-bold leading-snug;
+  }
+
+  .type-card-title {
+    @apply font-headline-md text-headline-md font-semibold leading-snug;
+  }
+
+  .type-caption {
+    @apply font-label-sm text-label-sm font-medium leading-normal;
+  }
+}

@@ -1,12 +1,46 @@
+using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskItem>> GetAllAsync();
+    Task<List<TaskItem>> GetAllByUserIdAsync(int userId);
+
+    Task<List<TaskItem>> GetAllTasksForAdminAsync();
+
+    Task<List<TaskItem>> GetByTeamIdAsync(int teamId);
+
     Task<TaskItem?> GetByIdAsync(int id);
+
     Task<TaskItem> CreateAsync(TaskItem task);
-    Task<bool> UpdateAsync(int id, TaskItem task);
-    Task<bool> DeleteAsync(int id);
+
+    Task<bool> UpdateAsync(
+        int id,
+        int userId,
+        TaskItem updatedTask);
+
+    Task<bool> DeleteAsync(
+        int id,
+        int userId);
+
+    Task<List<TaskItem>> FilterAsync(
+        int userId,
+        TaskFilterDto filter);
+
+    Task<List<TaskItem>> SearchAsync(
+        int userId,
+        string keyword);
+
+    Task<List<TaskItem>> GetPagedAsync(
+        int userId,
+        PaginationDto pagination);
+
+    Task<DashboardDto> GetDashboardAsync(
+        int userId);
+
+    Task<List<TaskItem>> SortAsync(
+        int userId,
+        TaskSortDto sort);
+
 }

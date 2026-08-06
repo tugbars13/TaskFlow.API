@@ -1,14 +1,47 @@
-/* src/styles/globals.css */
-.apple-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-.apple-shadow-hover:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.08); transform: translateY(-2px); }
-.glass-panel { backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); }
+@import "tailwindcss";
+
+/* Architecture Imports */
+@import "./variables.css";
+
+/* Components */
+@import "./components/buttons.css";
+@import "./components/cards.css";
+@import "./components/inputs.css";
+@import "./components/stats.css";
+@import "./components/typography.css";
+
+/* Features */
+@import "./features/dashboard.css";
+/* Ignore auth.css if missing, wait I will check if auth.css exists. User said it exists, but I didn't see it in list_dir earlier. Let me only import what I verified. */
+
+/* Base HTML Resets */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  font-size: 93.75%; /* Scales overall default rem units down by ~6.25% */
+}
+
+/* Custom Utilities */
+.apple-shadow {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s ease;
+}
+.apple-shadow-hover:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+    transform: translateY(-1.5px);
+}
+.glass-panel {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
 .mesh-gradient {
-  background-color: #4f378a;
-  background-image:
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+    background-color: #4f378a;
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
 }
 .gradient-brand {
-  background: linear-gradient(135deg, #381e72 0%, #085ac0 100%);
+    background: linear-gradient(135deg, #381e72 0%, #085ac0 100%);
 }

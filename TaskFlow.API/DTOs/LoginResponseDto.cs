@@ -7,8 +7,6 @@ public class LoginResponseDto
     public string Token { get; set; } = string.Empty;
 
     // Kullanıcının adı
-    public string Name { get; set; } = string.Empty;
+    public UserDto User { get; set; } = new();
 
-    // Email
-    public string Email { get; set; } = string.Empty;
 }
