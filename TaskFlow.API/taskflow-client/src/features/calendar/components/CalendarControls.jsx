@@ -1,5 +1,7 @@
+const VIEW_MODES = ["day", "week", "month"];
+
 export default function CalendarControls({
-  currentMonthText = "September 2024",
+  currentMonthText,
   viewMode = "month",
   onViewChange,
   onPrevMonth,
@@ -22,7 +24,7 @@ export default function CalendarControls({
       <div className="flex items-center gap-3 flex-wrap">
         {/* View Switcher */}
         <div className="bg-surface-container-lowest p-1 rounded-2xl border border-outline-variant/10 flex items-center apple-shadow">
-          {["day", "week", "month"].map((mode) => (
+          {VIEW_MODES.map((mode) => (
             <button
               key={mode}
               type="button"
@@ -44,14 +46,19 @@ export default function CalendarControls({
             type="button"
             onClick={onPrevMonth}
             className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-xl transition-all cursor-pointer"
+            aria-label="Previous Month"
             title="Previous Month"
           >
-            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+            <span className="material-symbols-outlined text-[16px]">
+              chevron_left
+            </span>
           </button>
           <button
             type="button"
             onClick={onToday}
             className="px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 rounded-xl transition-all cursor-pointer"
+            aria-label="Today"
+            title="Today"
           >
             Today
           </button>
@@ -59,9 +66,12 @@ export default function CalendarControls({
             type="button"
             onClick={onNextMonth}
             className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-xl transition-all cursor-pointer"
+            aria-label="Next Month"
             title="Next Month"
           >
-            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            <span className="material-symbols-outlined text-[16px]">
+              chevron_right
+            </span>
           </button>
         </div>
 
@@ -69,9 +79,12 @@ export default function CalendarControls({
         <button
           type="button"
           onClick={onFilterClick}
+          aria-label="Filter"
           className="bg-surface-container-lowest border border-outline-variant/10 px-4 py-2 rounded-2xl text-xs font-semibold text-on-surface hover:border-primary/30 hover:text-primary transition-all flex items-center gap-1.5 apple-shadow cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[16px]">filter_list</span>
+          <span className="material-symbols-outlined text-[16px]">
+            filter_list
+          </span>
           Filter
         </button>
       </div>

@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
-
+const EMPTY_PROFILE = Object.freeze({
+  fullName: "",
+  displayName: "",
+  email: "",
+  bio: "",
+});
 export default function ProfileForm({ initialValues, onSave, onCancel }) {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    displayName: "",
-    email: "",
-    bio: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_PROFILE);
 
   useEffect(() => {
-    if (initialValues) {
-      setFormData({
-        fullName: initialValues.fullName || "",
-        displayName: initialValues.displayName || "",
-        email: initialValues.email || "",
-        bio: initialValues.bio || "",
-      });
+    if (!initialValues) {
+      setFormData(EMPTY_PROFILE);
+      return;
     }
+
+    setFormData({
+      ...EMPTY_PROFILE,
+      ...initialValues,
+    });
   }, [initialValues]);
 
   const handleChange = (field, value) => {
@@ -45,7 +46,9 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
 
         {/* Display Name */}
         <div className="space-y-xs">
-          <label className="text-xs font-bold text-on-surface">Display Name / Handle</label>
+          <label className="text-xs font-bold text-on-surface">
+            Display Name / Handle
+          </label>
           <input
             type="text"
             value={formData.displayName}
@@ -58,7 +61,9 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
 
       {/* Email Address */}
       <div className="space-y-xs">
-        <label className="text-xs font-bold text-on-surface">Email Address</label>
+        <label className="text-xs font-bold text-on-surface">
+          Email Address
+        </label>
         <input
           type="email"
           value={formData.email}

@@ -1,11 +1,11 @@
 import { Navigate, Outlet } from "react-router-dom";
 import useAuth from "../features/auth/hooks/useAuth";
-import { ROUTES } from "../constants/routes.constants";
+import { ROUTES } from "../constants/routesConstants";
 import Spinner from "@/components/ui/Spinner";
 
 /**
  * ProtectedRoute Component
- * 
+ *
  * Guards private application routes.
  * Checks authentication status via useAuth() and handles automatic redirects.
  * Supports optional Role-Based Access Control (RBAC) via requiredRole prop.

@@ -1,10 +1,9 @@
-import { useEffect, useState, useCallback, useContext } from "react";
-import { getAnalyticsMetrics } from "../api/analyticsService";
-import { TaskContext } from "@/features/tasks/context/TaskContext";
-
+import { useEffect, useState, useCallback } from "react";
+import useTasks from "@/features/tasks/hooks/useTasks";
+import { getAnalyticsMetrics } from "@/features/analytics/api/analyticsService";
+import { ERROR_MESSAGES } from "@/constants/errorConstants";
 export default function useAnalytics() {
-  const taskCtx = useContext(TaskContext);
-  const lastUpdated = taskCtx?.lastUpdated;
+  const { lastUpdated } = useTasks();
 
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,8 +15,8 @@ export default function useAnalytics() {
     try {
       const data = await getAnalyticsMetrics();
       setMetrics(data);
-    } catch (err) {
-      setError(err.message || "Failed to load analytics metrics.");
+    } catch (error) {
+      setError(error.message || ERROR_MESSAGES.ANALYTICS_LOAD_FAILED);
     } finally {
       setLoading(false);
     }

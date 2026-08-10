@@ -7,11 +7,13 @@ export default function useCalendar() {
   const lastUpdated = taskCtx?.lastUpdated;
 
   const [events, setEvents] = useState({});
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(new Date().getMonth());
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(
+    new Date().getMonth(),
+  );
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [viewMode, setViewMode] = useState("month");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -19,7 +21,7 @@ export default function useCalendar() {
     try {
       const data = await getCalendarEvents();
       const eventsList = Array.isArray(data) ? data : [];
-      
+
       const eventsMap = {};
       eventsList.forEach((evt) => {
         const evtDate = new Date(evt.startDate);
@@ -37,7 +39,7 @@ export default function useCalendar() {
 
       setEvents(eventsMap);
     } catch (err) {
-      setError(err.message || "Failed to load calendar events.");
+      setError(err.message ?? "Failed to load calendar events.");
       setEvents({});
     } finally {
       setLoading(false);

@@ -1,28 +1,28 @@
-﻿import normalizeStatus from "./normalizeStatus";
+import normalizeStatus from "./normalizeStatus";
+
+const PRIORITY_MAP = Object.freeze({
+    1: "Low",
+    2: "Medium",
+    3: "High",
+});
+
+const CATEGORY_MAP = Object.freeze({
+    1: "Personal",
+    2: "Work",
+    3: "Study",
+    4: "Shopping",
+    5: "Health",
+});
 
 export default function normalizeTask(t) {
     const priorityStr =
         typeof t.priority === "number"
-            ? t.priority === 3
-                ? "High"
-                : t.priority === 2
-                    ? "Medium"
-                    : "Low"
+            ? PRIORITY_MAP[t.priority] ?? "Low"
             : t.priority || "Medium";
 
     const categoryStr =
         typeof t.category === "number"
-            ? t.category === 1
-                ? "Personal"
-                : t.category === 2
-                    ? "Work"
-                    : t.category === 3
-                        ? "Study"
-                        : t.category === 4
-                            ? "Shopping"
-                            : t.category === 5
-                                ? "Health"
-                                : "General"
+            ? CATEGORY_MAP[t.category] ?? "General"
             : t.category || "General";
 
     const statusStr = normalizeStatus(t.status, t.isCompleted);

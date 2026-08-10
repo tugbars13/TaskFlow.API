@@ -28,12 +28,12 @@ export default function Input({
   ...props
 }) {
   const generatedId = useId();
-  const inputId = id || name || generatedId;
+  const inputId = id ?? name ?? generatedId;
   const descriptionId = description ? `${inputId}-description` : undefined;
   const errorId = error ? `${inputId}-error` : undefined;
-  const describedBy = [nativeDescribedBy, descriptionId, errorId]
-    .filter(Boolean)
-    .join(" ") || undefined;
+  const describedBy =
+    [nativeDescribedBy, descriptionId, errorId].filter(Boolean).join(" ") ||
+    undefined;
   const resolvedSize = size === "sm" ? "sm" : "md";
   const resolvedVariant = variant === "search" ? "search" : "default";
   const legacyIcon = icon ? (
@@ -41,7 +41,7 @@ export default function Input({
       {icon}
     </span>
   ) : null;
-  const resolvedStartAdornment = startAdornment || legacyIcon;
+  const resolvedStartAdornment = startAdornment ?? legacyIcon;
 
   return (
     <div className={cn("input-field", containerClassName)}>
@@ -51,7 +51,11 @@ export default function Input({
           className={cn("input-label", hideLabel && "sr-only")}
         >
           {label}
-          {required && <span className="input-required" aria-hidden="true">*</span>}
+          {required && (
+            <span className="input-required" aria-hidden="true">
+              *
+            </span>
+          )}
         </label>
       )}
 
@@ -82,7 +86,7 @@ export default function Input({
             endAdornment && "input--has-end-adornment",
             error && "input--error",
             inputClassName,
-            className
+            className,
           )}
           {...props}
         />

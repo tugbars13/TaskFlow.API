@@ -1,12 +1,11 @@
-const SETTINGS_SECTIONS = [
+const SETTINGS_SECTIONS = Object.freeze([
   { id: "Profile", label: "Profile", icon: "person" },
   { id: "Account", label: "Account", icon: "manage_accounts" },
   { id: "Notifications", label: "Notifications", icon: "notifications" },
   { id: "Security", label: "Security", icon: "security" },
   { id: "Workspace", label: "Workspace", icon: "workspaces" },
   { id: "Billing", label: "Billing", icon: "credit_card" },
-];
-
+]);
 export default function SettingsSidebar({ activeSection, onSelectSection }) {
   return (
     <div className="bg-surface rounded-2xl p-md border border-outline-variant/10 apple-shadow space-y-xs">
@@ -20,6 +19,7 @@ export default function SettingsSidebar({ activeSection, onSelectSection }) {
             key={section.id}
             type="button"
             onClick={() => onSelectSection?.(section.id)}
+            aria-label={isActive ? "page" : undefined}
             className={`w-full flex items-center gap-md px-md py-sm rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
               isActive
                 ? "bg-primary/10 text-primary shadow-xs font-bold"
@@ -28,7 +28,9 @@ export default function SettingsSidebar({ activeSection, onSelectSection }) {
           >
             <span
               className="material-symbols-outlined text-[20px]"
-              style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+              style={{
+                fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+              }}
             >
               {section.icon}
             </span>

@@ -2,37 +2,50 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { formatDateDDMMYYYY } from "@/utils/dateUtils";
 
-export default function UpcomingDeadlinesCard({ deadlines = [], onViewAll, onTaskClick }) {
+export default function UpcomingDeadlinesCard({
+  deadlines = [],
+  onViewAll,
+  onTaskClick,
+}) {
   const getPriorityBadge = (priority) => {
     switch (priority?.toLowerCase()) {
       case "high":
-        return <Badge className="bg-error-container/30 text-error shrink-0 ml-auto">High</Badge>;
+        return <Badge variant="error">High</Badge>;
       case "medium":
-        return <Badge className="bg-tertiary-container/30 text-tertiary shrink-0 ml-auto">Medium</Badge>;
+        return <Badge variant="warning">Medium</Badge>;
       default:
-        return <Badge className="bg-surface-container-high text-on-surface-variant shrink-0 ml-auto">Low</Badge>;
+        return <Badge variant="secondary">Low</Badge>;
     }
   };
 
   const sortedDeadlines = (deadlines || [])
     .slice()
-    .sort((a, b) => new Date(a.dueDate || 0) - new Date(b.dueDate || 0))
+    .sort(
+      (a, b) =>
+        new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime(),
+    )
     .slice(0, 5);
 
   return (
-    <Card className="rounded-3xl p-6 apple-shadow space-y-5">
-      {/* Header title & View All aligned on same baseline */}
-      <div className="flex items-center justify-between border-b border-outline-variant/10 pb-4 h-8">
-        <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-500 text-[22px]">alarm</span>
-          Upcoming Deadlines
-        </h3>
+    <Card className="p-lg">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-md">
+        <div className="flex items-center gap-sm">
+          <span className="material-symbols-outlined text-amber-500">
+            alarm
+          </span>
+
+          <h3 className="font-headline-md font-bold text-on-surface">
+            Upcoming Deadlines
+          </h3>
+        </div>
+
         <button
           type="button"
           onClick={onViewAll}
-          className="text-xs font-bold text-primary hover:underline cursor-pointer flex items-center gap-1 leading-none"
+          className="text-xs font-semibold text-primary hover:underline"
         >
-          View All &rarr;
+          View All →
         </button>
       </div>
 
@@ -50,17 +63,22 @@ export default function UpcomingDeadlinesCard({ deadlines = [], onViewAll, onTas
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    calendar_today
+                  </span>
                 </div>
+
                 <div className="min-w-0 flex-1 pr-2">
                   <h4 className="text-xs font-semibold text-on-surface truncate group-hover:text-amber-500 transition-colors">
                     {item.title}
                   </h4>
+
                   <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">
                     {item.dueDate ? formatDateDDMMYYYY(item.dueDate) : "Today"}
                   </p>
                 </div>
               </div>
+
               {getPriorityBadge(item.priority)}
             </div>
           ))

@@ -1,0 +1,6 @@
+export const DONUT_CHART = {
+  CENTER: 80,
+  RADIUS: 60,
+  STROKE_WIDTH: 14,
+  CIRCUMFERENCE: 376.99,
+};

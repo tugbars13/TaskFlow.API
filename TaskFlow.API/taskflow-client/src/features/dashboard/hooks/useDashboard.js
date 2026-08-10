@@ -8,16 +8,16 @@ export default function useDashboard() {
 
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setError("");
     try {
       const data = await getDashboardMetrics();
       setMetrics(data);
     } catch (err) {
-      setError(err.message || "Failed to load dashboard metrics.");
+      setError(err.message ?? "Failed to load dashboard metrics.");
     } finally {
       setLoading(false);
     }
@@ -27,12 +27,15 @@ export default function useDashboard() {
     fetchDashboardData();
   }, [fetchDashboardData, lastUpdated]);
 
-  const toggleDashboardTask = async (id) => {
-    if (taskCtx && taskCtx.toggleTaskStatus) {
+  const toggleDashboardTask = useCallback(
+    async (id) => {
+      if (!taskCtx?.toggleTaskStatus) return;
+
       await taskCtx.toggleTaskStatus(id);
       await fetchDashboardData();
-    }
-  };
+    },
+    [taskCtx, fetchDashboardData],
+  );
 
   return {
     metrics,

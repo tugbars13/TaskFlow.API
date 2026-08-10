@@ -1,4 +1,6 @@
 import { useRef } from "react";
+const DEFAULT_AVATAR =
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200";
 
 export default function AvatarUploader({ avatarUrl, onChangeAvatar }) {
   const fileInputRef = useRef(null);
@@ -14,7 +16,7 @@ export default function AvatarUploader({ avatarUrl, onChangeAvatar }) {
   return (
     <div className="flex items-center gap-lg pb-lg border-b border-outline-variant/10">
       <img
-        src={avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"}
+        src={avatarUrl || DEFAULT_AVATAR}
         alt="Profile Avatar"
         className="w-20 h-20 rounded-2xl object-cover apple-shadow border-2 border-surface"
       />

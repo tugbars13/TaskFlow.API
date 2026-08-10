@@ -1,12 +1,24 @@
+import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 
 export default function RemoveMemberModal({ isOpen, onClose, member, onRemoveMember }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen || !member) return null;
 
-  const handleRemove = () => {
-    onRemoveMember?.(member.id);
-    onClose();
+  const handleRemove = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onRemoveMember?.(member.id);
+      onClose();
+    } catch (err) {
+      console.error("Failed to remove member:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,15 +39,23 @@ export default function RemoveMemberModal({ isOpen, onClose, member, onRemoveMem
         </div>
 
         <div className="flex items-center justify-end gap-md pt-md border-t border-outline-variant/10">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <button
             type="button"
             onClick={handleRemove}
-            className="px-xl py-md bg-error text-on-error font-bold text-xs rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
+            disabled={isSubmitting}
+            className="px-xl py-md bg-error text-on-error font-bold text-xs rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Remove
+            {isSubmitting ? (
+              <span className="flex items-center gap-xs">
+                <Spinner size="sm" />
+                Removing...
+              </span>
+            ) : (
+              "Remove"
+            )}
           </button>
         </div>
       </div>

@@ -44,7 +44,7 @@ export default function useCalendarPage() {
   } = useTasks();
   const { teams } = useTeam();
 
-  const todayDate = new Date();
+  const todayDate = useMemo(() => new Date(), []);
   const [selectedDay, setSelectedDay] = useState(todayDate.getDate());
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTaskModalData, setSelectedTaskModalData] = useState(null);
@@ -81,7 +81,9 @@ export default function useCalendarPage() {
     const now = new Date();
     return tasks
       .filter((t) => !t.isCompleted && t.dueDate && new Date(t.dueDate) >= now)
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+      )
       .slice(0, UPCOMING_DEADLINE_COUNT);
   }, [tasks]);
 
@@ -107,7 +109,7 @@ export default function useCalendarPage() {
         setIsTaskModalOpen(true);
       }
     },
-    [currentMonthIndex, currentYear, teams]
+    [currentMonthIndex, currentYear, teams],
   );
 
   const handleCreateTaskModal = useCallback(
@@ -118,7 +120,7 @@ export default function useCalendarPage() {
       setSelectedTeamForTask(null);
       refetch();
     },
-    [addTask, refetch]
+    [addTask, refetch],
   );
 
   const handleCloseTaskModal = useCallback(() => {

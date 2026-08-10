@@ -1,7 +1,14 @@
-export default function AuthMobileLogo() {
+import { cn } from "@/utils/cn";
+
+export default function AuthMobileLogo({ className }) {
   return (
-    <div className="flex items-center justify-center gap-sm mb-lg md:hidden">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-md font-bold text-white shadow-md">
+    <div
+      className={cn(
+        "flex items-center justify-center gap-sm mb-lg md:hidden",
+        className,
+      )}
+    >
+      <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-md font-bold text-white shadow-md">
         TF
       </div>
 

@@ -1,5 +1,8 @@
 import api from "@/api/client/axios";
-
+const DEFAULT_PRIORITY = 2;
+const DEFAULT_CATEGORY = 2;
+const DEFAULT_STATUS = 1;
+const COMPLETED_STATUS = 4;
 const PRIORITY_MAP = {
   low: 1,
   medium: 2,
@@ -28,6 +31,22 @@ const STATUS_MAP = {
   in_progress: 3,
   completed: 4,
 };
+const buildTaskPayload = (taskData) => ({
+  title: taskData.title,
+  description: taskData.description || "",
+  priority:
+    typeof taskData.priority === "number"
+      ? taskData.priority
+      : (PRIORITY_MAP[taskData.priority?.toLowerCase()] ?? DEFAULT_PRIORITY),
+  category:
+    typeof taskData.category === "number"
+      ? taskData.category
+      : (CATEGORY_MAP[taskData.category?.toLowerCase()] ?? DEFAULT_CATEGORY),
+  dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
+  assignedUserId: taskData.assignedUserId
+    ? Number(taskData.assignedUserId)
+    : null,
+});
 
 export const getTasks = async (teamId = null) => {
   const endpoint = teamId ? `/teams/${teamId}/tasks` : "/tasks";
@@ -37,16 +56,7 @@ export const getTasks = async (teamId = null) => {
 
 export const createTask = async (taskData) => {
   const payload = {
-    title: taskData.title,
-    description: taskData.description || "",
-    priority: typeof taskData.priority === "number"
-      ? taskData.priority
-      : (PRIORITY_MAP[taskData.priority?.toLowerCase()] || 2),
-    category: typeof taskData.category === "number"
-      ? taskData.category
-      : (CATEGORY_MAP[taskData.category?.toLowerCase()] || 2),
-    dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
-    assignedUserId: taskData.assignedUserId ? Number(taskData.assignedUserId) : null,
+    ...buildTaskPayload(taskData),
     teamId: taskData.teamId ? Number(taskData.teamId) : null,
   };
 
@@ -55,23 +65,18 @@ export const createTask = async (taskData) => {
 };
 
 export const updateTask = async (id, taskData) => {
-  const statusVal = typeof taskData.status === "number"
-    ? taskData.status
-    : (STATUS_MAP[taskData.status?.toLowerCase()] || (taskData.isCompleted ? 4 : 1));
+  const statusVal =
+    typeof taskData.status === "number"
+      ? taskData.status
+      : (STATUS_MAP[taskData.status?.toLowerCase()] ??
+        (taskData.isCompleted ? COMPLETED_STATUS : DEFAULT_STATUS));
 
   const payload = {
-    title: taskData.title,
-    description: taskData.description || "",
-    isCompleted: Boolean(taskData.isCompleted || statusVal === 4),
+    ...buildTaskPayload(taskData),
+    isCompleted: Boolean(
+      taskData.isCompleted || statusVal === COMPLETED_STATUS,
+    ),
     status: statusVal,
-    priority: typeof taskData.priority === "number"
-      ? taskData.priority
-      : (PRIORITY_MAP[taskData.priority?.toLowerCase()] || 2),
-    category: typeof taskData.category === "number"
-      ? taskData.category
-      : (CATEGORY_MAP[taskData.category?.toLowerCase()] || 2),
-    dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
-    assignedUserId: taskData.assignedUserId ? Number(taskData.assignedUserId) : null,
   };
 
   const response = await api.put(`/tasks/${id}`, payload);

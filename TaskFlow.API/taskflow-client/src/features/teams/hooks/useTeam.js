@@ -4,8 +4,8 @@ import {
   getTeamMembers,
   inviteTeamMember,
   updateTeamMember,
-    deleteTeamMember,
-} from "../api/team.service";
+  deleteTeamMember,
+} from "../api/teamservice.Js";
 
 export default function useTeam() {
   const [teams, setTeams] = useState([]);
@@ -52,58 +52,56 @@ export default function useTeam() {
         emailStr.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesRole =
-        roleFilter === "All" || roleStr.toLowerCase() === roleFilter.toLowerCase();
+        roleFilter === "All" ||
+        roleStr.toLowerCase() === roleFilter.toLowerCase();
 
       return matchesSearch && matchesRole;
     });
   }, [members, searchQuery, roleFilter]);
 
   const stats = useMemo(() => {
-    const totalMembers = teams.length > 0 ? teams.length : members.length;
+    const totalMembers = members.length;
     const activeNow = members.filter(
-      (m) => m.status?.toLowerCase() === "active"
+      (m) => m.status?.toLowerCase() === "active",
     ).length;
     const openInvitations = members.filter(
-      (m) => m.status?.toLowerCase() === "invited" || m.status?.toLowerCase() === "pending"
+      (m) =>
+        m.status?.toLowerCase() === "invited" ||
+        m.status?.toLowerCase() === "pending",
     ).length;
 
     return { totalMembers, activeNow, openInvitations };
-  }, [teams, members]);
+  }, [members]);
 
-  const inviteMember = async (newMemberData) => {
-    try {
-      const created = await inviteTeamMember(newMemberData);
-      setMembers((prev) => [created, ...prev]);
-      return true;
-    } catch (err) {
-      setError("Failed to send invite.");
-      return false;
-    }
-  };
+  const inviteMember = useCallback(async (newMemberData) => {
+    const created = await inviteTeamMember(newMemberData);
+    setMembers((prev) => [created, ...prev]);
+    return true;
+  }, []);
 
-  const updateMember = async (id, updatedFields) => {
+  const updateMember = useCallback(async (id, updatedFields) => {
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...updatedFields } : m)));
+
     try {
       await updateTeamMember(id, updatedFields);
-      setMembers((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, ...updatedFields } : m))
-      );
       return true;
     } catch (err) {
-      setError("Failed to update team member.");
-      return false;
+      fetchData();
+      throw err;
     }
-  };
+  }, [fetchData]);
 
-  const deleteMember = async (id) => {
+  const deleteMember = useCallback(async (id) => {
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+
     try {
       await deleteTeamMember(id);
-      setMembers((prev) => prev.filter((m) => m.id !== id));
       return true;
     } catch (err) {
-      setError("Failed to remove team member.");
-      return false;
+      fetchData();
+      throw err;
     }
-  };
+  }, [fetchData]);
 
   return {
     teams,

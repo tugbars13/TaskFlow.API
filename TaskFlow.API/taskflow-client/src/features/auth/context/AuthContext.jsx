@@ -1,6 +1,6 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useCallback, useMemo } from "react";
 import { tokenStorage } from "@/utils/tokenStorage";
-import useAuthActions from "../hooks/useAuthActions";
+import useAuthActions from "@/features/auth/hooks/useAuthActions";
 import useAuthSession from "@/features/auth/hooks/useAuthSession";
 
 export const AuthContext = createContext();
@@ -21,34 +21,49 @@ export default function AuthProvider({ children }) {
     setRole,
     setPermissions,
   });
-
-  const hasRole = (requiredRole) => {
-    if (!role) return false;
-    if (role === "Admin") return true;
-    return role === requiredRole;
-  };
-
-  const hasPermission = (permission) => {
-    if (role === "Admin") return true;
-    return permissions.includes(permission);
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        role,
-        permissions,
-        isAuthenticated: Boolean(user || tokenStorage.hasAccessToken()),
-        isLoading,
-        login,
-        logout,
-        register,
-        hasRole,
-        hasPermission,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const hasRole = useCallback(
+    (requiredRole) => {
+      if (!role) return false;
+      if (role === "Admin") return true;
+      return role === requiredRole;
+    },
+    [role],
   );
+
+  const hasPermission = useCallback(
+    (permission) => {
+      if (role === "Admin") return true;
+      return permissions.includes(permission);
+    },
+    [role, permissions],
+  );
+  const isAuthenticated = Boolean(user || tokenStorage.hasAccessToken());
+
+  const value = useMemo(
+    () => ({
+      user,
+      role,
+      permissions,
+      isAuthenticated,
+      isLoading,
+      login,
+      logout,
+      register,
+      hasRole,
+      hasPermission,
+    }),
+    [
+      user,
+      role,
+      permissions,
+      isAuthenticated,
+      isLoading,
+      login,
+      logout,
+      register,
+      hasRole,
+      hasPermission,
+    ],
+  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

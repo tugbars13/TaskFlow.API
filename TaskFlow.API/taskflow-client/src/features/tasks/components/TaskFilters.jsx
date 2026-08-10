@@ -1,6 +1,20 @@
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+const STATUS_OPTIONS = Object.freeze(["All", "Active", "Completed"]);
 
+const PRIORITY_OPTIONS = Object.freeze([
+  { value: "All", label: "All Priorities" },
+  { value: "High", label: "High" },
+  { value: "Medium", label: "Medium" },
+  { value: "Low", label: "Low" },
+]);
+
+const SORT_OPTIONS = Object.freeze([
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "priority", label: "Priority" },
+  { value: "title", label: "Title A-Z" },
+]);
 export default function TaskFilters({
   searchQuery,
   onSearchChange,
@@ -12,6 +26,17 @@ export default function TaskFilters({
   onSortChange,
   onNewTaskClick,
 }) {
+  const handleSearchChange = (event) => {
+    onSearchChange(event.target.value);
+  };
+
+  const handlePriorityChange = (event) => {
+    onPriorityChange(event.target.value);
+  };
+
+  const handleSortChange = (event) => {
+    onSortChange(event.target.value);
+  };
   return (
     <div className="space-y-md bg-surface-container-lowest p-md md:p-lg rounded-2xl apple-shadow border border-outline-variant/10">
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-md">
@@ -20,7 +45,7 @@ export default function TaskFilters({
             icon="search"
             placeholder="Search tasks by title or category..."
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
 
@@ -36,8 +61,10 @@ export default function TaskFilters({
 
       <div className="flex flex-wrap items-center justify-between gap-md pt-sm border-t border-outline-variant/10">
         <div className="flex items-center gap-sm flex-wrap">
-          <span className="text-xs font-semibold text-outline uppercase tracking-wider">Status:</span>
-          {["All", "Active", "Completed"].map((status) => (
+          <span className="text-xs font-semibold text-outline uppercase tracking-wider">
+            Status:
+          </span>
+          {STATUS_OPTIONS.map((status) => (
             <button
               key={status}
               type="button"
@@ -55,30 +82,36 @@ export default function TaskFilters({
 
         <div className="flex items-center gap-md flex-wrap">
           <div className="flex items-center gap-xs">
-            <span className="text-xs font-semibold text-outline uppercase tracking-wider">Priority:</span>
+            <span className="text-xs font-semibold text-outline uppercase tracking-wider">
+              Priority:
+            </span>
             <select
               value={priorityFilter}
-              onChange={(e) => onPriorityChange(e.target.value)}
+              onChange={handlePriorityChange}
               className="bg-surface-container-high/60 text-on-surface text-xs font-medium py-xs px-md rounded-xl border-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
             >
-              <option value="All">All Priorities</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              {PRIORITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex items-center gap-xs">
-            <span className="text-xs font-semibold text-outline uppercase tracking-wider">Sort:</span>
+            <span className="text-xs font-semibold text-outline uppercase tracking-wider">
+              Sort:
+            </span>
             <select
               value={sortBy}
-              onChange={(e) => onSortChange(e.target.value)}
+              onChange={handleSortChange}
               className="bg-surface-container-high/60 text-on-surface text-xs font-medium py-xs px-md rounded-xl border-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="priority">Priority</option>
-              <option value="title">Title A-Z</option>
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>

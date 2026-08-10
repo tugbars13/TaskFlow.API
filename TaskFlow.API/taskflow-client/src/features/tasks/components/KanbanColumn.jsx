@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import TaskCard from "./TaskCard";
-
+const DRAG_TASK_KEY = "taskId";
 export default function KanbanColumn({
   title,
   count,
@@ -14,29 +14,40 @@ export default function KanbanColumn({
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (!isDragOver) setIsDragOver(true);
-  };
+  const handleDragOver = useCallback(
+    (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
 
-  const handleDragLeave = () => {
+      if (!isDragOver) {
+        setIsDragOver(true);
+      }
+    },
+    [isDragOver],
+  );
+
+  const handleDragLeave = useCallback(() => {
     setIsDragOver(false);
-  };
+  }, []);
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const taskIdStr = e.dataTransfer.getData("taskId");
-    if (taskIdStr) {
-      onDropTask?.(Number(taskIdStr), statusId);
-    }
-  };
+  const handleDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      setIsDragOver(false);
 
-  const handleDragStart = (e, taskId) => {
-    e.dataTransfer.setData("taskId", String(taskId));
-    e.dataTransfer.effectAllowed = "move";
-  };
+      const taskIdStr = event.dataTransfer.getData(DRAG_TASK_KEY);
+
+      if (taskIdStr) {
+        onDropTask?.(Number(taskIdStr), statusId);
+      }
+    },
+    [onDropTask, statusId],
+  );
+
+  const handleDragStart = useCallback((event, taskId) => {
+    event.dataTransfer.setData(DRAG_TASK_KEY, String(taskId));
+    event.dataTransfer.effectAllowed = "move";
+  }, []);
 
   return (
     <div

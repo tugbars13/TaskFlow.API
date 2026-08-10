@@ -1,12 +1,12 @@
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
-const URGENCY_STYLES = {
+const URGENCY_STYLES = Object.freeze({
   urgent: "bg-error-container/30 text-error border-error/20",
   warning: "bg-tertiary-container/30 text-tertiary border-tertiary/20",
-  normal: "bg-surface-container-high text-on-surface-variant border-transparent",
-};
-
+  normal:
+    "bg-surface-container-high text-on-surface-variant border-transparent",
+});
 export default function UpcomingDeadlines({ deadlines = [] }) {
   return (
     <Card className="apple-shadow">
@@ -15,7 +15,10 @@ export default function UpcomingDeadlines({ deadlines = [] }) {
           <span className="material-symbols-outlined text-error">alarm</span>
           Upcoming Deadlines
         </h3>
-        <button type="button" className="text-primary font-label-md text-label-md hover:underline cursor-pointer">
+        <button
+          type="button"
+          className="text-primary font-label-md text-label-md hover:underline cursor-pointer"
+        >
           Calendar
         </button>
       </div>
@@ -32,15 +35,21 @@ export default function UpcomingDeadlines({ deadlines = [] }) {
               className="flex items-center justify-between p-sm md:p-md rounded-xl bg-surface-container-low/40 hover:bg-surface-container-lowest border border-outline-variant/10 transition-colors apple-shadow-hover"
             >
               <div className="flex items-center gap-md">
-                <div className={`p-xs rounded-lg border flex items-center justify-center ${URGENCY_STYLES[item.urgency] || URGENCY_STYLES.normal}`}>
-                  <span className="material-symbols-outlined text-[18px]">event</span>
+                <div
+                  className={`p-xs rounded-lg border flex items-center justify-center ${URGENCY_STYLES[item.urgency] || URGENCY_STYLES.normal}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    event
+                  </span>
                 </div>
                 <div>
                   <h4 className="font-label-md text-label-md font-semibold text-on-surface leading-tight">
                     {item.title}
                   </h4>
                   <p className="text-xs text-on-surface-variant flex items-center gap-xs mt-0.5">
-                    <span className="material-symbols-outlined text-[14px]">schedule</span>
+                    <span className="material-symbols-outlined text-[14px]">
+                      schedule
+                    </span>
                     {item.dueDate}
                   </p>
                 </div>

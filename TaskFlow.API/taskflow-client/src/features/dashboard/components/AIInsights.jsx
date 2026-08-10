@@ -4,7 +4,8 @@ import Button from "@/components/ui/Button";
 export default function AIInsights({
   insight = {
     title: "AI Workload Recommendation",
-    summary: "You have 3 overlapping tasks scheduled between 2:00 PM - 4:00 PM. Reallocating 'Marketing Review' to tomorrow morning will boost team focus velocity by ~18%.",
+    summary:
+      "You have 3 overlapping tasks scheduled between 2:00 PM - 4:00 PM. Reallocating 'Marketing Review' to tomorrow morning will boost team focus velocity by ~18%.",
     impact: "+18% Velocity",
     actionText: "Auto-Reschedule",
   },
@@ -17,7 +18,10 @@ export default function AIInsights({
       <div className="flex items-start justify-between gap-md mb-xs">
         <div className="flex items-center gap-xs">
           <div className="p-xs rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <span
+              className="material-symbols-outlined text-[20px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
               auto_awesome
             </span>
           </div>
@@ -26,26 +30,29 @@ export default function AIInsights({
           </h3>
         </div>
         <span className="bg-primary/10 text-primary text-xs font-semibold px-md py-0.5 rounded-full border border-primary/20">
-          {insight.impact}
+          {insight?.impact}
         </span>
       </div>
 
       <p className="text-body-md font-body-md text-on-surface-variant my-md leading-relaxed">
-        {insight.summary}
+        {insight?.summary}
       </p>
 
       <div className="flex items-center justify-between pt-xs">
         <span className="text-xs text-outline font-label-sm flex items-center gap-xs">
-          <span className="material-symbols-outlined text-[14px]">psychology</span>
+          <span className="material-symbols-outlined text-[14px]">
+            psychology
+          </span>
           Updated 15m ago
         </span>
         <Button
+          type="button"
           variant="filled"
           onClick={onApplyAction}
           className="text-xs px-md py-xs rounded-xl shadow-sm hover:shadow transition-shadow flex items-center gap-xs cursor-pointer"
         >
           <span className="material-symbols-outlined text-[16px]">bolt</span>
-          {insight.actionText}
+          {insight?.actionText}
         </Button>
       </div>
     </Card>

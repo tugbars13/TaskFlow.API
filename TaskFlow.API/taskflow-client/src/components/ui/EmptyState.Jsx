@@ -1,7 +1,6 @@
 import { cn } from "@/utils/cn";
 
 export default function EmptyState({
-  
   icon = "inbox",
   title = "Nothing here yet",
   description = "",
@@ -12,7 +11,7 @@ export default function EmptyState({
     <div
       className={cn(
         "flex flex-col items-center justify-center rounded-3xl border border-outline-variant/10 bg-surface-container-lowest p-2xl text-center apple-shadow",
-        className
+        className,
       )}
     >
       <span className="material-symbols-outlined text-[56px] text-outline">
@@ -29,11 +28,7 @@ export default function EmptyState({
         </p>
       )}
 
-      {action && (
-        <div className="mt-xl">
-          {action}
-        </div>
-      )}
+      {action && <div className="mt-xl">{action}</div>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/constants/routes.constants";
+import { ROUTES } from "@/constants/routesConstants";
 import useCalendarPage, {
   MONTHS,
 } from "@/features/calendar/hooks/useCalendarPage";
@@ -41,7 +41,7 @@ export default function CalendarPage() {
     isSelectTeamModalOpen,
     setIsSelectTeamModalOpen,
     handleSelectTeam,
-  } = useCalenda
+  } = useCalenda;
   rPage();
 
   if (loading) {

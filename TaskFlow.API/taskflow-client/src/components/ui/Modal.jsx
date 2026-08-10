@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import Card from "./Card";
-
+import { cn } from "@/utils/cn";
 export default function Modal({
   isOpen,
   onClose,
@@ -11,7 +11,7 @@ export default function Modal({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && isOpen) {
-        onClose();
+        onClose?.();
       }
     };
     if (isOpen) {
@@ -34,15 +34,14 @@ export default function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
     >
       {/* Backdrop overlay */}
-      <div
-        className="fixed inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       {/* Modal Dialog Card */}
       <Card
-        className={`relative z-10 w-[calc(100vw-32px)] sm:w-[90vw] md:w-[560px] max-w-[90vw] ${maxWidth} max-h-[90vh] overflow-y-auto overflow-x-hidden shadow-2xl border border-outline-variant/20 rounded-3xl p-lg animate-scale-up shrink-0 my-auto`}
+        className={cn(
+          "relative z-10 w-[calc(100vw-32px)] sm:w-[90vw] md:w-[560px] max-w-[90vw] max-h-[90vh] overflow-y-auto overflow-x-hidden shadow-2xl border border-outline-variant/20 rounded-3xl p-lg animate-scale-up shrink-0 my-auto",
+          maxWidth,
+        )}
       >
         <div className="flex items-center justify-between pb-md border-b border-outline-variant/10 mb-lg w-full">
           <h3
@@ -53,7 +52,7 @@ export default function Modal({
           </h3>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => onClose?.()}
             aria-label="Close modal"
             className="p-xs text-on-surface-variant hover:text-on-surface rounded-full hover:bg-surface-container-high transition-colors cursor-pointer shrink-0"
           >

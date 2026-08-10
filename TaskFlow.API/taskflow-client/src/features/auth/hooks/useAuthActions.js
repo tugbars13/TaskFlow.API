@@ -1,16 +1,10 @@
 import { tokenStorage } from "@/utils/tokenStorage";
 import { getCurrentUser } from "../api/authService";
 
-export default function useAuthActions({
-  setUser,
-  setRole,
-  setPermissions,
-}) {
+export default function useAuthActions({ setUser, setRole, setPermissions }) {
   const login = async (tokens, userData = null) => {
     if (typeof tokens === "string") {
       tokenStorage.setAccessToken(tokens);
-      console.log("TOKEN AFTER SAVE:",
-      tokenStorage.getAccessToken());
     } else if (tokens?.accessToken) {
       tokenStorage.setTokens(tokens.accessToken, tokens.refreshToken);
     }
@@ -20,9 +14,7 @@ export default function useAuthActions({
 
       const firstName =
         profile?.firstName ||
-        (profile?.fullName
-          ? profile.fullName.split(" ")[0]
-          : null);
+        (profile?.fullName ? profile.fullName.split(" ")[0] : null);
 
       const loggedUser = {
         ...profile,
@@ -32,7 +24,9 @@ export default function useAuthActions({
 
       setUser(loggedUser);
       setRole(profile?.role || "User");
-    } catch {
+      setPermissions(profile?.permissions ?? []);
+    } catch (err) {
+      console.error(err);
       setUser(userData || { name: null, firstName: null });
     }
   };

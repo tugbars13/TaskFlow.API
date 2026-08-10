@@ -1,26 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import Spinner from "@/components/ui/Spinner";
 
 export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTeamName("");
+      setDescription("");
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!teamName.trim()) return;
+    if (!teamName.trim() || isSubmitting) return;
 
-    onCreateTeam?.({
-      name: teamName.trim(),
-      description: description.trim(),
-    });
-
-    setTeamName("");
-    setDescription("");
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onCreateTeam?.({
+        name: teamName.trim(),
+        description: description.trim(),
+      });
+      onClose();
+    } catch (error) {
+      console.error("Failed to create team:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,6 +46,7 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
           value={teamName}
           onChange={(e) => setTeamName(e.target.value)}
           required
+          disabled={isSubmitting}
         />
 
         <div className="space-y-xs w-full">
@@ -43,21 +58,29 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
             placeholder="Brief description of this team's focus area..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={isSubmitting}
             className="w-full bg-surface-container-high/50 border-none rounded-2xl p-md text-body-sm font-body-sm text-on-surface placeholder:text-outline/60 apple-shadow focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
         <div className="flex items-center justify-end gap-md pt-md border-t border-outline-variant/10 w-full">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button
             type="submit"
             variant="filled"
-            disabled={!teamName.trim()}
+            disabled={!teamName.trim() || isSubmitting}
             className="px-xl py-md rounded-2xl font-bold text-xs shadow-md"
           >
-            Create Team
+            {isSubmitting ? (
+              <span className="flex items-center gap-xs">
+                <Spinner size="sm" />
+                Creating...
+              </span>
+            ) : (
+              "Create Team"
+            )}
           </Button>
         </div>
       </form>

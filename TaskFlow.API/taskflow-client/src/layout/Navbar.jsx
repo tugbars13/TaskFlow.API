@@ -1,4 +1,4 @@
-import { DEFAULT_USER } from "@/constants/user.constants";
+import { DEFAULT_USER } from "@/constants/userConstants";
 import { cn } from "@/utils/cn";
 export default function Navbar({
   user = DEFAULT_USER,
@@ -6,7 +6,7 @@ export default function Navbar({
   onOpenAssistant,
   onOpenNotifications,
   onOpenHelp,
-  onOpenProfile
+  onOpenProfile,
 }) {
   return (
     <header
@@ -20,8 +20,9 @@ export default function Navbar({
         "px-lg",
         "border-b border-outline-variant/20",
         "bg-surface-glass backdrop-blur-md",
-        "shadow-sm transition-all duration-300"
-      )} >
+        "shadow-sm transition-all duration-300",
+      )}
+    >
       {/* Search */}
       <div className="flex items-center gap-md flex-1">
         <div className="relative w-full max-w-md">

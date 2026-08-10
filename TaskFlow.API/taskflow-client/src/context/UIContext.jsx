@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 
 const UIContext = createContext(null);
 
@@ -13,19 +13,24 @@ export function UIProvider({ children }) {
     setIsGlobalTaskModalOpen(false);
   };
 
-  return (
-    <UIContext.Provider
-      value={{
-        isGlobalTaskModalOpen,
-        openTaskModal,
-        closeTaskModal,
-      }}
-    >
-      {children}
-    </UIContext.Provider>
+  const value = useMemo(
+    () => ({
+      isGlobalTaskModalOpen,
+      openTaskModal,
+      closeTaskModal,
+    }),
+    [isGlobalTaskModalOpen],
   );
+
+  return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
 }
 
 export function useUI() {
-  return useContext(UIContext);
+  const context = useContext(UIContext);
+
+  if (!context) {
+    throw new Error("useUI must be used within UIProvider");
+  }
+
+  return context;
 }

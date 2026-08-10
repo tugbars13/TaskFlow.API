@@ -1,5 +1,5 @@
-export const TASK_PRIORITY = {
-    HIGH: "High",
-    MEDIUM: "Medium",
-    LOW: "Low",
-};
+export const TASK_PRIORITY = Object.freeze({
+  HIGH: "High",
+  MEDIUM: "Medium",
+  LOW: "Low",
+});

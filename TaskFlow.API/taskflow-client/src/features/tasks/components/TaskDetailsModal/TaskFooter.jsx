@@ -7,17 +7,20 @@ export default function TaskFooter({
   onClose,
   isReadOnly = false,
 }) {
-  if (isReadOnly || (!onToggleStatus && !onDeleteTask)) return null;
+  const shouldHideFooter = isReadOnly || (!onToggleStatus && !onDeleteTask);
 
-  const handleToggle = () => {
-    onToggleStatus?.(task.id);
+  if (shouldHideFooter) {
+    return null;
+  }
+
+  const executeAction = (action) => {
+    action?.(task.id);
     onClose?.();
   };
 
-  const handleDelete = () => {
-    onDeleteTask?.(task.id);
-    onClose?.();
-  };
+  const handleToggle = () => executeAction(onToggleStatus);
+
+  const handleDelete = () => executeAction(onDeleteTask);
 
   return (
     <div className="flex items-center justify-end gap-sm pt-lg mt-lg border-t border-outline-variant/10">

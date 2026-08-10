@@ -1,28 +1,31 @@
+const EMPTY_WORKSPACE = Object.freeze({
+  name: "",
+  url: "",
+  logoUrl: "",
+});
 import { useState, useEffect } from "react";
 
 export default function WorkspaceSettings({ workspace, onSaveWorkspace }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    url: "",
-    logoUrl: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_WORKSPACE);
 
   useEffect(() => {
-    if (workspace) {
-      setFormData({
-        name: workspace.name || "",
-        url: workspace.url || "",
-        logoUrl: workspace.logoUrl || "",
-      });
+    if (!workspace) {
+      setFormData(EMPTY_WORKSPACE);
+      return;
     }
+
+    setFormData({
+      ...EMPTY_WORKSPACE,
+      ...workspace,
+    });
   }, [workspace]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
     onSaveWorkspace?.(formData);
   };
 
@@ -34,7 +37,8 @@ export default function WorkspaceSettings({ workspace, onSaveWorkspace }) {
             Workspace Settings
           </h3>
           <p className="text-xs text-on-surface-variant mt-0.5">
-            Manage organization branding, custom domain, and workspace permissions.
+            Manage organization branding, custom domain, and workspace
+            permissions.
           </p>
         </div>
         <button
@@ -52,7 +56,9 @@ export default function WorkspaceSettings({ workspace, onSaveWorkspace }) {
             WS
           </div>
           <div className="flex-1 space-y-xs">
-            <label className="text-xs font-bold text-on-surface">Workspace Name</label>
+            <label className="text-xs font-bold text-on-surface">
+              Workspace Name
+            </label>
             <input
               type="text"
               value={formData.name}
@@ -64,7 +70,9 @@ export default function WorkspaceSettings({ workspace, onSaveWorkspace }) {
         </div>
 
         <div className="space-y-xs">
-          <label className="text-xs font-bold text-on-surface">Workspace Custom URL</label>
+          <label className="text-xs font-bold text-on-surface">
+            Workspace Custom URL
+          </label>
           <input
             type="text"
             value={formData.url}

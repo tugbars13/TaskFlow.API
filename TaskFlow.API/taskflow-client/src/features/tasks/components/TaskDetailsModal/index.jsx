@@ -10,7 +10,9 @@ export default function TaskDetailsModal({
   onDeleteTask,
   isReadOnly = false,
 }) {
-  if (!task) return null;
+  if (!isOpen || !task) {
+    return null;
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={task.title}>

@@ -1,11 +1,15 @@
+import { LOGIN_BRAND_FEATURES } from "@/features/auth/constants/login-brand.constants";
+import { cn } from "@/utils/cn";
 export default function LoginBrandPanel() {
   return (
-    <section className={cn(
-      "relative hidden overflow-hidden",
-      "lg:flex lg:w-1/2",
-      "flex-col justify-between",
-      "mesh-gradient p-xl"
-    )}>
+    <section
+      className={cn(
+        "relative hidden overflow-hidden",
+        "lg:flex lg:w-1/2",
+        "flex-col justify-between",
+        "mesh-gradient p-xl",
+      )}
+    >
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 pointer-events-none opacity-30">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-primary-container blur-[120px]" />
@@ -30,42 +34,43 @@ export default function LoginBrandPanel() {
           Manage your workflow with AI-powered precision.
         </h1>
         <p className="font-body-lg text-body-lg leading-[28px] font-normal text-on-primary-container/80 max-w-[448px]">
-          The next generation of productivity is here. Experience fluid task management designed for modern high-performance teams.
+          The next generation of productivity is here. Experience fluid task
+          management designed for modern high-performance teams.
         </p>
       </div>
 
       {/* Feature Glass Cards */}
       <div className="relative z-10 flex gap-md">
-  {FEATURES.map((feature) => (
-    <div
-      key={feature.id}
-      className="glass-panel p-md rounded-xl flex items-center gap-sm"
-    >
-      <div className="size-10 rounded-full bg-on-primary-container/20 flex items-center justify-center">
-        <span
-          className="material-symbols-outlined text-white"
-          style={
-            feature.filled
-              ? { fontVariationSettings: "'FILL' 1" }
-              : undefined
-          }
-        >
-          {feature.icon}
-        </span>
-      </div>
+        {LOGIN_BRAND_FEATURES.map((feature) => (
+          <div
+            key={feature.id}
+            className="glass-panel p-md rounded-xl flex items-center gap-sm"
+          >
+            <div className="size-10 rounded-full bg-on-primary-container/20 flex items-center justify-center">
+              <span
+                className="material-symbols-outlined text-white"
+                style={
+                  feature.filled
+                    ? { fontVariationSettings: "'FILL' 1" }
+                    : undefined
+                }
+              >
+                {feature.icon}
+              </span>
+            </div>
 
-      <div>
-        <p className="text-white font-label-md text-label-md leading-[20px] font-semibold">
-          {feature.title}
-        </p>
+            <div>
+              <p className="text-white font-label-md text-label-md leading-[20px] font-semibold">
+                {feature.title}
+              </p>
 
-        <p className="text-on-primary-container/60 text-xs">
-          {feature.description}
-        </p>
+              <p className="text-on-primary-container/60 text-xs">
+                {feature.description}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
-  ))}
-</div>
     </section>
   );
 }

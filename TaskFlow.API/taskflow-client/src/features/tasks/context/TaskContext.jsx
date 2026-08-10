@@ -1,4 +1,10 @@
-import { createContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { useLocation, matchPath } from "react-router-dom";
 import normalizeStatus from "../utils/normalizeStatus";
 import useTaskActions from "../hooks/useTaskActions";
@@ -11,67 +17,62 @@ export default function TaskProvider({ children }) {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(Date.now());
 
-  const notifyChange = () => {
+  const notifyChange = useCallback(() => {
     setLastUpdated(Date.now());
-  };
+  }, []);
   const location = useLocation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-    const currentTeamId =
-        matchPath({ path: "/teams/:teamId/tasks" }, location.pathname)?.params
-            ?.teamId ?? null;
-  const { loadTasks } = useTaskLoader({
-    setTasks,
-    setLoading,
-    setError,
-  });
-  const {
-  addTask,
-  editTask,
-  removeTask,
-  toggleTaskStatus,
-  moveTaskColumn,
-} = useTaskActions({
-  tasks,
-  setTasks,
-  setError,
-  notifyChange,
-  loadTasks,
-  currentTeamId,
-});
+  const currentTeamId = useMemo(() => {
+    return (
+      matchPath({ path: "/teams/:teamId/tasks" }, location.pathname)?.params
+        ?.teamId ?? null
+    );
+  }, [location.pathname]);
+  const { addTask, editTask, removeTask, toggleTaskStatus, moveTaskColumn } =
+    useTaskActions({
+      tasks,
+      setTasks,
+      setError,
+      notifyChange,
+      loadTasks,
+      currentTeamId,
+    });
   useEffect(() => {
-  if (authLoading) return;
+    if (authLoading) return;
 
-  if (!isAuthenticated) {
-    setLoading(false);
-    return;
-  }
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
 
-  loadTasks(currentTeamId);
-}, [
-  authLoading,
-  isAuthenticated,
-  loadTasks,
-  currentTeamId,
-]);
-
-
-  return (
-    <TaskContext.Provider
-      value={{
-        tasks,
-        loading,
-        error,
-        lastUpdated,
-        loadTasks,
-        addTask,
-        editTask,
-        removeTask,
-        toggleTaskStatus,
-        moveTaskColumn,
-      }}
-    >
-      {children}
-    </TaskContext.Provider>
+    loadTasks(currentTeamId);
+  }, [authLoading, isAuthenticated, loadTasks, currentTeamId]);
+  const contextValue = useMemo(
+    () => ({
+      tasks,
+      loading,
+      error,
+      lastUpdated,
+      loadTasks,
+      addTask,
+      editTask,
+      removeTask,
+      toggleTaskStatus,
+      moveTaskColumn,
+    }),
+    [
+      tasks,
+      loading,
+      error,
+      lastUpdated,
+      loadTasks,
+      addTask,
+      editTask,
+      removeTask,
+      toggleTaskStatus,
+      moveTaskColumn,
+    ],
   );
+  return <TaskContext.Provider value={contextValue}></TaskContext.Provider>;
 }

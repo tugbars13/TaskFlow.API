@@ -1,21 +1,20 @@
 import api from "@/api/client/axios";
+import { AUTH_ENDPOINTS } from "@/features/auth/constants/auth.constants";
 
-export const loginRequest = async (email, password) => {
-    const response = await api.post("/Auth/login", {
-        email,
-        password
-    });
+export const loginRequest = async (credentials) => {
+  const response = await api.post(AUTH_ENDPOINTS.LOGIN, credentials);
 
-    return response.data;
+  return response.data;
 };
 
 export const registerRequest = async (user) => {
-    const response = await api.post("/Auth/register", user);
+  const response = await api.post(AUTH_ENDPOINTS.REGISTER, user);
 
-    return response.data;
+  return response.data;
 };
 
 export const getCurrentUser = async () => {
-    const response = await api.get("/Auth/me");
-    return response.data;
+  const response = await api.get(AUTH_ENDPOINTS.CURRENT_USER);
+
+  return response.data;
 };

@@ -30,11 +30,11 @@ export default function useAuth() {
 
     try {
       const response = await loginRequest(email, password);
-      console.log("LOGIN RESPONSE", response);
+
       setAuthContext(response.token || response.accessToken, response.user);
       return true;
     } catch (err) {
-      setError("Giriş başarısız.");
+      setError(err.response?.data?.message ?? "Giriş başarısız.");
       return false;
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ export default function useAuth() {
       });
       return true;
     } catch (err) {
-      setError("Kayıt başarısız.");
+      setError(err.response?.data?.message ?? "Kayıt başarısız.");
       return false;
     } finally {
       setLoading(false);

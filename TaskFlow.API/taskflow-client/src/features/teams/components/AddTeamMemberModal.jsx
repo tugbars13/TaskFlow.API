@@ -1,10 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
-import { getUsers } from "@/features/users/api/user.service";
+import { getUsers } from "@/features/users/api/userService";
 
-export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamName }) {
+const getDisplayName = (u) => u.fullName || u.name || "User";
+
+export default function AddTeamMemberModal({
+  isOpen,
+  onClose,
+  onAddMember,
+  teamName,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [role, setRole] = useState("Member");
@@ -12,6 +19,19 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+
+  const fetchRegisteredUsers = useCallback(async () => {
+    setLoadingUsers(true);
+    try {
+      const usersList = await getUsers();
+      setRegisteredUsers(Array.isArray(usersList) ? usersList : []);
+    } catch (err) {
+      console.warn("Failed to fetch registered users:", err);
+      setRegisteredUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -21,43 +41,28 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
       setStatusMessage(null);
       fetchRegisteredUsers();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchRegisteredUsers]);
 
-  const fetchRegisteredUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const usersList = await getUsers();
-      setRegisteredUsers(Array.isArray(usersList) ? usersList : []);
-    } catch (err) {
-      console.warn("Failed to fetch registered users from API:", err);
-      // Fallback registered users database records
-      setRegisteredUsers([
-        { id: 1, fullName: "Tuğba Bars", email: "tugba@/taskflow.dev" },
-        { id: 2, fullName: "Ahmet Korkmaz", email: "ahmet@/taskflow.dev" },
-        { id: 3, fullName: "Ayşe Demir", email: "ayse@/taskflow.dev" },
-        { id: 4, fullName: "Mehmet Kaya", email: "mehmet@/taskflow.dev" },
-        { id: 5, fullName: "Selin Yılmaz", email: "selin@/taskflow.dev" },
-      ]);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+  const filteredUsers = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return registeredUsers;
+    return registeredUsers.filter((u) => {
+      const nameStr = getDisplayName(u).toLowerCase();
+      const emailStr = (u.email || "").toLowerCase();
+      return nameStr.includes(q) || emailStr.includes(q);
+    });
+  }, [registeredUsers, searchQuery]);
 
   if (!isOpen) return null;
-
-  const filteredUsers = registeredUsers.filter((u) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    const nameStr = (u.fullName || u.name || "").toLowerCase();
-    const emailStr = (u.email || "").toLowerCase();
-    return nameStr.includes(q) || emailStr.includes(q);
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!selectedUser) {
-      setStatusMessage({ type: "error", text: "Please select a registered user from the list." });
+      setStatusMessage({
+        type: "error",
+        text: "Please select a registered user from the list.",
+      });
       return;
     }
 
@@ -68,7 +73,7 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
       const payload = {
         userId: selectedUser.id,
         role: role,
-        name: selectedUser.fullName || selectedUser.name,
+        name: getDisplayName(selectedUser),
         email: selectedUser.email,
       };
 
@@ -76,7 +81,7 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
 
       setStatusMessage({
         type: "success",
-        text: `User "${selectedUser.fullName || selectedUser.name}" added to team!`,
+        text: `User "${getDisplayName(selectedUser)}" added to team!`,
       });
 
       setTimeout(() => {
@@ -84,7 +89,10 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
       }, 600);
     } catch (err) {
       console.error("Failed to add member:", err);
-      setStatusMessage({ type: "error", text: err.message || "Failed to add member to team." });
+      setStatusMessage({
+        type: "error",
+        text: err.message || "Failed to add member to team.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -143,7 +151,9 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
             {loadingUsers ? (
               <div className="flex flex-col items-center justify-center py-lg space-y-xs">
                 <Spinner size="sm" />
-                <span className="text-xs text-on-surface-variant">Fetching registered users...</span>
+                <span className="text-xs text-on-surface-variant">
+                  Fetching registered users...
+                </span>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="p-md text-center text-xs text-on-surface-variant">
@@ -152,7 +162,7 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
             ) : (
               filteredUsers.map((u) => {
                 const isSelected = selectedUser?.id === u.id;
-                const displayName = u.fullName || u.name || "User";
+                const displayName = getDisplayName(u);
                 return (
                   <div
                     key={u.id}
@@ -168,8 +178,12 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
                         {displayName[0].toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-body-sm font-bold truncate">{displayName}</div>
-                        <div className="text-[11px] text-on-surface-variant/70 truncate">{u.email}</div>
+                        <div className="text-body-sm font-bold truncate">
+                          {displayName}
+                        </div>
+                        <div className="text-[11px] text-on-surface-variant/70 truncate">
+                          {u.email}
+                        </div>
                       </div>
                     </div>
 
@@ -203,7 +217,12 @@ export default function AddTeamMemberModal({ isOpen, onClose, onAddMember, teamN
 
         {/* 4. Footer Action Buttons */}
         <div className="flex items-center justify-end gap-md pt-md border-t border-outline-variant/10 w-full">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button

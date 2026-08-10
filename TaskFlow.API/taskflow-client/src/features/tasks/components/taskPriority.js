@@ -1,16 +1,16 @@
+const PRIORITY_BORDER = Object.freeze({
+  high: "border-l-[4px] border-l-rose-500 dark:border-l-rose-400",
+  3: "border-l-[4px] border-l-rose-500 dark:border-l-rose-400",
+
+  medium: "border-l-[4px] border-l-amber-500 dark:border-l-amber-400",
+  2: "border-l-[4px] border-l-amber-500 dark:border-l-amber-400",
+
+  low: "border-l-[4px] border-l-sky-500 dark:border-l-sky-400",
+  1: "border-l-[4px] border-l-sky-500 dark:border-l-sky-400",
+});
 export function getPriorityBorderClass(priority) {
-  switch (priority?.toLowerCase()) {
-    case "high":
-    case "3":
-      return "border-l-[4px] border-l-rose-500 dark:border-l-rose-400";
-
-    case "low":
-    case "1":
-      return "border-l-[4px] border-l-sky-500 dark:border-l-sky-400";
-
-    case "medium":
-    case "2":
-    default:
-      return "border-l-[4px] border-l-amber-500 dark:border-l-amber-400";
-  }
+  return (
+    PRIORITY_BORDER[String(priority ?? "").toLowerCase()] ??
+    PRIORITY_BORDER.medium
+  );
 }

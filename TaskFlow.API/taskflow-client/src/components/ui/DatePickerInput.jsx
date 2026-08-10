@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { formatDateDDMMYYYY } from "@/utils/dateUtils";
-
+import { cn } from "@/utils/cn";
 export default function DatePickerInput({
   id,
   label,
@@ -9,6 +9,8 @@ export default function DatePickerInput({
   onBlur,
   disabled = false,
   error,
+  className = "",
+  ...props
 }) {
   const hiddenDateRef = useRef(null);
 
@@ -17,21 +19,23 @@ export default function DatePickerInput({
 
   const handleContainerClick = () => {
     if (disabled) return;
-    if (hiddenDateRef.current) {
-      if (typeof hiddenDateRef.current.showPicker === "function") {
-        try {
-          hiddenDateRef.current.showPicker();
-        } catch {
-          hiddenDateRef.current.focus();
-        }
-      } else {
-        hiddenDateRef.current.focus();
+
+    const input = hiddenDateRef.current;
+    if (!input) return;
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch {
+        input.focus();
       }
+    } else {
+      input.focus();
     }
   };
 
   return (
-    <div className="space-y-xs w-full">
+    <div className={cn("space-y-xs w-full", className)}>
       {label && (
         <label
           htmlFor={id}
@@ -42,12 +46,20 @@ export default function DatePickerInput({
       )}
       <div
         onClick={handleContainerClick}
-        className={`relative w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-lg text-body-md font-body-md text-on-surface apple-shadow focus-within:ring-2 focus-within:ring-primary/20 transition-all flex items-center justify-between cursor-pointer ${
-          disabled ? "opacity-50 cursor-not-allowed" : ""
-        } ${error ? "ring-2 ring-error/40" : ""}`}
+        className={cn(
+          "relative w-full bg-surface-container-high/50 rounded-2xl py-[14px] px-lg text-body-md font-body-md text-on-surface apple-shadow focus-within:ring-2 focus-within:ring-primary/20 transition-all flex items-center justify-between cursor-pointer",
+          disabled && "opacity-50 cursor-not-allowed",
+          error && "ring-2 ring-error/40",
+        )}
       >
         {/* Strict DD/MM/YYYY text rendering */}
-        <span className={value ? "text-on-surface font-semibold" : "text-outline/60 font-normal"}>
+        <span
+          className={cn(
+            value
+              ? "text-on-surface font-semibold"
+              : "text-outline/60 font-normal",
+          )}
+        >
           {displayFormatted}
         </span>
 
@@ -61,10 +73,11 @@ export default function DatePickerInput({
           ref={hiddenDateRef}
           type="date"
           value={value || ""}
-          onChange={onChange}
-          onBlur={onBlur}
+          onChange={(e) => onChange?.(e)}
+          onBlur={(e) => onBlur?.(e)}
           disabled={disabled}
           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          {...props}
         />
       </div>
       {error && <p className="text-xs text-error font-medium pl-sm">{error}</p>}

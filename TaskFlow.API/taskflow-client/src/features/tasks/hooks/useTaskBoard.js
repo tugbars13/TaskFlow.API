@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export default function useTaskBoard({
     tasks,
@@ -15,12 +15,19 @@ export default function useTaskBoard({
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isSelectTeamModalOpen, setIsSelectTeamModalOpen] = useState(false);
     const [selectedTeamForTask, setSelectedTeamForTask] = useState(null);
-    const handleDeleteTask = async (id) => {
+
+    const getEditableTask = useCallback((taskId) => {
+        const task = tasks.find((t) => t.id === taskId);
+        if (!task || !canEditTask(task)) return null;
+        return task;
+    }, [tasks, canEditTask]);
+
+    const handleDeleteTask = useCallback(async (id) => {
         await removeTask(id);
         setSelectedTaskDetails(null);
-    };
+    }, [removeTask]);
 
-    const handleOpenNewTaskModal = () => {
+    const handleOpenNewTaskModal = useCallback(() => {
         if (isTeamBoard) {
             setSelectedTeamForTask(Number(teamId));
             setIsFormModalOpen(true);
@@ -35,65 +42,67 @@ export default function useTaskBoard({
         } else {
             setIsFormModalOpen(true);
         }
-    };
+    }, [isTeamBoard, teamId, teams]);
 
-    const handleFormSubmit = async (data) => {
+    const handleFormSubmit = useCallback(async (data) => {
         await addTask(data);
         setIsFormModalOpen(false);
         setSelectedTeamForTask(null);
-    };
+    }, [addTask]);
 
-    const handleDragDropTask = (taskId, statusId) => {
-        const task = tasks.find((t) => t.id === taskId);
-
-        if (!task || !canEditTask(task)) return;
+    const handleDragDropTask = useCallback((taskId, statusId) => {
+        const task = getEditableTask(taskId);
+        if (!task) return;
 
         moveTaskColumn(taskId, statusId);
-    };
+    }, [getEditableTask, moveTaskColumn]);
 
-    const handleToggleStatus = (taskId) => {
-        const task = tasks.find((t) => t.id === taskId);
-
-        if (!task || !canEditTask(task)) return;
+    const handleToggleStatus = useCallback((taskId) => {
+        const task = getEditableTask(taskId);
+        if (!task) return;
 
         toggleTaskStatus(taskId);
-    };
-    const handleSelectTeam = (teamId) => {
+    }, [getEditableTask, toggleTaskStatus]);
+
+    const handleSelectTeam = useCallback((teamId) => {
         setSelectedTeamForTask(teamId);
         setIsSelectTeamModalOpen(false);
         setIsFormModalOpen(true);
-    };
+    }, []);
 
-    const handleCloseForm = () => {
+    const handleCloseForm = useCallback(() => {
         setIsFormModalOpen(false);
         setSelectedTeamForTask(null);
-    };
+    }, []);
 
-    const handleCloseSelectTeam = () => {
+    const handleCloseSelectTeam = useCallback(() => {
         setIsSelectTeamModalOpen(false);
-    };
-    const handleCloseTaskDetails = () => {
+    }, []);
+
+    const handleSelectTaskDetails = useCallback((task) => {
+        setSelectedTaskDetails(task);
+    }, []);
+
+    const handleCloseTaskDetails = useCallback(() => {
         setSelectedTaskDetails(null);
-    };
+    }, []);
+
     return {
         selectedTaskDetails,
-        setSelectedTaskDetails,
-
         isFormModalOpen,
-        setIsFormModalOpen,
-
         isSelectTeamModalOpen,
-        setIsSelectTeamModalOpen,
-
         selectedTeamForTask,
-        setSelectedTeamForTask,
 
+        handleSelectTaskDetails,
+        handleCloseTaskDetails,
         handleOpenNewTaskModal,
+        handleCloseForm,
+        handleSelectTeam,
+        handleCloseSelectTeam,
+        
         handleFormSubmit,
         handleDragDropTask,
         handleToggleStatus,
         handleDeleteTask,
-        handleCloseSelectTeam,
-        handleCloseTaskDetails,
     };
 }

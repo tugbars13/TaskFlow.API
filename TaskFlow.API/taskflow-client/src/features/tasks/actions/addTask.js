@@ -2,22 +2,24 @@
 import normalizeTask from "../utils/normalizeTask";
 
 export default async function addTaskAction({
-    newTaskData,
-    currentTeamId,
-    setTasks,
-    loadTasks,
-    notifyChange,
+  newTaskData,
+  currentTeamId,
+  setTasks,
+  loadTasks,
+  notifyChange,
 }) {
-    const created = await createTask({
-        ...newTaskData,
-        teamId: currentTeamId,
-    });
+  const created = await createTask({
+    ...newTaskData,
+    teamId: currentTeamId,
+  });
 
-    if (created?.id) {
-        setTasks((prev) => [normalizeTask(created), ...prev]);
-    } else {
-        await loadTasks(currentTeamId);
-    }
+  if (created?.id) {
+    const normalizedTask = normalizeTask(created);
 
-    notifyChange();
+    setTasks((prev) => [normalizedTask, ...prev]);
+  } else {
+    await loadTasks(currentTeamId);
+  }
+
+  notifyChange();
 }

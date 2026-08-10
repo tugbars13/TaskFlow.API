@@ -10,4 +10,6 @@ export const ROUTES = {
   TEAM_TASKS: "/teams/:teamId/tasks",
   SETTINGS: "/settings",
   PROFILE: "/profile",
+
+  teamTasks: (teamId) => `/teams/${teamId}/tasks`,
 };

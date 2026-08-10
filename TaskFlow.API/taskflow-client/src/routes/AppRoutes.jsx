@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
-import { ROUTES } from "../constants/routes.constants";
+import { ROUTES } from "../constants/routesConstants";
 import ProtectedRoute from "./ProtectedRoute";
 import { Spinner } from "@/components/ui";
 
@@ -11,7 +11,7 @@ const RegisterPage = lazy(() => import("../pages/Auth/RegisterPage"));
 const DashboardPage = lazy(() => import("../pages/Dashboard/DashboardPage"));
 const TasksPage = lazy(() => import("../pages/Tasks/TasksPage"));
 const CalendarPage = lazy(() => import("../pages/Calendar/CalendarPage"));
-const Analytics = lazy(() => import("../pages/Analytics/Analytics"));
+const Analytics = lazy(() => import("../pages/Analytics/AnalyticspPage"));
 const TeamPage = lazy(() => import("../pages/Team/TeamPage"));
 const SettingsPage = lazy(() => import("../pages/Settings/SettingsPage"));
 const MainLayout = lazy(() => import("../layout/MainLayout"));

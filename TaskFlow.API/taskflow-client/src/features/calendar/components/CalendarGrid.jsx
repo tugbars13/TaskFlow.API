@@ -1,3 +1,4 @@
+const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export default function CalendarGrid({
   currentMonthIndex,
   currentYear,
@@ -9,21 +10,30 @@ export default function CalendarGrid({
   todayMonth = new Date().getMonth(),
   todayYear = new Date().getFullYear(),
 }) {
-  const daysInMonthCount = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
-  const firstDayOfWeek = (new Date(currentYear, currentMonthIndex, 1).getDay() + 6) % 7; // Mon = 0
+  const daysInMonthCount = new Date(
+    currentYear,
+    currentMonthIndex + 1,
+    0,
+  ).getDate();
+  const firstDayOfWeek =
+    (new Date(currentYear, currentMonthIndex, 1).getDay() + 6) % 7; // Mon = 0
 
   const daysInMonth = Array.from({ length: daysInMonthCount }, (_, i) => i + 1);
 
   const prevMonthCount = new Date(currentYear, currentMonthIndex, 0).getDate();
   const prevOverflowDays = Array.from(
     { length: firstDayOfWeek },
-    (_, i) => prevMonthCount - firstDayOfWeek + i + 1
+    (_, i) => prevMonthCount - firstDayOfWeek + i + 1,
   );
 
   const totalCellsSoFar = prevOverflowDays.length + daysInMonth.length;
   const nextOverflowCount = (7 - (totalCellsSoFar % 7)) % 7;
-  const nextOverflowDays = Array.from({ length: nextOverflowCount }, (_, i) => i + 1);
+  const nextOverflowDays = Array.from(
+    { length: nextOverflowCount },
+    (_, i) => i + 1,
+  );
 
+  const now = new Date();
   const getIndicatorsForDay = (day) => {
     const isToday =
       day === todayDay &&
@@ -45,7 +55,8 @@ export default function CalendarGrid({
     if (isToday) {
       indicators.push({
         label: "Today",
-        color: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
+        color:
+          "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
       });
     }
 
@@ -53,24 +64,30 @@ export default function CalendarGrid({
     if (completed.length > 0) {
       indicators.push({
         label: `${completed.length} Completed`,
-        color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+        color:
+          "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
       });
     }
 
-    const now = new Date();
-    const upcoming = dayTasks.filter((t) => !t.isCompleted && new Date(t.dueDate) >= now);
+    const upcoming = dayTasks.filter(
+      (t) => !t.isCompleted && new Date(t.dueDate) >= now,
+    );
     if (upcoming.length > 0) {
       indicators.push({
         label: `${upcoming.length} Upcoming`,
-        color: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+        color:
+          "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
       });
     }
 
-    const overdue = dayTasks.filter((t) => !t.isCompleted && new Date(t.dueDate) < now);
+    const overdue = dayTasks.filter(
+      (t) => !t.isCompleted && new Date(t.dueDate) < now,
+    );
     if (overdue.length > 0) {
       indicators.push({
         label: `${overdue.length} Overdue`,
-        color: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
+        color:
+          "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
       });
     }
 
@@ -80,14 +97,15 @@ export default function CalendarGrid({
   return (
     <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant/10 p-6 apple-shadow overflow-hidden">
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-3 text-center pb-4 border-b border-outline-variant/10 text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">
-        <div>Mon</div>
-        <div>Tue</div>
-        <div>Wed</div>
-        <div>Thu</div>
-        <div>Fri</div>
-        <div>Sat</div>
-        <div>Sun</div>
+      <div className="grid grid-cols-7 gap-3">
+        {WEEK_DAYS.map((day) => (
+          <div
+            key={day}
+            className="text-center text-xs font-semibold text-on-surface-variant uppercase tracking-wide"
+          >
+            {day}
+          </div>
+        ))}
       </div>
 
       {/* Month Grid */}
@@ -126,8 +144,8 @@ export default function CalendarGrid({
                 isSelected
                   ? "border border-purple-500/50 bg-purple-500/[0.05] shadow-xs"
                   : isToday
-                  ? "border border-purple-500/40 bg-purple-500/[0.03]"
-                  : "bg-surface-container-lowest hover:bg-surface-container-high/40 border border-outline-variant/10"
+                    ? "border border-purple-500/40 bg-purple-500/[0.03]"
+                    : "bg-surface-container-lowest hover:bg-surface-container-high/40 border border-outline-variant/10"
               }`}
             >
               {/* Top Bar inside Cell */}
@@ -137,8 +155,8 @@ export default function CalendarGrid({
                     isToday
                       ? "bg-purple-600 text-white shadow-sm"
                       : isSelected
-                      ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
-                      : "text-on-surface group-hover:text-primary"
+                        ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+                        : "text-on-surface group-hover:text-primary"
                   }`}
                 >
                   {day}

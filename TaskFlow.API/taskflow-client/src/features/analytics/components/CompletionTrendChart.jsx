@@ -1,20 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useTasks from "@/features/tasks/hooks/useTasks";
-
+import Card from "@/components/ui/Card";
 export default function CompletionTrendChart({ trendData = [] }) {
   const { tasks } = useTasks();
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   // If trendData is provided by API, use it; otherwise compute from global tasks
-  let points = trendData;
-  if (!points || points.length === 0) {
+  const points = useMemo(() => {
+    if (trendData?.length) {
+      return trendData;
+    }
+
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const now = new Date();
-    const currentDayIdx = (now.getDay() + 6) % 7; // Mon = 0
+    const currentDayIdx = (now.getDay() + 6) % 7;
     const monday = new Date(now);
     monday.setDate(now.getDate() - currentDayIdx);
 
-    points = days.map((dayLabel, idx) => {
+    return days.map((dayLabel, idx) => {
       const targetDate = new Date(monday);
       targetDate.setDate(monday.getDate() + idx);
 
@@ -37,11 +40,11 @@ export default function CompletionTrendChart({ trendData = [] }) {
         completed: completedCount,
       };
     });
-  }
+  }, [trendData, tasks]);
 
   const maxVal = Math.max(
     ...points.map((p) => Math.max(p.created || 0, p.completed || 0)),
-    3
+    3,
   );
 
   // Build SVG smooth path coordinates
@@ -57,12 +60,17 @@ export default function CompletionTrendChart({ trendData = [] }) {
     points.map((p, idx) => {
       const x = paddingX + idx * stepX;
       const val = p[key] || 0;
-      const y = svgHeight - paddingY - (val / maxVal) * (svgHeight - paddingY * 2);
+      const y =
+        svgHeight - paddingY - (val / maxVal) * (svgHeight - paddingY * 2);
       return { x, y, val };
     });
 
-  const completedCoords = getCoordinates("completed");
-  const createdCoords = getCoordinates("created");
+  const createdCoords = useMemo(() => {
+    return getCoordinates("created");
+  }, [points, maxVal]);
+  const completedCoords = useMemo(() => {
+    return getCoordinates("completed");
+  }, [points, maxVal]);
 
   // Helper for Catmull-Rom or cubic Bezier smooth curves
   const buildSmoothPath = (coords) => {
@@ -82,26 +90,36 @@ export default function CompletionTrendChart({ trendData = [] }) {
     return path;
   };
 
-  const completedLinePath = buildSmoothPath(completedCoords);
-  const createdLinePath = buildSmoothPath(createdCoords);
+  const completedPath = useMemo(() => {
+    return buildSmoothPath(completedCoords);
+  }, [completedCoords]);
+
+  const createdPath = useMemo(() => {
+    return buildSmoothPath(createdCoords);
+  }, [createdCoords]);
 
   const completedAreaPath =
     completedCoords.length > 0
-      ? `${completedLinePath} L ${completedCoords[completedCoords.length - 1].x} ${svgHeight - paddingY} L ${completedCoords[0].x} ${svgHeight - paddingY} Z`
+      ? `${completedPath} L ${completedCoords[completedCoords.length - 1].x} ${svgHeight - paddingY} L ${completedCoords[0].x} ${svgHeight - paddingY} Z`
       : "";
 
   const createdAreaPath =
     createdCoords.length > 0
-      ? `${createdLinePath} L ${createdCoords[createdCoords.length - 1].x} ${svgHeight - paddingY} L ${createdCoords[0].x} ${svgHeight - paddingY} Z`
+      ? `${createdPath} L ${createdCoords[createdCoords.length - 1].x} ${svgHeight - paddingY} L ${createdCoords[0].x} ${svgHeight - paddingY} Z`
       : "";
 
   return (
-    <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-3xl apple-shadow border border-outline-variant/10 flex flex-col min-h-[400px]">
+    <Card
+      variant="default"
+      className="col-span-12 lg:col-span-8 flex flex-col min-h-[400px]"
+    >
       {/* Header & Legends */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-sm border-b border-outline-variant/10 pb-4 h-auto sm:h-8">
         <div>
           <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[22px]">show_chart</span>
+            <span className="material-symbols-outlined text-primary text-[22px]">
+              show_chart
+            </span>
             Task Completion Trend
           </h3>
           <p className="text-[11px] text-on-surface-variant mt-0.5">
@@ -112,11 +130,15 @@ export default function CompletionTrendChart({ trendData = [] }) {
         <div className="flex items-center gap-md">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-xs font-semibold text-on-surface">Completed</span>
+            <span className="text-xs font-semibold text-on-surface">
+              Completed
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-purple-400" />
-            <span className="text-xs font-semibold text-on-surface-variant">Created</span>
+            <span className="text-xs font-semibold text-on-surface-variant">
+              Created
+            </span>
           </div>
         </div>
       </div>
@@ -159,7 +181,7 @@ export default function CompletionTrendChart({ trendData = [] }) {
           {/* Created Tasks Area & Line */}
           <path d={createdAreaPath} fill="url(#createdGrad)" />
           <path
-            d={createdLinePath}
+            d={createdPath}
             fill="none"
             stroke="#C084FC"
             strokeWidth="3"
@@ -170,7 +192,7 @@ export default function CompletionTrendChart({ trendData = [] }) {
           {/* Completed Tasks Area & Line */}
           <path d={completedAreaPath} fill="url(#completedGrad)" />
           <path
-            d={completedLinePath}
+            d={completedPath}
             fill="none"
             stroke="#7C3AED"
             strokeWidth="3.5"
@@ -240,7 +262,9 @@ export default function CompletionTrendChart({ trendData = [] }) {
             <span
               key={idx}
               className={`transition-colors cursor-pointer ${
-                hoveredIdx === idx ? "text-primary font-extrabold scale-110" : ""
+                hoveredIdx === idx
+                  ? "text-primary font-extrabold scale-110"
+                  : ""
               }`}
             >
               {p.day || p.date}
@@ -271,6 +295,6 @@ export default function CompletionTrendChart({ trendData = [] }) {
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

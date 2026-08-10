@@ -1,14 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import useAuth from "@/features/auth/hooks/useAuth";
 import useTasks from "@/features/tasks/hooks/useTasks";
 import useTeam from "./useTeam";
 import {
   createTeam,
-  addTeamMember,
-  updateTeamMember,
-  deleteTeamMember,
   deleteTeam,
-} from "../api/team.service";
+} from "../api/teamservice.Js";
 
 const ROLE_ORDER = { owner: 0, admin: 1, member: 2 };
 const TOAST_TIMEOUT_MS = 4000;
@@ -20,7 +17,16 @@ const TOAST_TIMEOUT_MS = 4000;
  */
 export default function useTeamPage() {
   const { user } = useAuth();
-  const { teams = [], members = [], loading, error, refetch } = useTeam();
+  const {
+    teams = [],
+    members = [],
+    loading,
+    error,
+    refetch,
+    inviteMember,
+    updateMember,
+    deleteMember,
+  } = useTeam();
   const { addTask } = useTasks();
 
   const [expandedTeamId, setExpandedTeamId] = useState(null);
@@ -34,20 +40,34 @@ export default function useTeamPage() {
   const [activeRemoveMember, setActiveRemoveMember] = useState(null);
   const [activeDeleteTeam, setActiveDeleteTeam] = useState(null);
 
+  const toastTimerRef = useRef(null);
+
   const showToast = useCallback((type, text) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage({ type, text });
-    setTimeout(() => setToastMessage(null), TOAST_TIMEOUT_MS);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), TOAST_TIMEOUT_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
   // Database-driven team list from GET /api/teams & GET /api/Team
   const teamsList = useMemo(() => {
     if (!teams || teams.length === 0) return [];
 
+    const membersByTeam = members.reduce((acc, m) => {
+      const tId = Number(m.teamId);
+      acc[tId] = acc[tId] || [];
+      acc[tId].push(m);
+      return acc;
+    }, {});
+
     return teams.map((team) => {
       // Group members strictly by TeamId from GET /api/Team response
-      const teamMembers = members.filter(
-        (m) => Number(m.teamId) === Number(team.id)
-      );
+      const teamMembers = membersByTeam[Number(team.id)] || [];
 
       // Sort: Owner first → Admins → Members
       const sortedMembers = [...teamMembers].sort((a, b) => {
@@ -82,11 +102,11 @@ export default function useTeamPage() {
       totalMembers: teamsList.length,
       activeNow: teamsList.reduce(
         (acc, t) => acc + (t.memberCount || t.members.length),
-        0
+        0,
       ),
       openInvitations: teamsList.filter((t) => t.userRole === "Owner").length,
     }),
-    [teamsList]
+    [teamsList],
   );
 
   // Accordion Toggle: Only ONE team can stay open at a time
@@ -104,13 +124,16 @@ export default function useTeamPage() {
         });
 
         await refetch();
-        showToast("success", `Team "${newTeamData.name}" created successfully!`);
+        showToast(
+          "success",
+          `Team "${newTeamData.name}" created successfully!`,
+        );
       } catch (err) {
         console.error("Failed to create team in database:", err);
         showToast("error", err.message || "Failed to create team.");
       }
     },
-    [refetch, showToast]
+    [refetch, showToast],
   );
 
   // Add Member via POST /api/Team using real SQL Server Team.Id
@@ -126,37 +149,34 @@ export default function useTeamPage() {
       };
 
       try {
-        await addTeamMember(payload);
-        await refetch();
+        await inviteMember(payload);
         showToast(
           "success",
-          `${payload.fullName} added to ${activeAddMemberTeam.name}!`
+          `${payload.fullName} added to ${activeAddMemberTeam.name}!`,
         );
       } catch (err) {
         console.warn("POST /api/Team error:", err);
         if (err?.response?.status === 403) {
           showToast(
             "error",
-            "You don't have permission to add members to this team."
+            "You don't have permission to add members to this team.",
           );
         } else {
-          await refetch();
           showToast(
-            "success",
-            `${payload.fullName} added to ${activeAddMemberTeam.name}!`
+            "error",
+            "Failed to add member to team.",
           );
         }
       }
     },
-    [activeAddMemberTeam, refetch, showToast]
+    [activeAddMemberTeam, inviteMember, showToast],
   );
 
   // Change Role via PUT /api/Team/{id}
   const handleChangeRole = useCallback(
     async (memberId, newRole) => {
       try {
-        await updateTeamMember(memberId, { role: newRole });
-        await refetch();
+        await updateMember(memberId, { role: newRole });
         showToast("success", "Member role updated successfully!");
       } catch (err) {
         console.error("PUT /api/Team error:", err);
@@ -167,7 +187,7 @@ export default function useTeamPage() {
         }
       }
     },
-    [refetch, showToast]
+    [updateMember, showToast],
   );
 
   // Remove Member via DELETE /api/Team/{id}
@@ -175,8 +195,7 @@ export default function useTeamPage() {
     async (memberId) => {
       try {
         const removedMember = activeRemoveMember;
-        await deleteTeamMember(memberId);
-        await refetch();
+        await deleteMember(memberId);
 
         if (removedMember && user && removedMember.userId === user.id) {
           // If the current user was removed from the team
@@ -198,7 +217,7 @@ export default function useTeamPage() {
         }
       }
     },
-    [activeRemoveMember, expandedTeamId, refetch, showToast, user]
+    [activeRemoveMember, expandedTeamId, deleteMember, showToast, user],
   );
 
   const handleCreateTaskFromModal = useCallback(
@@ -207,7 +226,7 @@ export default function useTeamPage() {
       setActiveAssignTaskMember(null);
       showToast("success", "Task created and assigned!");
     },
-    [addTask, showToast]
+    [addTask, showToast],
   );
 
   // Delete Team via DELETE /api/teams/{id}
@@ -223,7 +242,7 @@ export default function useTeamPage() {
       if (err?.response?.status === 409) {
         showToast(
           "error",
-          "This team still contains tasks. Please move or delete all remaining tasks before deleting the team."
+          "This team still contains tasks. Please move or delete all remaining tasks before deleting the team.",
         );
       } else {
         showToast("error", "Failed to delete team.");

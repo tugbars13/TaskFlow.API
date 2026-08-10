@@ -1,6 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
-import { getSettings, updateProfile, updateWorkspace } from "../api/settingsService";
+import {
+  getSettings,
+  updateProfile,
+  updateWorkspace,
+} from "../api/settingsService";
 
+const SAVE_STATUS_DURATION = 3000;
 export default function useSettings() {
   const [settings, setSettings] = useState(null);
   const [activeSection, setActiveSection] = useState("Profile");
@@ -21,44 +26,54 @@ export default function useSettings() {
       setLoading(false);
     }
   }, []);
+  const resetSaveStatus = useCallback(() => {
+    setTimeout(() => {
+      setSaveStatus(null);
+    }, SAVE_STATUS_DURATION);
+  }, []);
+  const updateSettingsSection = useCallback(
+    async (section, apiCall, data) => {
+      setSaveStatus("saving");
 
+      try {
+        const updated = await apiCall(data);
+
+        setSettings((prev) => ({
+          ...prev,
+          [section]: {
+            ...prev?.[section],
+            ...updated,
+          },
+        }));
+
+        setSaveStatus("success");
+        resetSaveStatus();
+
+        return true;
+      } catch {
+        setSaveStatus("error");
+        return false;
+      }
+    },
+    [resetSaveStatus],
+  );
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
 
-  const handleProfileUpdate = async (profileData) => {
-    setSaveStatus("saving");
-    try {
-      const updated = await updateProfile(profileData);
-      setSettings((prev) => ({
-        ...prev,
-        profile: { ...prev?.profile, ...updated },
-      }));
-      setSaveStatus("success");
-      setTimeout(() => setSaveStatus(null), 3000);
-      return true;
-    } catch (err) {
-      setSaveStatus("error");
-      return false;
-    }
-  };
+  const handleProfileUpdate = useCallback(
+    (profileData) => {
+      return updateSettingsSection("profile", updateProfile, profileData);
+    },
+    [updateSettingsSection],
+  );
 
-  const handleWorkspaceUpdate = async (workspaceData) => {
-    setSaveStatus("saving");
-    try {
-      const updated = await updateWorkspace(workspaceData);
-      setSettings((prev) => ({
-        ...prev,
-        workspace: { ...prev?.workspace, ...updated },
-      }));
-      setSaveStatus("success");
-      setTimeout(() => setSaveStatus(null), 3000);
-      return true;
-    } catch (err) {
-      setSaveStatus("error");
-      return false;
-    }
-  };
+  const handleWorkspaceUpdate = useCallback(
+    (workspaceData) => {
+      return updateSettingsSection("workspace", updateWorkspace, workspaceData);
+    },
+    [updateSettingsSection],
+  );
 
   return {
     settings,

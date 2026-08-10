@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ROUTES } from "@/constants/routes.constants";
+import { ROUTES } from "@/constants/routesConstants";
 import { cn } from "@/utils/cn";
 const NAV_ITEMS = [
   { path: ROUTES.DASHBOARD, label: "Dashboard", icon: "dashboard" },
@@ -22,7 +22,7 @@ export default function Sidebar() {
         "p-lg",
         "bg-surface",
         "border-r border-outline-variant/20",
-        "transition-all duration-300"
+        "transition-all duration-300",
       )}
     >
       <div className="space-y-xl">
@@ -48,12 +48,14 @@ export default function Sidebar() {
                   "flex items-center gap-md rounded-xl px-md py-sm text-body-md font-medium transition-all duration-200",
                   isActive
                     ? "bg-primary/10 text-primary font-semibold shadow-xs"
-                    : "text-on-surface-variant hover:bg-surface-container-high/60 hover:text-on-surface"
+                    : "text-on-surface-variant hover:bg-surface-container-high/60 hover:text-on-surface",
                 )}
               >
                 <span
                   className="material-symbols-outlined text-[22px]"
-                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+                  style={{
+                    fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+                  }}
                 >
                   {item.icon}
                 </span>
@@ -73,7 +75,9 @@ export default function Sidebar() {
           <p className="font-label-md text-label-md font-semibold text-on-surface truncate">
             My Workspace
           </p>
-          <p className="text-xs text-on-surface-variant/70 truncate">Pro Plan</p>
+          <p className="text-xs text-on-surface-variant/70 truncate">
+            Pro Plan
+          </p>
         </div>
       </div>
     </aside>

@@ -1,19 +1,23 @@
 import api from "@/api/client/axios";
 
+const unwrapResponse = (response, fallback = null) => {
+  return response.data?.data ?? response.data ?? fallback;
+};
+
 // Database Teams CRUD API Calls
 export const getTeams = async () => {
   const response = await api.get("/teams");
-  return response.data?.data || response.data || [];
+  return unwrapResponse(response, []);
 };
 
 export const createTeam = async (teamData) => {
   const response = await api.post("/teams", teamData);
-  return response.data?.data || response.data;
+  return unwrapResponse(response);
 };
 
 export const getTeamById = async (id) => {
   const response = await api.get(`/teams/${id}`);
-  return response.data?.data || response.data;
+  return unwrapResponse(response);
 };
 
 export const deleteTeam = async (teamId) => {
@@ -25,27 +29,27 @@ export const deleteTeam = async (teamId) => {
 export const getTeamMembers = async (teamId) => {
   const url = teamId ? `/Team/team/${teamId}` : "/Team";
   const response = await api.get(url);
-  return response.data?.data || response.data || [];
+  return unwrapResponse(response, []);
 };
 
 export const getTeamMemberById = async (id) => {
   const response = await api.get(`/Team/${id}`);
-  return response.data?.data || response.data;
+  return unwrapResponse(response);
 };
 
 export const addTeamMember = async (memberData) => {
   const response = await api.post("/Team", memberData);
-  return response.data?.data || response.data;
+  return unwrapResponse(response);
 };
 
 export const inviteTeamMember = async (memberData) => {
   const response = await api.post("/Team/invite", memberData);
-  return response.data?.data || response.data;
+  return unwrapResponse(response);
 };
 
 export const updateTeamMember = async (id, updatedFields) => {
   const response = await api.put(`/Team/${id}`, updatedFields);
-  return response.data?.data || response.data;
+  return unwrapResponse(response);
 };
 
 export const deleteTeamMember = async (id) => {

@@ -1,22 +1,22 @@
-﻿export const KANBAN_COLUMNS = [
-    {
-        title: "Backlog",
-        statusId: "backlog",
-        color: "bg-outline/20 text-outline",
-    },
-    {
-        title: "To Do",
-        statusId: "todo",
-        color: "bg-secondary/20 text-secondary",
-    },
-    {
-        title: "In Progress",
-        statusId: "in_progress",
-        color: "bg-primary/20 text-primary",
-    },
-    {
-        title: "Completed",
-        statusId: "completed",
-        color: "bg-green-500/20 text-green-600",
-    },
-];
+﻿export const KANBAN_COLUMNS = Object.freeze([
+  {
+    statusId: "backlog",
+    title: "Backlog",
+    color: "bg-outline/20 text-outline",
+  },
+  {
+    statusId: "todo",
+    title: "To Do",
+    color: "bg-secondary/20 text-secondary",
+  },
+  {
+    statusId: "in_progress",
+    title: "In Progress",
+    color: "bg-primary/20 text-primary",
+  },
+  {
+    statusId: "completed",
+    title: "Completed",
+    color: "bg-green-500/20 text-green-600",
+  },
+]);

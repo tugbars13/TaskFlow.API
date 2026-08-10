@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AvatarUploader from "./AvatarUploader";
 import ProfileForm from "./ProfileForm";
 
@@ -6,18 +6,21 @@ export default function ProfileSettings({ profile, onSaveProfile }) {
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
-    if (profile?.avatarUrl) {
-      setAvatarUrl(profile.avatarUrl);
-    }
+    setAvatarUrl(profile?.avatarUrl ?? "");
   }, [profile]);
 
-  const handleFormSave = (formData) => {
-    onSaveProfile?.({
-      ...formData,
-      avatarUrl,
-    });
-  };
-
+  const handleFormSave = useCallback(
+    (formData) => {
+      onSaveProfile?.({
+        ...formData,
+        avatarUrl,
+      });
+    },
+    [avatarUrl, onSaveProfile],
+  );
+  const handleCancel = useCallback(() => {
+    setAvatarUrl(profile?.avatarUrl ?? "");
+  }, [profile]);
   return (
     <div className="bg-surface rounded-2xl p-lg border border-outline-variant/10 apple-shadow space-y-lg">
       <div>
@@ -29,15 +32,12 @@ export default function ProfileSettings({ profile, onSaveProfile }) {
         </p>
       </div>
 
-      <AvatarUploader
-        avatarUrl={avatarUrl}
-        onChangeAvatar={setAvatarUrl}
-      />
+      <AvatarUploader avatarUrl={avatarUrl} onChangeAvatar={setAvatarUrl} />
 
       <ProfileForm
         initialValues={profile}
         onSave={handleFormSave}
-        onCancel={() => setAvatarUrl(profile?.avatarUrl || "")}
+        onCancel={handleCancel}
       />
     </div>
   );

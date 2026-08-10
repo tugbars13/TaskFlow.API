@@ -22,35 +22,36 @@ export default function Card({
   className = "",
   hover = false,
   clickable = false,
+  onClick,
+  onKeyDown,
   ...props
 }) {
-  const resolvedVariant = VARIANTS[variant] || VARIANTS.default;
-  const resolvedPadding = PADDING[padding] || PADDING.lg;
+  const resolvedVariant = VARIANTS[variant] ?? VARIANTS.default;
+  const resolvedPadding = PADDING[padding] ?? PADDING.lg;
 
   const handleKeyDown = (e) => {
-    if (clickable && (e.key === "Enter" || e.key === " ") && props.onClick) {
+    if (clickable && (e.key === "Enter" || e.key === " ") && onClick) {
       e.preventDefault();
-      props.onClick(e);
+      onClick(e);
     }
-    if (props.onKeyDown) {
-      props.onKeyDown(e);
-    }
+    onKeyDown?.(e);
   };
 
   return (
     <div
+      {...props}
+      onClick={clickable ? onClick : undefined}
       className={cn(
         "card",
         resolvedVariant,
         resolvedPadding,
         hover && "card--hoverable apple-shadow-hover",
         clickable && "card--clickable",
-        className
+        className,
       )}
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
-      {...props}
-      onKeyDown={clickable ? handleKeyDown : props.onKeyDown}
+      onKeyDown={clickable ? handleKeyDown : onKeyDown}
     >
       {children}
     </div>

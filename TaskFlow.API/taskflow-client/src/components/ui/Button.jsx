@@ -32,16 +32,15 @@ export default function Button({
   iconOnly = false,
   loading = false,
   loadingText,
-  icon: _legacyIcon,
   "aria-label": nativeAriaLabel,
   ...props
 }) {
-  const accessibleLabel = ariaLabel || nativeAriaLabel;
+  const accessibleLabel = ariaLabel ?? nativeAriaLabel;
   const isDisabled = disabled || loading;
-  const resolvedVariant = VARIANTS[variant] || VARIANTS.primary;
-  const resolvedSize = SIZES[size] || SIZES.md;
-  const visibleContent = loading && loadingText ? loadingText : children;
-  const iconContent = startIcon || endIcon || children;
+  const resolvedVariant = VARIANTS[variant] ?? VARIANTS.primary;
+  const resolvedSize = SIZES[size] ?? SIZES.md;
+  const visibleContent = loadingText && loading ? loadingText : children;
+  const iconContent = startIcon ?? endIcon ?? children;
 
   if (iconOnly && !accessibleLabel) {
     throw new Error("Button with iconOnly requires an ariaLabel.");
@@ -60,21 +59,29 @@ export default function Button({
         resolvedVariant,
         resolvedSize,
         iconOnly && "button--icon-only",
-        className
+        className,
       )}
     >
       {loading && <span className="button__spinner" aria-hidden="true" />}
 
       {iconOnly ? (
-        !loading && <span className="button__icon" aria-hidden="true">{iconContent}</span>
+        !loading && (
+          <span className="button__icon" aria-hidden="true">
+            {iconContent}
+          </span>
+        )
       ) : (
         <>
           {!loading && startIcon && (
-            <span className="button__icon" aria-hidden="true">{startIcon}</span>
+            <span className="button__icon" aria-hidden="true">
+              {startIcon}
+            </span>
           )}
           <span className="button__label">{visibleContent}</span>
           {!loading && endIcon && (
-            <span className="button__icon" aria-hidden="true">{endIcon}</span>
+            <span className="button__icon" aria-hidden="true">
+              {endIcon}
+            </span>
           )}
         </>
       )}

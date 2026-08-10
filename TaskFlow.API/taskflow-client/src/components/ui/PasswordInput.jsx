@@ -7,18 +7,24 @@ export default function PasswordInput({
   showForgotLink = true,
   id = "password",
   name = "password",
-  label = "Password"
+  label = "Password",
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="space-y-sm">
       <div className="flex justify-between items-center">
-        <label htmlFor={id} className="font-label-md text-label-md leading-[20px] font-semibold text-on-surface">
+        <label
+          htmlFor={id}
+          className="font-label-md text-label-md leading-[20px] font-semibold text-on-surface"
+        >
           {label}
         </label>
         {showForgotLink && (
-          <a href="#" className="text-primary font-label-sm text-label-sm leading-[16px] tracking-[0.05em] font-medium hover:underline">
+          <a
+            href="#"
+            className="text-primary font-label-sm text-label-sm leading-[16px] tracking-[0.05em] font-medium hover:underline"
+          >
             Forgot password?
           </a>
         )}
@@ -33,12 +39,13 @@ export default function PasswordInput({
           type={showPassword ? "text" : "password"}
           placeholder={placeholder}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange?.(e.target.value)}
           className="w-full pl-[48px] pr-lg py-[14px] bg-surface-container-high/50 border-none rounded-2xl focus:ring-0 transition-colors placeholder:text-outline/60 text-body-md font-body-md leading-[24px] font-normal apple-shadow"
         />
         <button
           type="button"
-          onClick={() => setShowPassword(!showPassword)}
+          onClick={() => setShowPassword((prev) => !prev)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
           className="absolute right-md top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors cursor-pointer"
         >
           <span className="material-symbols-outlined">

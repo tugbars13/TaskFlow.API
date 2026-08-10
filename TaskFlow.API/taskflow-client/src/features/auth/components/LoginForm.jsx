@@ -5,42 +5,44 @@ import Button from "@/components/ui/Button";
 
 export default function LoginForm({
   email,
-  setEmail,
+  onEmailChange,
   password,
-  setPassword,
+  onPasswordChange,
   remember,
-  setRemember,
+  onRememberChange,
   loading,
   error,
   onSubmit,
 }) {
   return (
     <form onSubmit={onSubmit} className="space-y-lg">
-
       <Input
         id="email"
         name="email"
+        type="email"
         label="Email Address"
         icon="mail"
-        type="email"
-        placeholder="name@/company.com"
+        placeholder="name@company.com"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={onEmailChange}
       />
 
       <PasswordInput
         value={password}
-        onChange={setPassword}
+        onChange={onPasswordChange}
       />
 
       <Checkbox
         checked={remember}
-        onChange={setRemember}
+        onChange={onRememberChange}
         label="Remember me for 30 days"
       />
 
       {error && (
-        <p className="text-status-error text-body-sm">
+        <p
+          role="alert"
+          className="text-body-sm text-error"
+        >
           {error}
         </p>
       )}
@@ -52,7 +54,6 @@ export default function LoginForm({
       >
         {loading ? "Signing in..." : "Sign In"}
       </Button>
-
     </form>
   );
 }
