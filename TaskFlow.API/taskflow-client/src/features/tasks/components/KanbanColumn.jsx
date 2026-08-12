@@ -11,6 +11,7 @@ export default function KanbanColumn({
   onAddTask,
   onDropTask,
   canEditTask = () => true,
+  isTeamBoard = true,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -54,14 +55,14 @@ export default function KanbanColumn({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex flex-col h-full bg-surface-container-low/40 border rounded-2xl p-md apple-shadow transition-all duration-200 ${
+      className={`flex flex-col h-full min-h-[600px] bg-surface-container-low/40 border rounded-2xl p-lg apple-shadow transition-all duration-200 ${
         isDragOver
           ? "border-primary bg-primary/[0.04] ring-2 ring-primary/20 scale-[1.01]"
           : "border-outline-variant/10"
       }`}
     >
       {/* Column Header */}
-      <div className="flex items-center justify-between pb-md border-b border-outline-variant/10 mb-md">
+      <div className="flex items-center justify-between pb-lg border-b border-outline-variant/10 mb-lg">
         <div className="flex items-center gap-xs">
           <span className={`w-3 h-3 rounded-full ${color.split(" ")[0]}`} />
           <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
@@ -83,7 +84,7 @@ export default function KanbanColumn({
       </div>
 
       {/* Task Cards List — Dashboard Design System Alignment */}
-      <div className="flex-1 space-y-sm overflow-y-auto pr-xs">
+      <div className="flex-1 space-y-md overflow-y-auto pr-xs">
         {tasks.map((task) => (
           <TaskCard
             key={task.id}
@@ -91,6 +92,8 @@ export default function KanbanColumn({
             draggable={canEditTask(task)}
             onDragStart={(e) => handleDragStart(e, task.id)}
             onClick={() => onTaskClick?.(task)}
+            showAssignee={isTeamBoard}
+            showTeam={!isTeamBoard}
           />
         ))}
       </div>

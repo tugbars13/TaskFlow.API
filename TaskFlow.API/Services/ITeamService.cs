@@ -23,5 +23,9 @@ namespace TaskFlow.API.Services
 
         /// <summary>Returns the TeamMember row for a given user/team combo, or null if not found.</summary>
         Task<TeamMemberDto?> GetMemberByTeamAndUserAsync(int teamId, int userId);
+
+        Task<(bool Success, string Message)> InviteUserAsync(int teamId, int userIdToInvite, int currentUserId);
+        Task<(bool Success, string Message)> AcceptInvitationAsync(int teamId, int userId);
+        Task<(bool Success, string Message)> RejectInvitationAsync(int teamId, int userId);
     }
 }

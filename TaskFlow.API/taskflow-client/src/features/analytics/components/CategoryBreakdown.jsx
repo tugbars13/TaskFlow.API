@@ -48,10 +48,10 @@ export default function CategoryBreakdown() {
       .sort((a, b) => b.count - a.count);
   }, [activeTasks, totalTasks]);
   return (
-    <Card className="col-span-12 lg:col-span-6" variant="default">
+    <Card className="col-span-12 md:col-span-6 lg:col-span-4" variant="default">
       <div className="flex justify-between items-center mb-5 border-b border-outline-variant/10 pb-4 h-8">
         <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-purple-500 text-[22px]">
+          <span className="material-symbols-outlined text-primary text-[22px]">
             category
           </span>
           Category Breakdown

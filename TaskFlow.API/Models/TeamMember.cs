@@ -14,5 +14,7 @@ public class TeamMember
 
     public TeamRole Role { get; set; }
 
+    public TeamMemberStatus Status { get; set; } = TeamMemberStatus.Accepted;
+
     public DateTime JoinedDate { get; set; }
 }

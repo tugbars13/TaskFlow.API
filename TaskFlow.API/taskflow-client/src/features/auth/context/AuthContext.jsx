@@ -14,9 +14,10 @@ export default function AuthProvider({ children }) {
   useAuthSession({
     setUser,
     setRole,
+    setPermissions,
     setIsLoading,
   });
-  const { login, logout, register } = useAuthActions({
+  const { login, logout, register, refreshProfile } = useAuthActions({
     setUser,
     setRole,
     setPermissions,
@@ -49,6 +50,7 @@ export default function AuthProvider({ children }) {
       login,
       logout,
       register,
+      refreshProfile,
       hasRole,
       hasPermission,
     }),
@@ -61,6 +63,7 @@ export default function AuthProvider({ children }) {
       login,
       logout,
       register,
+      refreshProfile,
       hasRole,
       hasPermission,
     ],

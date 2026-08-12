@@ -22,14 +22,8 @@ export default function CompletionTrendChart({ trendData = [] }) {
       targetDate.setDate(monday.getDate() + idx);
 
       const createdCount = tasks.filter((t) => {
-        if (!t.createdDate && !t.dueDate) return false;
-        const d = new Date(t.createdDate || t.dueDate);
-        return d.toDateString() === targetDate.toDateString();
-      }).length;
-
-      const completedCount = tasks.filter((t) => {
-        if (!t.isCompleted) return false;
-        const d = new Date(t.completedDate || t.dueDate || t.createdDate);
+        if (!t.createdDate) return false;
+        const d = new Date(t.createdDate);
         return d.toDateString() === targetDate.toDateString();
       }).length;
 
@@ -37,13 +31,14 @@ export default function CompletionTrendChart({ trendData = [] }) {
         date: targetDate.toISOString().slice(0, 10),
         day: dayLabel,
         created: createdCount,
-        completed: completedCount,
       };
     });
   }, [trendData, tasks]);
 
+  const hasData = points.some((p) => p.created > 0);
+
   const maxVal = Math.max(
-    ...points.map((p) => Math.max(p.created || 0, p.completed || 0)),
+    ...points.map((p) => p.created || 0),
     3,
   );
 
@@ -68,9 +63,6 @@ export default function CompletionTrendChart({ trendData = [] }) {
   const createdCoords = useMemo(() => {
     return getCoordinates("created");
   }, [points, maxVal]);
-  const completedCoords = useMemo(() => {
-    return getCoordinates("completed");
-  }, [points, maxVal]);
 
   // Helper for Catmull-Rom or cubic Bezier smooth curves
   const buildSmoothPath = (coords) => {
@@ -90,18 +82,9 @@ export default function CompletionTrendChart({ trendData = [] }) {
     return path;
   };
 
-  const completedPath = useMemo(() => {
-    return buildSmoothPath(completedCoords);
-  }, [completedCoords]);
-
   const createdPath = useMemo(() => {
     return buildSmoothPath(createdCoords);
   }, [createdCoords]);
-
-  const completedAreaPath =
-    completedCoords.length > 0
-      ? `${completedPath} L ${completedCoords[completedCoords.length - 1].x} ${svgHeight - paddingY} L ${completedCoords[0].x} ${svgHeight - paddingY} Z`
-      : "";
 
   const createdAreaPath =
     createdCoords.length > 0
@@ -120,22 +103,16 @@ export default function CompletionTrendChart({ trendData = [] }) {
             <span className="material-symbols-outlined text-primary text-[22px]">
               show_chart
             </span>
-            Task Completion Trend
+            Task Creation Trend
           </h3>
           <p className="text-[11px] text-on-surface-variant mt-0.5">
-            Daily volume of completed vs created tasks from SQL Server
+            Daily volume of created tasks this week
           </p>
         </div>
 
         <div className="flex items-center gap-md">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-xs font-semibold text-on-surface">
-              Completed
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-400" />
             <span className="text-xs font-semibold text-on-surface-variant">
               Created
             </span>
@@ -143,7 +120,20 @@ export default function CompletionTrendChart({ trendData = [] }) {
         </div>
       </div>
 
-      {/* SVG Smooth Area Chart */}
+      {/* Empty State */}
+      {!hasData ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+          <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-4">
+            <span className="material-symbols-outlined text-[32px] text-outline">
+              insights
+            </span>
+          </div>
+          <h4 className="text-[15px] font-bold text-on-surface mb-2">No task activity yet</h4>
+          <p className="text-[13px] text-on-surface-variant max-w-[250px]">
+            Create your first task to start tracking your workspace activity.
+          </p>
+        </div>
+      ) : (
       <div className="flex-1 w-full flex flex-col justify-end pt-6 relative">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -151,13 +141,9 @@ export default function CompletionTrendChart({ trendData = [] }) {
         >
           <defs>
             {/* Gradients */}
-            <linearGradient id="completedGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#7C3AED" stopOpacity="0.0" />
-            </linearGradient>
             <linearGradient id="createdGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#C084FC" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#C084FC" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#D22B2B" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#D22B2B" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -183,18 +169,7 @@ export default function CompletionTrendChart({ trendData = [] }) {
           <path
             d={createdPath}
             fill="none"
-            stroke="#C084FC"
-            strokeWidth="3"
-            strokeLinecap="round"
-            className="transition-all duration-700"
-          />
-
-          {/* Completed Tasks Area & Line */}
-          <path d={completedAreaPath} fill="url(#completedGrad)" />
-          <path
-            d={completedPath}
-            fill="none"
-            stroke="#7C3AED"
+            stroke="#D22B2B"
             strokeWidth="3.5"
             strokeLinecap="round"
             className="transition-all duration-700"
@@ -202,7 +177,6 @@ export default function CompletionTrendChart({ trendData = [] }) {
 
           {/* Data Points & Interactive Circles */}
           {points.map((p, idx) => {
-            const cPt = completedCoords[idx];
             const crPt = createdCoords[idx];
             const isHovered = hoveredIdx === idx;
 
@@ -211,11 +185,11 @@ export default function CompletionTrendChart({ trendData = [] }) {
                 {/* Vertical hover guide line */}
                 {isHovered && (
                   <line
-                    x1={cPt.x}
+                    x1={crPt.x}
                     y1={paddingY}
-                    x2={cPt.x}
+                    x2={crPt.x}
                     y2={svgHeight - paddingY}
-                    stroke="#7C3AED"
+                    stroke="#D22B2B"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                     className="opacity-50"
@@ -226,15 +200,6 @@ export default function CompletionTrendChart({ trendData = [] }) {
                 <circle
                   cx={crPt.x}
                   cy={crPt.y}
-                  r={isHovered ? 5 : 3.5}
-                  className="fill-purple-400 stroke-white dark:stroke-gray-900 transition-all cursor-pointer"
-                  strokeWidth="2"
-                />
-
-                {/* Completed Point */}
-                <circle
-                  cx={cPt.x}
-                  cy={cPt.y}
                   r={isHovered ? 6 : 4}
                   className="fill-primary stroke-white dark:stroke-gray-900 transition-all cursor-pointer"
                   strokeWidth="2"
@@ -242,7 +207,7 @@ export default function CompletionTrendChart({ trendData = [] }) {
 
                 {/* Transparent trigger bar for hover */}
                 <rect
-                  x={cPt.x - stepX / 2}
+                  x={crPt.x - stepX / 2}
                   y={0}
                   width={stepX}
                   height={svgHeight}
@@ -286,15 +251,12 @@ export default function CompletionTrendChart({ trendData = [] }) {
             </p>
             <div className="flex items-center gap-2 mt-1">
               <span className="w-2 h-2 rounded-full bg-primary" />
-              <span>Completed: {points[hoveredIdx].completed || 0}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-purple-400" />
               <span>Created: {points[hoveredIdx].created || 0}</span>
             </div>
           </div>
         )}
       </div>
+      )}
     </Card>
   );
 }

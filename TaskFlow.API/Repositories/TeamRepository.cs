@@ -102,21 +102,42 @@ namespace TaskFlow.API.Repositories
 
         public async Task<bool> DeleteTeamAsync(int id)
         {
-            var team = await _context.Teams.FindAsync(id);
-
-            if (team == null)
-                return false;
-
-            var hasTasks = await _context.Tasks.AnyAsync(t => t.TeamId == id && !t.IsDeleted);
-            if (hasTasks)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                throw new InvalidOperationException("HasTasks");
+                var team = await _context.Teams.FindAsync(id);
+
+                if (team == null)
+                    return false;
+
+                // Safely delete all tasks associated with this team
+                var tasks = await _context.Tasks.Where(t => t.TeamId == id).ToListAsync();
+                if (tasks.Any())
+                {
+                    _context.Tasks.RemoveRange(tasks);
+                }
+
+                // Clean up related team invitations so they don't get stuck in UI forever
+                var relatedNotifications = await _context.Notifications
+                    .Where(n => n.RelatedId == id && n.Type == "TeamInvitation")
+                    .ToListAsync();
+                
+                if (relatedNotifications.Any())
+                {
+                    _context.Notifications.RemoveRange(relatedNotifications);
+                }
+
+                _context.Teams.Remove(team);
+                await _context.SaveChangesAsync();
+                
+                await transaction.CommitAsync();
+                return true;
             }
-
-            _context.Teams.Remove(team);
-            await _context.SaveChangesAsync();
-
-            return true;
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<TeamMember?> GetMemberByTeamAndUserAsync(int teamId, int userId)

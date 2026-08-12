@@ -1,4 +1,4 @@
-﻿namespace TaskFlow.API.DTOs;
+namespace TaskFlow.API.DTOs;
 
 public class UserDto
 {
@@ -7,4 +7,7 @@ public class UserDto
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? DisplayName { get; set; }
+    public string? Bio { get; set; }
+    public string? AvatarUrl { get; set; }
 }

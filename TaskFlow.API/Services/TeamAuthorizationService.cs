@@ -17,7 +17,7 @@ public class TeamAuthorizationService : ITeamAuthorizationService
     public async Task<bool> IsTeamMemberOrCreatorAsync(int teamId, int userId)
     {
         var isMember = await _context.TeamMembers
-            .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId);
+            .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted);
         var isCreator = await _context.Teams
             .AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId);
 
@@ -27,7 +27,7 @@ public class TeamAuthorizationService : ITeamAuthorizationService
     public async Task<bool> CanCreateTaskForTeamAsync(int teamId, int userId)
     {
         var role = await _context.TeamMembers
-            .Where(tm => tm.TeamId == teamId && tm.UserId == userId)
+            .Where(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted)
             .Select(tm => (TeamRole?)tm.Role)
             .FirstOrDefaultAsync();
 
@@ -40,6 +40,19 @@ public class TeamAuthorizationService : ITeamAuthorizationService
         return isOwner || isAdmin;
     }
 
+    public async Task<bool> CanInviteMemberAsync(int teamId, int userId)
+    {
+        var role = await _context.TeamMembers
+            .Where(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted)
+            .Select(tm => (TeamRole?)tm.Role)
+            .FirstOrDefaultAsync();
+
+        var isCreator = await _context.Teams
+            .AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId);
+
+        return role == TeamRole.Owner || role == TeamRole.Admin || isCreator;
+    }
+
     public async Task<bool> CanManageTaskAsync(TaskItem task, int userId, bool isAdmin)
     {
         if (isAdmin) 
@@ -48,7 +61,7 @@ public class TeamAuthorizationService : ITeamAuthorizationService
         if (!task.TeamId.HasValue)
         {
             // Personal task: Only owner or assignee can manage
-            return task.UserId == userId || task.AssignedUserId == userId;
+            return task.UserId == userId || task.AssignedUserId == userId || (task.Assignees != null && task.Assignees.Any(a => a.UserId == userId));
         }
 
         // Team task: Admin (above), Team Creator, or Team Member can manage

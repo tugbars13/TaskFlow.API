@@ -52,13 +52,13 @@ export default function RegisterPage() {
       {/* Form Fields */}
       <RegisterForm
           fullName={fullName}
-          setFullName={setFullName}
+          onFullNameChange={(e) => setFullName(e.target.value)}
           email={email}
-          setEmail={setEmail}
+          onEmailChange={(e) => setEmail(e.target.value)}
           password={password}
-          setPassword={setPassword}
+          onPasswordChange={setPassword}
           agreedToTerms={agreedToTerms}
-          setAgreedToTerms={setAgreedToTerms}
+          onTermsChange={setAgreedToTerms}
           loading={loading}
           error={error}
           onSubmit={handleSubmit}

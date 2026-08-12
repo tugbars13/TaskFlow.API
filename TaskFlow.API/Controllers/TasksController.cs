@@ -18,11 +18,13 @@ namespace TaskFlow.API.Controllers
     {
         private readonly ITaskService _taskService;
         private readonly ITeamAuthorizationService _teamAuth;
+        private readonly TaskFlow.API.Data.AppDbContext _context;
 
-        public TasksController(ITaskService taskService, ITeamAuthorizationService teamAuth)
+        public TasksController(ITaskService taskService, ITeamAuthorizationService teamAuth, TaskFlow.API.Data.AppDbContext context)
         {
             _taskService = taskService;
             _teamAuth = teamAuth;
+            _context = context;
         }
 
         private TaskDto MapToDto(TaskItem task)
@@ -43,6 +45,13 @@ namespace TaskFlow.API.Controllers
                 AttachmentsCount = 1,
                 AssignedUserId = task.AssignedUserId,
                 AssignedUserFullName = task.AssignedUser?.FullName,
+                AssignedUserAvatar = task.AssignedUser?.AvatarUrl,
+                Assignees = task.Assignees?.Select(a => new AssigneeDto 
+                { 
+                    Id = a.UserId, 
+                    FullName = a.User?.FullName ?? string.Empty, 
+                    AvatarUrl = a.User?.AvatarUrl 
+                }).ToList() ?? new List<AssigneeDto>(),
                 TeamId = task.TeamId,
                 TeamName = task.Team?.Name
             };
@@ -147,6 +156,27 @@ namespace TaskFlow.API.Controllers
                 }
             }
 
+            var assignees = new List<TaskAssignee>();
+
+            if (dto.AssigneeIds != null && dto.AssigneeIds.Any())
+            {
+                if (!dto.TeamId.HasValue)
+                {
+                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Kullanıcı atamak için takım belirtmelisiniz." });
+                }
+
+                foreach (var assigneeId in dto.AssigneeIds)
+                {
+                    var isMember = _context.TeamMembers.Any(tm => tm.TeamId == dto.TeamId.Value && tm.UserId == assigneeId && tm.Status == TeamMemberStatus.Accepted);
+                    if (!isMember)
+                    {
+                        return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"Geçersiz kullanıcı ataması: {assigneeId}" });
+                    }
+                    
+                    assignees.Add(new TaskAssignee { UserId = assigneeId });
+                }
+            }
+
             var task = new TaskItem
             {
                 Title = dto.Title,
@@ -158,7 +188,8 @@ namespace TaskFlow.API.Controllers
                 TeamId = dto.TeamId,
                 UserId = userId,
                 CreatedDate = DateTime.UtcNow,
-                IsDeleted = false
+                IsDeleted = false,
+                Assignees = assignees
             };
 
             var createdTask = await _taskService.CreateAsync(task);
@@ -200,6 +231,32 @@ namespace TaskFlow.API.Controllers
                 Console.WriteLine($"[DEBUG-TRACE] Returning NotFound (1st check). task == null: {task == null}");
                 return NotFound();
             }
+            
+            var assignees = task.Assignees?.ToList() ?? new List<TaskAssignee>();
+
+            if (dto.AssigneeIds != null)
+            {
+                if (task.TeamId.HasValue)
+                {
+                    // Temizle ve yeniden oluştur (tam liste değiştirme mantığı)
+                    assignees.Clear();
+                    var distinctIds = dto.AssigneeIds.Distinct();
+                    foreach (var assigneeId in distinctIds)
+                    {
+                        var isMember = _context.TeamMembers.Any(tm => tm.TeamId == task.TeamId.Value && tm.UserId == assigneeId && tm.Status == TeamMemberStatus.Accepted);
+                        if (!isMember)
+                        {
+                            return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"Geçersiz kullanıcı ataması: {assigneeId}" });
+                        }
+                        
+                        assignees.Add(new TaskAssignee { TaskId = id, UserId = assigneeId });
+                    }
+                }
+                else if (dto.AssigneeIds.Any())
+                {
+                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Kullanıcı atamak için takım belirtmelisiniz." });
+                }
+            }
 
             var updatedTask = new TaskItem
             {
@@ -210,7 +267,8 @@ namespace TaskFlow.API.Controllers
                 Priority = dto.Priority,
                 DueDate = dto.DueDate,
                 Category = dto.Category,
-                AssignedUserId = dto.AssignedUserId
+                AssignedUserId = dto.AssignedUserId,
+                Assignees = assignees
             };
 
             Console.WriteLine($"[DEBUG-TRACE] Calling TaskService.UpdateAsync");

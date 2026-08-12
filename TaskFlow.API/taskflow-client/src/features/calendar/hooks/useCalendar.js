@@ -29,7 +29,7 @@ export default function useCalendar() {
         eventsMap[day] = {
           id: evt.id,
           title: evt.title,
-          style: evt.color || "bg-indigo-50/80 text-indigo-700",
+          style: evt.color || "bg-primary-container/80 text-primary",
           category: evt.category,
           startDate: evt.startDate,
           endDate: evt.endDate,

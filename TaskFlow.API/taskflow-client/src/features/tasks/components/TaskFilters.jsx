@@ -38,57 +38,46 @@ export default function TaskFilters({
     onSortChange(event.target.value);
   };
   return (
-    <div className="space-y-md bg-surface-container-lowest p-md md:p-lg rounded-2xl apple-shadow border border-outline-variant/10">
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-md">
-        <div className="flex-1 max-w-md">
+    <div className="bg-surface-container-lowest py-2 px-3 rounded-xl border border-outline-variant/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+      <div className="flex items-center gap-3 flex-1">
+        <div className="flex-1 max-w-[300px]">
           <Input
             icon="search"
-            placeholder="Search tasks by title or category..."
+            placeholder="Search tasks..."
             value={searchQuery}
             onChange={handleSearchChange}
           />
         </div>
-
-        <Button
-          variant="filled"
-          onClick={onNewTaskClick}
-          className="flex items-center justify-center gap-xs px-lg py-md rounded-2xl shadow-md active:scale-95 transition-transform"
-        >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          New Task
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-md pt-sm border-t border-outline-variant/10">
-        <div className="flex items-center gap-sm flex-wrap">
-          <span className="text-xs font-semibold text-outline uppercase tracking-wider">
-            Status:
-          </span>
+        
+        {/* Status Filters */}
+        <div className="hidden md:flex items-center gap-1 border-l border-outline-variant/10 pl-3">
           {STATUS_OPTIONS.map((status) => (
             <button
               key={status}
               type="button"
               onClick={() => onStatusChange(status)}
-              className={`px-md py-xs rounded-full text-xs font-label-md transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
                 statusFilter === status
-                  ? "bg-primary text-on-primary font-semibold shadow-sm"
-                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
+                  ? "bg-primary text-on-primary shadow-sm"
+                  : "bg-transparent text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >
               {status}
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="flex items-center gap-md flex-wrap">
-          <div className="flex items-center gap-xs">
-            <span className="text-xs font-semibold text-outline uppercase tracking-wider">
+      <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-outline uppercase">
               Priority:
             </span>
             <select
               value={priorityFilter}
               onChange={handlePriorityChange}
-              className="bg-surface-container-high/60 text-on-surface text-xs font-medium py-xs px-md rounded-xl border-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              className="bg-transparent text-on-surface text-[11px] font-medium py-1 px-2 border-none focus:ring-0 cursor-pointer"
             >
               {PRIORITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -98,14 +87,14 @@ export default function TaskFilters({
             </select>
           </div>
 
-          <div className="flex items-center gap-xs">
-            <span className="text-xs font-semibold text-outline uppercase tracking-wider">
+          <div className="hidden lg:flex items-center gap-1">
+            <span className="text-[10px] font-semibold text-outline uppercase">
               Sort:
             </span>
             <select
               value={sortBy}
               onChange={handleSortChange}
-              className="bg-surface-container-high/60 text-on-surface text-xs font-medium py-xs px-md rounded-xl border-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              className="bg-transparent text-on-surface text-[11px] font-medium py-1 px-2 border-none focus:ring-0 cursor-pointer"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -114,6 +103,20 @@ export default function TaskFilters({
               ))}
             </select>
           </div>
+          
+        {/* Mobile Status Dropdown (Fallback) */}
+        <div className="md:hidden flex items-center gap-1 border-l border-outline-variant/10 pl-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => onStatusChange(e.target.value)}
+              className="bg-transparent text-on-surface text-[11px] font-medium py-1 px-2 border-none focus:ring-0 cursor-pointer"
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
         </div>
       </div>
     </div>

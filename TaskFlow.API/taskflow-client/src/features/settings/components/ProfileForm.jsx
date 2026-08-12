@@ -37,7 +37,7 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
           <label className="text-xs font-bold text-on-surface">Full Name</label>
           <input
             type="text"
-            value={formData.fullName}
+            value={formData.fullName || ""}
             onChange={(e) => handleChange("fullName", e.target.value)}
             placeholder="e.g. Alex Rivera"
             className="w-full px-md py-sm bg-surface-container-high/40 border border-outline-variant/20 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 apple-shadow transition-colors"
@@ -51,7 +51,7 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
           </label>
           <input
             type="text"
-            value={formData.displayName}
+            value={formData.displayName || ""}
             onChange={(e) => handleChange("displayName", e.target.value)}
             placeholder="e.g. alexrivera"
             className="w-full px-md py-sm bg-surface-container-high/40 border border-outline-variant/20 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 apple-shadow transition-colors"
@@ -67,9 +67,9 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
         <input
           type="email"
           value={formData.email}
-          onChange={(e) => handleChange("email", e.target.value)}
-          placeholder="name@/company.com"
-          className="w-full px-md py-sm bg-surface-container-high/40 border border-outline-variant/20 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 apple-shadow transition-colors"
+          readOnly
+          placeholder="name@company.com"
+          className="w-full px-md py-sm bg-surface-container-high/40 border border-outline-variant/20 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 apple-shadow transition-colors opacity-70 cursor-not-allowed"
         />
       </div>
 
@@ -78,7 +78,7 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
         <label className="text-xs font-bold text-on-surface">Bio</label>
         <textarea
           rows={3}
-          value={formData.bio}
+          value={formData.bio || ""}
           onChange={(e) => handleChange("bio", e.target.value)}
           placeholder="Brief summary about your role and responsibilities..."
           className="w-full px-md py-sm bg-surface-container-high/40 border border-outline-variant/20 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 apple-shadow transition-colors resize-none"

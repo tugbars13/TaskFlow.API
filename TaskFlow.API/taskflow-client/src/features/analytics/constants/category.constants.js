@@ -7,15 +7,15 @@ export const CATEGORY_MAP = {
 };
 
 export const CATEGORY_COLORS = {
-  Work: "bg-purple-600",
+  Work: "bg-primary",
   Personal: "bg-pink-500",
-  Study: "bg-indigo-500",
+  Study: "bg-primary",
   Shopping: "bg-amber-500",
   Health: "bg-emerald-500",
-  Backend: "bg-purple-600",
-  Frontend: "bg-indigo-500",
+  Backend: "bg-primary",
+  Frontend: "bg-primary",
   "Design System": "bg-pink-500",
   Marketing: "bg-amber-500",
   QA: "bg-emerald-500",
-  General: "bg-blue-500",
+  General: "bg-primary",
 };

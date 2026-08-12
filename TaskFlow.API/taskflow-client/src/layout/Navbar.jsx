@@ -1,3 +1,6 @@
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routesConstants";
 import { DEFAULT_USER } from "@/constants/userConstants";
 import { cn } from "@/utils/cn";
 export default function Navbar({
@@ -5,9 +8,24 @@ export default function Navbar({
   onSearch,
   onOpenAssistant,
   onOpenNotifications,
+  unreadCount = 0,
   onOpenHelp,
-  onOpenProfile,
+  onLogout,
+  isSidebarCollapsed,
 }) {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   return (
     <header
       id="topbar"
@@ -15,8 +33,7 @@ export default function Navbar({
         "sticky top-0 right-0 z-40",
         "flex items-center justify-between",
         "h-[72px]",
-        "w-[calc(100%-var(--spacing-sidebar-width))]",
-        "ml-sidebar-width",
+        isSidebarCollapsed ? "w-[calc(100%-80px)] ml-[80px]" : "w-[calc(100%-300px)] ml-[300px]",
         "px-lg",
         "border-b border-outline-variant/20",
         "bg-surface-glass backdrop-blur-md",
@@ -34,7 +51,7 @@ export default function Navbar({
             aria-label="Search"
             placeholder="Search tasks, docs, or colleagues..."
             onChange={(e) => onSearch?.(e.target.value)}
-            className="w-full bg-surface-container-high/50 border-none rounded-full pl-xl pr-md py-sm focus:ring-0 text-body-md"
+            className="w-full bg-surface-container-high/50 border border-transparent rounded-full pl-xl pr-md py-sm focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 text-body-md transition-all"
           />
         </div>
       </div>
@@ -44,43 +61,73 @@ export default function Navbar({
         <button
           type="button"
           onClick={onOpenAssistant}
-          className="text-primary font-label-md flex items-center gap-xs hover:bg-primary/5 px-md py-sm rounded-full transition-all"
+          className="text-primary font-semibold text-sm flex items-center gap-1.5 hover:bg-primary/5 px-3 py-1.5 rounded-full transition-all"
         >
-          <span className="material-symbols-outlined">smart_toy</span>
+          <span className="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
           AI Assistant
         </button>
 
-        <div className="flex items-center gap-md border-l border-outline-variant/30 pl-lg">
+        <div className="flex items-center gap-4 border-l border-outline-variant/30 pl-5">
           <button
             type="button"
             aria-label="Notifications"
             onClick={onOpenNotifications}
-            className="text-on-surface-variant hover:text-primary transition-colors"
+            className="text-on-surface hover:text-primary transition-colors relative flex items-center justify-center"
           >
-            <span className="material-symbols-outlined">notifications</span>
+            <span className="material-symbols-outlined text-[24px]">notifications</span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </button>
 
-          <button
-            type="button"
-            aria-label="Help"
-            onClick={onOpenHelp}
-            className="text-on-surface-variant hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined">help</span>
-          </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              aria-label="Open profile menu"
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center gap-2 hover:bg-surface-variant/50 p-1 pr-2 rounded-full transition-colors cursor-pointer ml-1"
+            >
+              <div className="size-9 rounded-full overflow-hidden bg-surface-variant ring-1 ring-outline-variant/30">
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="size-full object-cover"
+                />
+              </div>
+              <span className="text-sm font-semibold text-on-surface">{user.name}</span>
+              <span className="material-symbols-outlined text-on-surface-variant text-[20px] transition-transform duration-200" style={{ transform: isProfileOpen ? 'rotate(180deg)' : 'none' }}>
+                expand_more
+              </span>
+            </button>
 
-          <button
-            type="button"
-            aria-label="Open profile menu"
-            onClick={onOpenProfile}
-            className="size-10 rounded-full overflow-hidden bg-surface-variant cursor-pointer ring-2 ring-primary/10"
-          >
-            <img
-              src={user.avatarUrl}
-              alt={user.name}
-              className="size-10 object-cover"
-            />
-          </button>
+            {isProfileOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-md py-2 z-50">
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-50 flex items-center gap-2 transition-colors font-medium"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    navigate(ROUTES.SETTINGS);
+                  }}
+                >
+                  <span className="material-symbols-outlined text-[18px]">settings</span>
+                  Settings
+                </button>
+                <div className="h-px bg-gray-200 my-1 mx-2" />
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-primary hover:bg-primary/10 flex items-center gap-2 transition-colors font-medium"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    if (onLogout) onLogout();
+                  }}
+                >
+                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

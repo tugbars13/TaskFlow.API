@@ -1,4 +1,4 @@
-﻿export default function normalizeStatus(status, isCompleted) {
+export default function normalizeStatus(status, isCompleted) {
   if (isCompleted) return "completed";
 
   if (typeof status === "number") {

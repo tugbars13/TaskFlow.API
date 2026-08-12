@@ -5,7 +5,7 @@ import useTeam from "./useTeam";
 import {
   createTeam,
   deleteTeam,
-} from "../api/teamservice.Js";
+} from "../api/teamService.js";
 
 const ROLE_ORDER = { owner: 0, admin: 1, member: 2 };
 const TOAST_TIMEOUT_MS = 4000;
@@ -78,6 +78,8 @@ export default function useTeamPage() {
 
       const formattedMembers = sortedMembers.map((m) => ({
         id: m.id,
+        userId: m.userId,
+        teamId: m.teamId,
         name: m.fullName || m.name || "User",
         role: m.role || "Member",
         isOwner: String(m.role).toLowerCase() === "owner",
@@ -136,35 +138,41 @@ export default function useTeamPage() {
     [refetch, showToast],
   );
 
-  // Add Member via POST /api/Team using real SQL Server Team.Id
+  // Add Member via POST /api/teams/{teamId}/members/{userId}/invite
   const handleAddMemberToTeam = useCallback(
     async (memberData) => {
       if (!activeAddMemberTeam) return;
 
-      const payload = {
-        userId: Number(memberData.userId) || 1,
-        teamId: Number(activeAddMemberTeam.id), // Real SQL Server Team.Id
-        fullName: memberData.name || memberData.fullName || "Team Member",
-        role: memberData.role || "Member",
-      };
+      const teamId = Number(activeAddMemberTeam.id); // Real SQL Server Team.Id
+      const userId = Number(memberData.userId);
+
+      if (!userId) {
+        showToast("error", "Invalid user ID.");
+        return;
+      }
 
       try {
-        await inviteMember(payload);
+        await inviteMember(teamId, userId);
         showToast(
           "success",
-          `${payload.fullName} added to ${activeAddMemberTeam.name}!`,
+          `User invited to ${activeAddMemberTeam.name} successfully!`,
         );
       } catch (err) {
-        console.warn("POST /api/Team error:", err);
+        console.warn("Invite error:", err);
         if (err?.response?.status === 403) {
           showToast(
             "error",
-            "You don't have permission to add members to this team.",
+            "You don't have permission to invite members to this team.",
+          );
+        } else if (err?.response?.status === 409) {
+          showToast(
+            "error",
+            err.response.data?.message || "User is already a member or has a pending invitation.",
           );
         } else {
           showToast(
             "error",
-            "Failed to add member to team.",
+            "Failed to invite user to team.",
           );
         }
       }
@@ -222,11 +230,15 @@ export default function useTeamPage() {
 
   const handleCreateTaskFromModal = useCallback(
     async (taskPayload) => {
-      await addTask(taskPayload);
+      const payloadWithTeam = {
+        ...taskPayload,
+        teamId: activeAssignTaskMember?.teamId || null,
+      };
+      await addTask(payloadWithTeam);
       setActiveAssignTaskMember(null);
       showToast("success", "Task created and assigned!");
     },
-    [addTask, showToast],
+    [addTask, showToast, activeAssignTaskMember],
   );
 
   // Delete Team via DELETE /api/teams/{id}
@@ -239,16 +251,13 @@ export default function useTeamPage() {
       setActiveDeleteTeam(null);
     } catch (err) {
       console.error("DELETE /api/teams error:", err);
-      if (err?.response?.status === 409) {
-        showToast(
-          "error",
-          "This team still contains tasks. Please move or delete all remaining tasks before deleting the team.",
-        );
+      if (err?.response?.status === 403) {
+        showToast("error", "You don't have permission to delete this team.");
       } else {
         showToast("error", "Failed to delete team.");
       }
     }
-  }, [activeDeleteTeam, refetch, showToast]);
+  }, [activeDeleteTeam, deleteTeam, refetch, showToast]);
 
   return {
     // data

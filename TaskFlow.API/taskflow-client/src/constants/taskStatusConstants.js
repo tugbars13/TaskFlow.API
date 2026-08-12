@@ -7,12 +7,12 @@ export const TASK_STATUS_CONFIG = {
   IN_PROGRESS: {
     label: "In Progress",
     color: "bg-primary",
-    strokeColor: "#7C3AED",
+    strokeColor: "#D22B2B",
   },
   TODO: {
     label: "To Do",
-    color: "bg-purple-400",
-    strokeColor: "#c084fc",
+    color: "bg-secondary",
+    strokeColor: "#9CA3AF",
   },
   BACKLOG: {
     label: "Backlog",

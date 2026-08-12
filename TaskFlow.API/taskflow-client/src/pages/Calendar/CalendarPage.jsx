@@ -41,8 +41,7 @@ export default function CalendarPage() {
     isSelectTeamModalOpen,
     setIsSelectTeamModalOpen,
     handleSelectTeam,
-  } = useCalenda;
-  rPage();
+  } = useCalendarPage();
 
   if (loading) {
     return (
@@ -76,21 +75,21 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-xl pb-xl transition-all duration-300">
+    <div className="space-y-4 pb-4 transition-all duration-300 w-full overflow-hidden">
       {/* 1. Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant/10 pb-lg">
-        <div className="flex items-center gap-md">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center apple-shadow shrink-0">
-            <span className="material-symbols-outlined text-[28px]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/10 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary flex items-center justify-center apple-shadow shrink-0">
+            <span className="material-symbols-outlined text-[24px]">
               calendar_month
             </span>
           </div>
           <div className="flex flex-col justify-center">
-            <h1 className="font-display-lg text-display-lg font-extrabold text-on-surface leading-none">
+            <h1 className="text-2xl font-extrabold text-on-surface leading-none tracking-tight">
               Calendar
             </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1 leading-none">
-              Your schedule at a glance.
+            <p className="text-sm text-on-surface-variant mt-1 leading-none">
+              Your schedule at a glance
             </p>
           </div>
         </div>
@@ -107,7 +106,7 @@ export default function CalendarPage() {
               chevron_left
             </span>
           </button>
-          <span className="font-headline-md text-headline-md font-bold text-on-surface px-md min-w-[160px] text-center select-none">
+          <span className="text-lg font-bold text-on-surface px-4 min-w-[140px] text-center select-none">
             {MONTHS[currentMonthIndex]} {currentYear}
           </span>
           <button
@@ -124,7 +123,7 @@ export default function CalendarPage() {
       </div>
 
       {/* 2. Main Two-Column Layout (65% / 35%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT SIDE (65% / 8 Columns): Large Monthly Calendar */}
         <div className="lg:col-span-8">
           <CalendarGrid
@@ -138,7 +137,7 @@ export default function CalendarPage() {
         </div>
 
         {/* RIGHT SIDEBAR (35% / 4 Columns): Order 1. Upcoming Deadlines, 2. Today's Schedule */}
-        <div className="lg:col-span-4 space-y-xl">
+        <div className="lg:col-span-4 space-y-6">
           {/* Card 1: Upcoming Deadlines */}
           <UpcomingDeadlinesCard
             deadlines={upcomingDeadlines}
@@ -183,3 +182,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+

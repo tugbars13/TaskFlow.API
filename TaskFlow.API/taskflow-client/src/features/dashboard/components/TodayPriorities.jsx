@@ -64,7 +64,7 @@ export default function TodayPriorities({
         </button>
       </div>
 
-      <div className="flex-1 border-t border-outline-variant/10 divide-y divide-outline-variant/10">
+      <div className="flex flex-col gap-3">
         {displayedTasks.length === 0 ? (
           <div className="py-xl flex flex-col items-center justify-center text-center">
             <span className="material-symbols-outlined text-outline mb-sm text-[24px]">
@@ -88,6 +88,8 @@ export default function TodayPriorities({
               priority={task.priority}
               dueDate={task.dueDate}
               assignee={task.assignee}
+              isCompleted={task.isCompleted}
+              status={task.status}
             />
           ))
         )}

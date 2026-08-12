@@ -17,6 +17,8 @@ public class TaskDto
     public int AttachmentsCount { get; set; }
     public int? AssignedUserId { get; set; }
     public string? AssignedUserFullName { get; set; }
+    public string? AssignedUserAvatar { get; set; }
+    public List<AssigneeDto>? Assignees { get; set; } = new List<AssigneeDto>();
     public int? TeamId { get; set; }
     public string? TeamName { get; set; }
 }

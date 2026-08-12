@@ -14,7 +14,7 @@ function RoleBadge({ role }) {
   }
   if (r === "admin") {
     return (
-      <span className="inline-flex items-center gap-[3px] text-[11px] font-bold px-[10px] py-[3px] rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300">
+      <span className="inline-flex items-center gap-[3px] text-[11px] font-bold px-[10px] py-[3px] rounded-xl bg-primary/10 text-primary dark:text-primary">
         🛡 Admin
       </span>
     );
@@ -228,7 +228,7 @@ export default function TeamCard({
                                 }}
                                 className="w-full text-left px-md py-xs text-xs font-semibold text-on-surface hover:bg-surface-container-high rounded-xl flex items-center gap-xs transition-colors cursor-pointer"
                               >
-                                <span className="material-symbols-outlined text-[16px] text-purple-600">manage_accounts</span>
+                                <span className="material-symbols-outlined text-[16px] text-primary">manage_accounts</span>
                                 Change Role
                               </button>
                             )}

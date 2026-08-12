@@ -5,7 +5,7 @@ import {
   inviteTeamMember,
   updateTeamMember,
   deleteTeamMember,
-} from "../api/teamservice.Js";
+} from "../api/teamService.js";
 
 export default function useTeam() {
   const [teams, setTeams] = useState([]);
@@ -36,6 +36,16 @@ export default function useTeam() {
 
   useEffect(() => {
     fetchData();
+    
+    // Custom event listener for external triggers (like accepting an invite)
+    const handleRefresh = () => {
+      fetchData();
+    };
+    
+    window.addEventListener("teamRefreshRequired", handleRefresh);
+    return () => {
+      window.removeEventListener("teamRefreshRequired", handleRefresh);
+    };
   }, [fetchData]);
 
   const filteredMembers = useMemo(() => {
@@ -73,9 +83,11 @@ export default function useTeam() {
     return { totalMembers, activeNow, openInvitations };
   }, [members]);
 
-  const inviteMember = useCallback(async (newMemberData) => {
-    const created = await inviteTeamMember(newMemberData);
-    setMembers((prev) => [created, ...prev]);
+  const inviteMember = useCallback(async (teamId, userId) => {
+    const created = await inviteTeamMember(teamId, userId);
+    // Note: Since this is an invite, the user is pending and shouldn't appear instantly as an active member.
+    // We can just rely on the next refresh or omit them from the 'active' list for now.
+    // If you want to show pending members, you can add them to state here.
     return true;
   }, []);
 

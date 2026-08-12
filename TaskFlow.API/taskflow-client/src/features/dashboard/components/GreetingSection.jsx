@@ -4,12 +4,11 @@ export default function GreetingSection() {
   const dateString = formatLongDate();
 
   return (
-    <header className="mb-md">
-      <h1 className="text-display-lg font-bold text-on-surface tracking-tight leading-tight">
+    <header className="mb-8">
+      <h1 className="text-2xl font-extrabold text-on-surface leading-none tracking-tight">
         Today
       </h1>
-
-      <p className="text-body-lg text-on-surface-variant mt-xs">{dateString}</p>
+      <p className="text-sm text-on-surface-variant mt-1.5 leading-none font-medium">{dateString}</p>
     </header>
   );
 }

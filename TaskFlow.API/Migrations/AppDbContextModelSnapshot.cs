@@ -51,6 +51,68 @@ namespace TaskFlow.API.Migrations
                     b.ToTable("ActivityLogs");
                 });
 
+            modelBuilder.Entity("TaskFlow.API.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("RelatedId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("TaskFlow.API.Models.TaskAssignee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TaskId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("TaskAssignees");
+                });
+
             modelBuilder.Entity("TaskFlow.API.Models.Team", b =>
                 {
                     b.Property<int>("Id")
@@ -92,6 +154,9 @@ namespace TaskFlow.API.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
 
@@ -100,9 +165,10 @@ namespace TaskFlow.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TeamId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TeamId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("TeamMembers");
                 });
@@ -115,8 +181,17 @@ namespace TaskFlow.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -209,6 +284,36 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TaskFlow.API.Models.Notification", b =>
+                {
+                    b.HasOne("TaskFlow.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TaskFlow.API.Models.TaskAssignee", b =>
+                {
+                    b.HasOne("TaskItem", "Task")
+                        .WithMany("Assignees")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskFlow.API.Models.User", "User")
+                        .WithMany("TaskAssignees")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TaskFlow.API.Models.TeamMember", b =>
                 {
                     b.HasOne("TaskFlow.API.Models.Team", "Team")
@@ -259,9 +364,16 @@ namespace TaskFlow.API.Migrations
 
             modelBuilder.Entity("TaskFlow.API.Models.User", b =>
                 {
+                    b.Navigation("TaskAssignees");
+
                     b.Navigation("Tasks");
 
                     b.Navigation("TeamMemberships");
+                });
+
+            modelBuilder.Entity("TaskItem", b =>
+                {
+                    b.Navigation("Assignees");
                 });
 #pragma warning restore 612, 618
         }

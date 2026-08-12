@@ -35,7 +35,7 @@ export default function RegisterBrandPanel() {
       {/* Social Proof */}
       <div className="relative z-10 glass-panel p-lg rounded-xl flex items-center justify-between">
         <div className="flex -space-x-3">
-          {TEAM_MEMBERS.map((member) => (
+          {AVATAR_PLACEHOLDERS.map((member) => (
             <div
               key={member.id}
               className={cn(

@@ -49,7 +49,7 @@ export default function TaskStatusDistribution() {
     (item) => item.label === TASK_STATUS_CONFIG.COMPLETED.label,
   );
   return (
-    <Card variant="default" className="col-span-12 lg:col-span-6">
+    <Card variant="default" className="col-span-12 md:col-span-6 lg:col-span-4">
       <div className="flex justify-between items-center mb-5 border-b border-outline-variant/10 pb-4 h-8">
         <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[22px]">

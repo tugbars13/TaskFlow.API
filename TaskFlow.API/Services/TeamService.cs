@@ -11,11 +11,107 @@ namespace TaskFlow.API.Services
     {
         private readonly ITeamRepository _repository;
         private readonly AppDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public TeamService(ITeamRepository repository, AppDbContext context)
+        public TeamService(ITeamRepository repository, AppDbContext context, INotificationService notificationService)
         {
             _repository = repository;
             _context = context;
+            _notificationService = notificationService;
+        }
+
+        public async Task<(bool Success, string Message)> InviteUserAsync(int teamId, int userIdToInvite, int currentUserId)
+        {
+            var userExists = await _context.Users.AnyAsync(u => u.Id == userIdToInvite);
+            if (!userExists) return (false, "UserNotFound");
+
+            if (userIdToInvite == currentUserId) return (false, "CannotInviteSelf");
+
+            var existingMember = await _context.TeamMembers.FirstOrDefaultAsync(m => m.TeamId == teamId && m.UserId == userIdToInvite);
+            if (existingMember != null)
+            {
+                if (existingMember.Status == TeamMemberStatus.Accepted) return (false, "AlreadyMember");
+                if (existingMember.Status == TeamMemberStatus.Pending) return (false, "AlreadyInvited");
+                if (existingMember.Status == TeamMemberStatus.Rejected)
+                {
+                    existingMember.Status = TeamMemberStatus.Pending;
+                    _context.TeamMembers.Update(existingMember);
+                }
+            }
+            else
+            {
+                var newMember = new TeamMember
+                {
+                    TeamId = teamId,
+                    UserId = userIdToInvite,
+                    Role = TeamRole.Member,
+                    Status = TeamMemberStatus.Pending,
+                    JoinedDate = DateTime.UtcNow
+                };
+                _context.TeamMembers.Add(newMember);
+            }
+
+            var team = await _context.Teams.FindAsync(teamId);
+            var sender = await _context.Users.FindAsync(currentUserId);
+            if (team != null && sender != null)
+            {
+                // Mevcut okunmamÄ±ÅŸ (Unread) eski davet bildirimlerini bul ve okundu yap
+                var oldNotifications = await _context.Notifications
+                    .Where(n => n.UserId == userIdToInvite && n.Type == "TeamInvitation" && n.RelatedId == teamId && !n.IsRead)
+                    .ToListAsync();
+                
+                foreach (var oldNotif in oldNotifications)
+                {
+                    oldNotif.IsRead = true;
+                    _context.Notifications.Update(oldNotif);
+                }
+
+                await _notificationService.SendNotificationAsync(
+                    userIdToInvite, 
+                    "Yeni Takım Daveti", 
+                    $"{sender.FullName} sizi {team.Name} grubuna davet etti.",
+                    type: "TeamInvitation",
+                    relatedId: teamId);
+            }
+
+            await _context.SaveChangesAsync();
+            return (true, "Success");
+        }
+
+        public async Task<(bool Success, string Message)> AcceptInvitationAsync(int teamId, int userId)
+        {
+            var member = await _context.TeamMembers
+                .FirstOrDefaultAsync(m => m.TeamId == teamId && m.UserId == userId);
+
+            if (member == null)
+                return (false, "NotFound");
+
+            if (member.Status != TeamMemberStatus.Pending)
+                return (false, "NotPending");
+
+            member.Status = TeamMemberStatus.Accepted;
+            _context.TeamMembers.Update(member);
+            await _context.SaveChangesAsync();
+
+            return (true, "Success");
+        }
+
+        public async Task<(bool Success, string Message)> RejectInvitationAsync(int teamId, int userId)
+        {
+            var member = await _context.TeamMembers
+                .FirstOrDefaultAsync(m => m.TeamId == teamId && m.UserId == userId);
+
+            if (member == null)
+                return (false, "NotFound");
+
+            if (member.Status != TeamMemberStatus.Pending)
+                return (false, "NotPending");
+
+            member.Status = TeamMemberStatus.Rejected;
+            _context.TeamMembers.Update(member);
+            await _context.SaveChangesAsync();
+
+            return (true, "Success");
         }
 
         // ── TeamMembers ────────────────────────────────────────────────────────
@@ -24,7 +120,7 @@ namespace TaskFlow.API.Services
         {
             var members = await _repository.GetAllAsync();
 
-            return members.Select(x => new TeamMemberDto
+            return members.Where(x => x.Status == TeamMemberStatus.Accepted).Select(x => new TeamMemberDto
             {
                 Id = x.Id,
                 TeamId = x.TeamId,
@@ -43,7 +139,7 @@ namespace TaskFlow.API.Services
         {
             var members = await _repository.GetMembersByTeamIdAsync(teamId);
 
-            return members.Select(x => new TeamMemberDto
+            return members.Where(x => x.Status == TeamMemberStatus.Accepted).Select(x => new TeamMemberDto
             {
                 Id = x.Id,
                 TeamId = x.TeamId,
@@ -165,7 +261,7 @@ namespace TaskFlow.API.Services
             var teams = await _context.Teams
                 .Include(t => t.Members)
                     .ThenInclude(m => m.User)
-                .Where(t => t.Members.Any(m => m.UserId == currentUserId) || t.CreatedByUserId == currentUserId)
+                .Where(t => t.Members.Any(m => m.UserId == currentUserId && m.Status == TeamMemberStatus.Accepted) || t.CreatedByUserId == currentUserId)
                 .ToListAsync();
 
             var result = new List<TeamDto>();
@@ -302,7 +398,7 @@ namespace TaskFlow.API.Services
         public async Task<string?> GetUserRoleInTeamAsync(int teamId, int userId)
         {
             var member = await _context.TeamMembers
-                .FirstOrDefaultAsync(m => m.TeamId == teamId && m.UserId == userId);
+                .FirstOrDefaultAsync(m => m.TeamId == teamId && m.UserId == userId && m.Status == TeamMemberStatus.Accepted);
 
             if (member != null)
                 return member.Role.ToString();

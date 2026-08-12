@@ -1,4 +1,4 @@
-﻿using TaskFlow.API.DTOs;
+using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
 using BCrypt.Net;
@@ -82,6 +82,31 @@ public class AuthService : IAuthService
         return MapToUserDto(user);
     }
 
+    public async Task<UserDto?> UpdateProfileAsync(int userId, UpdateProfileDto dto)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return null;
+
+        user.FullName = dto.FullName;
+        user.DisplayName = dto.DisplayName;
+        user.Bio = dto.Bio;
+
+        await _userRepository.SaveChangesAsync();
+
+        return MapToUserDto(user);
+    }
+
+    public async Task<bool> DeleteAccountAsync(int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return false;
+
+        await _userRepository.DeleteUserWithRelationsAsync(userId);
+        return true;
+    }
+
     // BU METOT EKSİKSE, EN ALTA EKLE
     private static UserDto MapToUserDto(User user)
     {
@@ -98,7 +123,10 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             FirstName = firstName,
             LastName = lastName,
-            Email = user.Email
+            Email = user.Email,
+            DisplayName = user.DisplayName,
+            Bio = user.Bio,
+            AvatarUrl = user.AvatarUrl
         };
     }
 }

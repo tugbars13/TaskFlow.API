@@ -18,3 +18,9 @@ export const getCurrentUser = async () => {
 
   return response.data;
 };
+
+export const deleteAccount = async () => {
+  // Using the /api/auth/me endpoint we created in AuthController
+  const response = await api.delete('/auth/me');
+  return response.data;
+};

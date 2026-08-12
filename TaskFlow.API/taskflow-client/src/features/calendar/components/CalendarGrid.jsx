@@ -56,7 +56,7 @@ export default function CalendarGrid({
       indicators.push({
         label: "Today",
         color:
-          "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
+          "bg-primary/10 text-primary dark:text-primary border-primary/30",
       });
     }
 
@@ -95,9 +95,9 @@ export default function CalendarGrid({
   };
 
   return (
-    <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant/10 p-6 apple-shadow overflow-hidden">
+    <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-4 apple-shadow overflow-hidden">
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid grid-cols-7 gap-1.5">
         {WEEK_DAYS.map((day) => (
           <div
             key={day}
@@ -109,12 +109,12 @@ export default function CalendarGrid({
       </div>
 
       {/* Month Grid */}
-      <div className="grid grid-cols-7 gap-3 pt-4">
+      <div className="grid grid-cols-7 gap-1.5 pt-2">
         {/* Previous Month Overflow Days */}
         {prevOverflowDays.map((d) => (
           <div
             key={`prev-${d}`}
-            className="h-[128px] p-3 rounded-2xl bg-background-canvas/30 text-on-surface-variant/20 text-xs font-medium pointer-events-none opacity-40 select-none"
+            className="h-24 p-2 rounded-xl bg-background-canvas/30 text-on-surface-variant/20 text-xs font-medium pointer-events-none opacity-40 select-none"
           >
             {d}
           </div>
@@ -140,29 +140,29 @@ export default function CalendarGrid({
                 e.stopPropagation();
                 onDoubleClickDay?.(day);
               }}
-              className={`h-[128px] p-3 rounded-2xl transition-all duration-200 flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 hover:shadow-md ${
+              className={`h-24 p-2 rounded-xl transition-all duration-200 flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 hover:shadow-md ${
                 isSelected
-                  ? "border border-purple-500/50 bg-purple-500/[0.05] shadow-xs"
+                  ? "border border-primary/50 bg-primary/[0.05] shadow-sm"
                   : isToday
-                    ? "border border-purple-500/40 bg-purple-500/[0.03]"
+                    ? "border border-primary/40 bg-primary/[0.03]"
                     : "bg-surface-container-lowest hover:bg-surface-container-high/40 border border-outline-variant/10"
               }`}
             >
               {/* Top Bar inside Cell */}
               <div className="flex items-center justify-between pointer-events-none">
                 <span
-                  className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                  className={`text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
                     isToday
-                      ? "bg-purple-600 text-white shadow-sm"
+                      ? "bg-primary text-white shadow-sm"
                       : isSelected
-                        ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+                        ? "bg-primary/20 text-primary dark:text-primary"
                         : "text-on-surface group-hover:text-primary"
                   }`}
                 >
                   {day}
                 </span>
                 {isToday && (
-                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
                 )}
               </div>
 
@@ -190,7 +190,7 @@ export default function CalendarGrid({
         {nextOverflowDays.map((d) => (
           <div
             key={`next-${d}`}
-            className="h-[128px] p-3 rounded-2xl bg-background-canvas/30 text-on-surface-variant/20 text-xs font-medium pointer-events-none opacity-40 select-none"
+            className="h-24 p-2 rounded-xl bg-background-canvas/30 text-on-surface-variant/20 text-xs font-medium pointer-events-none opacity-40 select-none"
           >
             {d}
           </div>

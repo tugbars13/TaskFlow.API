@@ -69,7 +69,7 @@ export default function TasksPage() {
         selectedTaskDetails && canEditTask(selectedTaskDetails);
 
   return (
-    <div className="space-y-xl pb-xl transition-all duration-300">
+    <div className="space-y-4 pb-4 transition-all duration-300 w-full overflow-hidden">
       {/* 1. Project Header & Controls */}
           <TasksHeader
               isTeamBoard={isTeamBoard}
@@ -91,21 +91,22 @@ export default function TasksPage() {
         />
     ) : (
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg items-start min-h-[600px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                       {columns.map((column) => (
                           <KanbanColumn
-                              key={column.statusId}
-                              title={column.title}
-                              statusId={column.statusId}
-                              count={column.tasks.length}
-                              tasks={column.tasks}
-                              color={column.color}
-                              onTaskClick={setSelectedTaskDetails}
-                              onToggleStatus={handleToggleStatus}
-                              onAddTask={canCreateTasks ? handleOpenNewTaskModal : null}
-                              onDropTask={handleDragDropTask}
-                              canEditTask={canEditTask}
-                          />
+                                key={column.statusId}
+                                title={column.title}
+                                statusId={column.statusId}
+                                count={column.tasks.length}
+                                tasks={column.tasks}
+                                color={column.color}
+                                onTaskClick={setSelectedTaskDetails}
+                                onToggleStatus={handleToggleStatus}
+                                onAddTask={canCreateTasks ? handleOpenNewTaskModal : null}
+                                onDropTask={handleDragDropTask}
+                                canEditTask={canEditTask}
+                                isTeamBoard={isTeamBoard}
+                            />
                       ))}
         </div>
       )}

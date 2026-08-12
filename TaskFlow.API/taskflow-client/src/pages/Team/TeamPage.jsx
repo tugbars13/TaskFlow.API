@@ -8,7 +8,7 @@ import ChangeRoleModal from "@/features/teams/components/ChangeRoleModal";
 import RemoveMemberModal from "@/features/teams/components/RemoveMemberModal";
 import DeleteTeamModal from "@/features/teams/components/DeleteTeamModal";
 import TaskFormModal from "@/features/tasks/components/TaskFormModal";
-import { PageHeader, PageLoading, PageError } from "@/components/common";
+import { PageLoading, PageError } from "@/components/common";
 
 export default function TeamPage() {
   const {
@@ -56,7 +56,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-xl pb-xl transition-all duration-300 relative w-full max-w-full overflow-x-hidden">
+    <div className="space-y-xl pb-xl transition-all duration-300 relative">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div
@@ -75,11 +75,6 @@ export default function TeamPage() {
 
       {/* 1. Header Toolbar */}
       <TeamToolbar onCreateTeamClick={() => setIsCreateModalOpen(true)} />
-      <PageHeader
-        icon="groups"
-        title="Teams"
-        subtitle="Manage teams, members and collaboration."
-      />
 
       {/* 2. Teams Statistics Overview */}
       <TeamStats stats={stats} />

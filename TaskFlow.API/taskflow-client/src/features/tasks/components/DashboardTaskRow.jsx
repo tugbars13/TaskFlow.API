@@ -1,16 +1,7 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDateDDMMYYYY } from "@/utils/dateUtils";
-const PRIORITY_DOT_COLORS = Object.freeze({
-  high: "bg-status-error",
-  3: "bg-status-error",
 
-  medium: "bg-status-progress",
-  2: "bg-status-progress",
-
-  low: "bg-secondary",
-  1: "bg-secondary",
-});
 export default function DashboardTaskRow({
   id,
   title,
@@ -19,12 +10,11 @@ export default function DashboardTaskRow({
   priority,
   dueDate,
   assignee,
+  isCompleted,
+  status,
   onClick,
 }) {
   const navigate = useNavigate();
-
-  const getPriorityDot = (priority) =>
-    PRIORITY_DOT_COLORS[priority?.toLowerCase()] ?? "bg-status-progress";
 
   const handleCardClick = useCallback(
     (event) => {
@@ -32,75 +22,66 @@ export default function DashboardTaskRow({
         onClick(event);
         return;
       }
-
       navigate("/tasks");
     },
     [navigate, onClick],
   );
 
   const formattedDate = dueDate ? formatDateDDMMYYYY(dueDate) : null;
-  const taskIdDisplay = id != null ? `TF-${id}` : null;
+  const statusDisplay = status || (isCompleted ? "Completed" : "In Progress");
 
   return (
     <button
       type="button"
       onClick={handleCardClick}
-      className="w-full py-md px-sm hover:bg-surface-container-low/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-150 group cursor-pointer flex items-center justify-between text-left"
+      className="w-full py-3.5 px-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 apple-shadow hover:border-primary/30 hover:bg-surface-container-low/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-all duration-200 group cursor-pointer flex items-center justify-between text-left gap-4 h-[72px]"
     >
-      {/* Left Content Area */}
-      <div className="flex items-start gap-md flex-1 min-w-0">
-        {/* Subtle Checkbox Icon */}
-        <div className="mt-xs text-outline-variant/60 group-hover:text-primary transition-colors shrink-0">
-          <span
-            className="material-symbols-outlined text-headline-lg-mobile"
-            aria-hidden="true"
-          >
-            check_box_outline_blank
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className={`mt-0.5 shrink-0 transition-colors ${isCompleted ? "text-emerald-500" : "text-outline-variant/60 group-hover:text-primary"}`}>
+          <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
+            {isCompleted ? "check_box" : "check_box_outline_blank"}
           </span>
         </div>
 
         <div className="flex-1 min-w-0">
-          <h4 className="text-body-lg font-medium text-on-surface group-hover:text-primary transition-colors truncate leading-tight">
+          <h4 className={`text-sm font-semibold truncate leading-tight transition-colors ${isCompleted ? "text-on-surface-variant line-through" : "text-on-surface group-hover:text-primary"}`}>
             {title}
           </h4>
-          <div className="flex items-center gap-sm mt-xs text-body-sm text-on-surface-variant/70 truncate">
-            <span className="flex items-center gap-xs">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${getPriorityDot(priority)}`}
-                aria-hidden="true"
-              />
+          <div className="flex flex-wrap items-center gap-x-3 mt-1.5 text-xs text-on-surface-variant font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-primary'}`} />
               Task
             </span>
-            {taskIdDisplay && (
-              <>
+            {formattedDate && (
+              <span className="flex items-center gap-1.5">
                 <span>•</span>
-                <span>{taskIdDisplay}</span>
-              </>
+                {formattedDate}
+              </span>
             )}
             {teamName && (
-              <>
+              <span className="flex items-center gap-1.5">
                 <span>•</span>
-                <span>{teamName}</span>
-              </>
+                {teamName}
+              </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Right Side: Avatar & Date */}
-      <div className="flex items-center gap-md shrink-0 pl-md">
-        {/* Subtle Avatar */}
-        {assignee && (
-          <div className="w-6 h-6 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center text-label-sm font-bold text-on-surface-variant">
-            {assignee[0]?.toUpperCase()}
-          </div>
-        )}
-        {/* Subtle Date */}
-        {formattedDate && (
-          <div className="text-body-sm text-on-surface-variant/60 text-right">
-            {formattedDate}
-          </div>
-        )}
+      <div className="flex items-center justify-end gap-3 shrink-0 ml-auto">
+        <div className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center justify-center ${
+          isCompleted 
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
+            : "bg-surface-container-high text-on-surface-variant border-outline-variant/20"
+        }`}>
+          {statusDisplay}
+        </div>
+        
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors hover:bg-surface-container-highest">
+          <span className="material-symbols-outlined text-[20px]">
+            more_vert
+          </span>
+        </div>
       </div>
     </button>
   );

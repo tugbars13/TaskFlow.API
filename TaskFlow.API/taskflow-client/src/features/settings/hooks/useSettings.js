@@ -4,14 +4,15 @@ import {
   updateProfile,
   updateWorkspace,
 } from "../api/settingsService";
+import useAuth from "@/features/auth/hooks/useAuth";
 
 const SAVE_STATUS_DURATION = 3000;
 export default function useSettings() {
   const [settings, setSettings] = useState(null);
-  const [activeSection, setActiveSection] = useState("Profile");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
+  const { refreshProfile } = useAuth();
 
   const fetchSettings = useCallback(async () => {
     setLoading(true);
@@ -49,6 +50,10 @@ export default function useSettings() {
         setSaveStatus("success");
         resetSaveStatus();
 
+        if (section === "profile") {
+          await refreshProfile();
+        }
+
         return true;
       } catch {
         setSaveStatus("error");
@@ -77,8 +82,6 @@ export default function useSettings() {
 
   return {
     settings,
-    activeSection,
-    setActiveSection,
     loading,
     error,
     saveStatus,

@@ -1,18 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 import { getTeamMembers } from "@/features/teams/api/teamService";
+
 const DEFAULT_FORM_VALUES = Object.freeze({
   title: "",
   description: "",
   priority: "Medium",
   category: "General",
   dueDate: "",
-  assigneeId: "",
+  assigneeIds: [],
 });
+
 const DEFAULT_CATEGORIES = [
   "General",
   "Design System",
@@ -31,12 +33,19 @@ export default function TaskFormModal({
   teamId = null,
 }) {
   const [formData, setFormData] = useState(DEFAULT_FORM_VALUES);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [touched, setTouched] = useState({});
+
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
+
   useEffect(() => {
     if (isOpen) {
       fetchAssignees();
@@ -50,16 +59,7 @@ export default function TaskFormModal({
       setTeamMembers(Array.isArray(members) ? members : []);
     } catch (err) {
       console.warn("Failed to load assignees from Users API:", err);
-      setTeamMembers([
-        { id: 1, userId: 1, fullName: "Tuğba Bars", role: "Owner" },
-        {
-          id: 2,
-          userId: 2,
-          fullName: "Ahmet Korkmaz",
-          role: "Backend Developer",
-        },
-        { id: 3, userId: 3, fullName: "Ayşe Demir", role: "Frontend Lead" },
-      ]);
+      setTeamMembers([]);
     } finally {
       setLoadingMembers(false);
     }
@@ -71,15 +71,20 @@ export default function TaskFormModal({
       setSubmitting(false);
       setTouched({});
 
+      let initialAssigneeIds = [];
+      if (initialData?.assignees && initialData.assignees.length > 0) {
+        initialAssigneeIds = initialData.assignees.map((a) => String(a.id));
+      } else if (initialData?.assignedUserId) {
+        initialAssigneeIds = [String(initialData.assignedUserId)];
+      }
+
       setFormData({
-        title: initialData.title || "",
-        description: initialData.description || "",
-        priority: initialData.priority || "Medium",
-        category: initialData.category || "General",
-        dueDate: initialData.dueDate ? initialData.dueDate.slice(0, 10) : "",
-        assigneeId: initialData.assignedUserId
-          ? String(initialData.assignedUserId)
-          : "",
+        title: initialData?.title || "",
+        description: initialData?.description || "",
+        priority: initialData?.priority || "Medium",
+        category: initialData?.category || "General",
+        dueDate: initialData?.dueDate ? initialData.dueDate.slice(0, 10) : "",
+        assigneeIds: initialAssigneeIds,
       });
     }
   }, [initialData, isOpen]);
@@ -112,19 +117,13 @@ export default function TaskFormModal({
     setSubmitError(null);
 
     try {
-      const selectedAssignee = teamMembers.find(
-        (m) => String(m.userId) === String(formData.assigneeId),
-      );
       const payload = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         priority: formData.priority,
         category: formData.category,
         dueDate: formData.dueDate,
-        assignedUserId: formData.assigneeId
-          ? Number(formData.assigneeId)
-          : null,
-        assignedUser: selectedAssignee ? selectedAssignee.fullName : null,
+        assigneeIds: formData.assigneeIds.map(Number),
       };
 
       await onSubmit(payload);
@@ -236,25 +235,58 @@ export default function TaskFormModal({
             error={touched.dueDate ? errors.dueDate : null}
           />
 
-          {/* Optional Assigned User Dropdown */}
-          <div className="space-y-xs">
+          {/* Assignees (Multi-Select) */}
+          <div className="space-y-xs md:col-span-2">
             <label className="block font-label-md text-label-md font-semibold text-on-surface">
-              Assigned User (Optional)
+              Assigned Users (Optional)
             </label>
-            <select
-              value={formData.assigneeId}
-              onChange={(e) => handleFieldChange("assigneeId", e.target.value)}
-              disabled={submitting || loadingMembers}
-              className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50 cursor-pointer"
-            >
-              <option value="">-- Unassigned (Optional) --</option>
-              {teamMembers.map((member) => (
-                <option key={member.id} value={member.userId}>
-                  👤 {member.fullName || member.name}{" "}
-                  {member.role ? `(${member.role})` : ""}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-sm max-h-48 overflow-y-auto bg-surface-container-high/50 p-sm rounded-2xl">
+              {teamMembers
+                .filter(
+                  (v, i, a) =>
+                    a.findIndex((t) => t.userId === v.userId) === i &&
+                    v.status === 1 // Sadece Accepted (1) olanlar
+                )
+                .map((member) => {
+                  const isSelected = formData.assigneeIds.includes(
+                    String(member.userId)
+                  );
+                  return (
+                    <label
+                      key={member.id}
+                      className={`flex items-center gap-2 p-2 rounded-xl cursor-pointer transition-colors border ${
+                        isSelected
+                          ? "bg-primary/10 border-primary"
+                          : "bg-surface border-outline-variant hover:bg-surface-container"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          const idStr = String(member.userId);
+                          setFormData((prev) => {
+                            const newIds = e.target.checked
+                              ? [...prev.assigneeIds, idStr]
+                              : prev.assigneeIds.filter((id) => id !== idStr);
+                            return { ...prev, assigneeIds: newIds };
+                          });
+                        }}
+                        disabled={submitting || loadingMembers}
+                        className="rounded border-outline-variant text-primary focus:ring-primary"
+                      />
+                      <span className="text-body-sm font-medium">
+                        {member.fullName || member.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              {teamMembers.length === 0 && !loadingMembers && (
+                <div className="col-span-full text-center text-body-sm text-outline p-2">
+                  No accepted team members available.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -277,7 +309,7 @@ export default function TaskFormModal({
             {submitting ? (
               <span className="flex items-center gap-xs">
                 <Spinner size="sm" />
-                Creating Task...
+                Saving...
               </span>
             ) : initialData && initialData.id ? (
               "Save Changes"

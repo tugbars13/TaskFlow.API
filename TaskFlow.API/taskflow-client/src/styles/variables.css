@@ -1,56 +1,80 @@
 @theme {
-  --color-surface-tint: #6750a4;
-  --color-on-secondary-fixed: #001a42;
-  --color-surface-dim: #ded8df;
-  --color-background-canvas: #F9F9FB;
-  --color-border-subtle: #e6e0e9;
-  --color-on-secondary-container: #002c66;
-  --color-inverse-on-surface: #f5eff6;
-  --color-surface-container-low: #f8f2f9;
-  --color-on-secondary: #ffffff;
-  --color-surface-container-high: #ece6ed;
-  --color-on-primary-fixed: #22005c;
-  --color-on-secondary-fixed-variant: #004395;
-  --color-surface: #fef7ff;
-  --color-on-primary-fixed-variant: #4f378a;
-  --color-on-primary-container: #c0a7ff;
-  --color-secondary-container: #5b94fd;
-  --color-outline: #7a7582;
-  --color-surface-glass: rgba(253, 247, 255, 0.8);
-  --color-tertiary-fixed-dim: #e7c265;
-  --color-error-container: #ffdad6;
-  --color-surface-bright: #fef7ff;
-  --color-on-tertiary-fixed: #241a00;
-  --color-secondary-fixed-dim: #adc6ff;
-  --color-surface-container: #f2ecf3;
-  --color-secondary: #085ac0;
-  --color-on-surface-variant: #494551;
-  --color-on-tertiary: #ffffff;
-  --color-background: #fef7ff;
-  --color-on-error: #ffffff;
-  --color-on-surface: #1d1b20;
-  --color-primary-fixed: #e9ddff;
-  --color-on-background: #1d1b20;
-  --color-tertiary-fixed: #ffdf93;
-  --color-on-error-container: #93000a;
-  --color-status-progress: #c9a74d;
-  --color-primary-container: #4f378a;
-  --color-on-tertiary-fixed-variant: #594400;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-highest: #e6e1e8;
-  --color-error: #ba1a1a;
-  --color-tertiary-container: #c9a74d;
-  --color-primary-fixed-dim: #d0bcff;
-  --color-secondary-fixed: #d8e2ff;
-  --color-tertiary: #765b00;
-  --color-primary: #381e72;
-  --color-inverse-surface: #322f35;
-  --color-inverse-primary: #d0bcff;
+  /* Brand Primary: Red from Logo */
+  --color-primary: #D22B2B;
   --color-on-primary: #ffffff;
-  --color-surface-variant: #e6e1e8;
-  --color-status-error: #ba1a1a;
-  --color-on-tertiary-container: #503d00;
-  --color-outline-variant: #cbc4d2;
+  --color-primary-container: #FDECEA;
+  --color-on-primary-container: #991B1B;
+  --color-primary-fixed: #FDECEA;
+  --color-primary-fixed-dim: #FCA5A5;
+  --color-on-primary-fixed: #7F1D1D;
+  --color-on-primary-fixed-variant: #991B1B;
+
+  /* Secondary: Black/Dark Grays */
+  --color-secondary: #111827;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #F3F4F6;
+  --color-on-secondary-container: #111827;
+  --color-secondary-fixed: #E5E7EB;
+  --color-secondary-fixed-dim: #D1D5DB;
+  --color-on-secondary-fixed: #111827;
+  --color-on-secondary-fixed-variant: #374151;
+
+  /* Backgrounds & Surfaces */
+  --color-background: #F7F7F7;
+  --color-on-background: #111827;
+
+  --color-surface: #ffffff;
+  --color-on-surface: #111827;
+  --color-surface-variant: #F3F4F6;
+  --color-on-surface-variant: #4B5563;
+
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #F9FAFB;
+  --color-surface-container: #F3F4F6;
+  --color-surface-container-high: #E5E7EB;
+  --color-surface-container-highest: #D1D5DB;
+
+  --color-surface-bright: #ffffff;
+  --color-surface-dim: #E5E7EB;
+  --color-surface-tint: #D22B2B;
+  --color-surface-glass: rgba(255, 255, 255, 0.85);
+
+  /* Borders */
+  --color-border-subtle: #E5E7EB;
+  --color-outline: #9CA3AF;
+  --color-outline-variant: #E5E7EB;
+
+  /* Inverse */
+  --color-inverse-surface: #111827;
+  --color-inverse-on-surface: #F9FAFB;
+  --color-inverse-primary: #FCA5A5;
+
+  /* Status Colors */
+  --color-error: #DC2626;
+  --color-on-error: #ffffff;
+  --color-error-container: #FEE2E2;
+  --color-on-error-container: #991B1B;
+  --color-status-error: #DC2626;
+  --color-status-progress: #F59E0B;
+
+  /* Sidebar Specific */
+  --color-sidebar: #ffffff;
+  --color-sidebar-text: #111827;
+  --color-sidebar-text-variant: #4B5563;
+  --color-sidebar-border: #E5E7EB;
+  --color-sidebar-active-bg: #D22B2B;
+  --color-sidebar-active-text: #ffffff;
+  --color-sidebar-hover: #FDE8E7;
+
+  /* Tertiary */
+  --color-tertiary: #111827;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #F3F4F6;
+  --color-on-tertiary-container: #111827;
+  --color-tertiary-fixed: #E5E7EB;
+  --color-tertiary-fixed-dim: #D1D5DB;
+  --color-on-tertiary-fixed: #111827;
+  --color-on-tertiary-fixed-variant: #374151;
 
   --radius-DEFAULT: 0.25rem;
   --radius-lg: 0.5rem;

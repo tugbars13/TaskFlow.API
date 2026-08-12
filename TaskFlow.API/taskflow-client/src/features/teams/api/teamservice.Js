@@ -42,8 +42,8 @@ export const addTeamMember = async (memberData) => {
   return unwrapResponse(response);
 };
 
-export const inviteTeamMember = async (memberData) => {
-  const response = await api.post("/Team/invite", memberData);
+export const inviteTeamMember = async (teamId, userId) => {
+  const response = await api.post(`/teams/${teamId}/members/${userId}/invite`);
   return unwrapResponse(response);
 };
 
@@ -55,4 +55,14 @@ export const updateTeamMember = async (id, updatedFields) => {
 export const deleteTeamMember = async (id) => {
   await api.delete(`/Team/${id}`);
   return true;
+};
+
+export const acceptTeamInvitation = async (teamId) => {
+  const response = await api.post(`/teams/${teamId}/invitations/accept`);
+  return unwrapResponse(response);
+};
+
+export const rejectTeamInvitation = async (teamId) => {
+  const response = await api.post(`/teams/${teamId}/invitations/reject`);
+  return unwrapResponse(response);
 };

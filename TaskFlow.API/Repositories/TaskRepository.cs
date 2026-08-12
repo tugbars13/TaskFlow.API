@@ -18,6 +18,7 @@ public class TaskRepository : ITaskRepository
         return _context.Tasks
             .AsNoTracking()
             .Include(x => x.AssignedUser)
+            .Include(x => x.Assignees).ThenInclude(a => a.User)
             .Include(x => x.Team)
             .Where(x => !x.IsDeleted);
     }
@@ -30,7 +31,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId)
     {
         return await GetActiveTasksQuery()
-        .Where(x => x.AssignedUserId == userId)
+        .Where(x => x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
         .OrderByDescending(x => x.CreatedDate)
         .ToListAsync();
     }
@@ -47,7 +48,9 @@ public class TaskRepository : ITaskRepository
     {
         return await _context.Tasks
             .AsNoTracking()
-            .Include(x => x.AssignedUser).Include(x => x.Team)
+            .Include(x => x.AssignedUser)
+            .Include(x => x.Assignees).ThenInclude(a => a.User)
+            .Include(x => x.Team)
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
     }
 
@@ -89,6 +92,18 @@ public class TaskRepository : ITaskRepository
         task.Category = updatedTask.Category;
         task.AssignedUserId = updatedTask.AssignedUserId;
 
+        // Multi-Assignee güncellemeleri
+        var existingAssignees = await _context.TaskAssignees.Where(ta => ta.TaskId == id).ToListAsync();
+        _context.TaskAssignees.RemoveRange(existingAssignees);
+
+        if (updatedTask.Assignees != null && updatedTask.Assignees.Any())
+        {
+            foreach (var a in updatedTask.Assignees)
+            {
+                a.TaskId = id;
+                _context.TaskAssignees.Add(a);
+            }
+        }
 
         await _context.SaveChangesAsync();
 
@@ -113,7 +128,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> FilterAsync(int userId, TaskFilterDto filter)
     {
         var query = GetActiveTasksQuery()
-        .Where(x => x.AssignedUserId == userId);
+        .Where(x => x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId));
 
         if (filter.Priority.HasValue)
         {
@@ -137,14 +152,14 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> GetDashboardTasksAsync(int userId)
     {
         return await GetActiveTasksQuery()
-            .Where(x => x.AssignedUserId == userId)
+            .Where(x => x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
             .ToListAsync();
     }
 
     public async Task<DashboardDto> GetDashboardAsync(int userId)
     {
         var tasks = await GetActiveTasksQuery()
-        .Where(x => x.AssignedUserId == userId)
+        .Where(x => x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
         .ToListAsync();
 
         var todayPriorities = tasks
@@ -225,7 +240,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> SortAsync(int userId, TaskSortDto sort)
     {
         var query = GetActiveTasksQuery()
-            .Where(x => x.AssignedUserId == userId);
+            .Where(x => x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId));
 
         var sortBy = sort.SortBy?.ToLower() ?? "createddate";
         var isDescending = sort.IsDescending;
@@ -244,7 +259,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> SearchAsync(int userId, string keyword)
     {
         return await GetActiveTasksQuery()
-            .Where(x => x.AssignedUserId == userId &&
+            .Where(x => (x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId)) &&
                 (x.Title.Contains(keyword) ||
                  (x.Description != null && x.Description.Contains(keyword))))
             .ToListAsync();
@@ -253,7 +268,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> GetPagedAsync(int userId, PaginationDto pagination)
     {
         return await GetActiveTasksQuery()
-        .Where(x => x.AssignedUserId == userId)
+        .Where(x => x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
         .OrderByDescending(x => x.CreatedDate)
         .Skip((pagination.PageNumber - 1) * pagination.PageSize)
         .Take(pagination.PageSize)

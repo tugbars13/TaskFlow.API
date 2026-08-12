@@ -20,16 +20,16 @@ export default function TodayScheduleCard({
   };
 
   return (
-    <Card className="rounded-3xl p-6 apple-shadow space-y-5">
+    <Card className="rounded-2xl p-4 apple-shadow space-y-3">
       {/* Header aligned perfectly */}
-      <div className="flex items-center justify-between border-b border-outline-variant/10 pb-4 h-8">
-        <h3 className="font-headline-md text-headline-md font-bold text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-purple-500 text-[22px]">
+      <div className="flex items-center justify-between border-b border-outline-variant/10 pb-2 h-6">
+        <h3 className="text-sm font-bold text-on-surface flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-primary text-[18px]">
             today
           </span>
           Schedule: {selectedDateText}
         </h3>
-        <span className="bg-purple-500/10 text-purple-600 dark:text-purple-300 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center justify-center">
+        <span className="bg-primary/10 text-primary dark:text-primary text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center justify-center">
           {tasks.length} {tasks.length === 1 ? "item" : "items"}
         </span>
       </div>
@@ -37,18 +37,9 @@ export default function TodayScheduleCard({
       {/* List items or Empty State */}
       <div className="space-y-3">
         {tasks.length === 0 ? (
-          <div className="py-8 px-6 text-center bg-surface-container-low/30 rounded-2xl border border-dashed border-outline-variant/20 flex flex-col items-center justify-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-1">
-              <span className="material-symbols-outlined text-[26px]">
-                event_available
-              </span>
-            </div>
-            <h4 className="text-xs font-bold text-on-surface">
-              No events scheduled
-            </h4>
-            <p className="text-[11px] text-on-surface-variant max-w-[250px] mx-auto leading-relaxed whitespace-normal break-words">
-              Your schedule is clear for this date. Select another day from the
-              calendar or create a new task to get started.
+          <div className="py-4 text-center">
+            <p className="text-xs text-on-surface-variant font-medium">
+              No tasks scheduled today
             </p>
           </div>
         ) : (
@@ -64,24 +55,24 @@ export default function TodayScheduleCard({
               <div
                 key={task.id}
                 onClick={() => onTaskClick?.(task)}
-                className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/10 hover:border-purple-500/30 apple-shadow transition-all cursor-pointer group"
+                className="flex items-center justify-between p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/10 hover:border-primary/30 shadow-sm transition-all cursor-pointer group"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="text-center shrink-0 min-w-[44px]">
-                    <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 block">
+                    <span className="text-[11px] font-bold text-primary dark:text-primary block">
                       {timeStr}
                     </span>
                   </div>
 
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[18px]">
+                  <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary dark:text-primary flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[14px]">
                       event
                     </span>
                   </div>
 
                   <div className="min-w-0 flex-1 pr-2">
                     <h4
-                      className={`text-xs font-semibold text-on-surface truncate group-hover:text-purple-500 transition-colors ${task.isCompleted ? "line-through opacity-60" : ""}`}
+                      className={`text-xs font-semibold text-on-surface truncate group-hover:text-primary transition-colors ${task.isCompleted ? "line-through opacity-60" : ""}`}
                     >
                       {task.title}
                     </h4>

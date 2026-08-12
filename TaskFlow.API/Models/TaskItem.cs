@@ -23,6 +23,8 @@ public class TaskItem
 
     public int? AssignedUserId { get; set; }
     public User? AssignedUser { get; set; }
+    
+    public ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
 
     public int? TeamId { get; set; }
     public Team? Team { get; set; }

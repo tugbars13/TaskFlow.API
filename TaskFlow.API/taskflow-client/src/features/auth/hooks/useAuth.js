@@ -17,6 +17,7 @@ export default function useAuth() {
     isLoading: authLoading,
     login: setAuthContext,
     logout: logoutAuthContext,
+    refreshProfile,
     hasRole,
     hasPermission,
   } = context;
@@ -29,9 +30,9 @@ export default function useAuth() {
     setError(null);
 
     try {
-      const response = await loginRequest(email, password);
+      const response = await loginRequest({ email, password });
 
-      setAuthContext(response.token || response.accessToken, response.user);
+      await setAuthContext(response.token || response.accessToken, response.user);
       return true;
     } catch (err) {
       setError(err.response?.data?.message ?? "Giriş başarısız.");
@@ -69,6 +70,7 @@ export default function useAuth() {
     login: loginUser,
     register,
     logout: logoutAuthContext,
+    refreshProfile,
     hasRole,
     hasPermission,
     loading,

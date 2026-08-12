@@ -38,7 +38,7 @@ export default function TasksHeader({
     : "Manage agile deliverables, assignees, and workflow progress.";
   return (
     <>
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-md border-b border-outline-variant/10 pb-lg">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-outline-variant/10 pb-4">
         <div>
           {isTeamBoard ? (
             <>
@@ -81,12 +81,12 @@ export default function TasksHeader({
                     ))}
                   </select>
                 ) : (
-                  <h1 className="font-display-lg text-display-lg font-bold text-on-surface">
+                  <h1 className="text-3xl font-bold text-on-surface tracking-tight">
                     {currentTeam?.name || "Team"}
                   </h1>
                 )}
               </div>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-xs">
+              <p className="font-body-sm text-sm text-on-surface-variant mt-1">
                 Shared team board. Manage deliverables and workflow progress.
               </p>
             </>
@@ -96,11 +96,11 @@ export default function TasksHeader({
                 <span className="material-symbols-outlined text-primary text-[28px]">
                   view_kanban
                 </span>
-                <h1 className="font-display-lg text-display-lg font-bold text-on-surface">
+                <h1 className="text-3xl font-bold text-on-surface tracking-tight">
                   Tasks
                 </h1>
               </div>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-xs">
+              <p className="font-body-sm text-sm text-on-surface-variant mt-1">
                 Manage agile deliverables, assignees, and workflow progress.
               </p>
             </>
@@ -158,7 +158,7 @@ export default function TasksHeader({
               variant="filled"
               icon="add"
               onClick={handleOpenNewTaskModal}
-              className="flex items-center gap-xs px-lg py-md rounded-2xl shadow-md active:scale-95 transition-transform"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-md active:scale-95 transition-transform text-sm font-semibold"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
               New Task

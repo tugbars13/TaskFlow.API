@@ -35,32 +35,30 @@ export default function LoginPage() {
       <AuthHeader
         title="Welcome Back"
         subtitle="Enter your details to access your workspace."
-    />
+      />
 
       {/* Social Login Buttons */}
       <SocialLoginButtons />
 
       {/* Divider */}
-      <AuthDivider
-          text="Or sign in with email"
-      />
+      <AuthDivider text="Or sign in with email" />
 
       <LoginForm
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          remember={remember}
-          setRemember={setRemember}
-          loading={loading}
-          error={error}
-          onSubmit={handleSubmit}
+        email={email}
+        onEmailChange={(e) => setEmail(e.target.value)}
+        password={password}
+        onPasswordChange={setPassword}
+        remember={remember}
+        onRememberChange={setRemember}
+        loading={loading}
+        error={error}
+        onSubmit={handleSubmit}
       />
 
       <AuthFooter
-          question="Don't have an account?"
-          linkText="Sign Up"
-          to="/register"
+        question="Don't have an account?"
+        linkText="Sign Up"
+        to="/register"
       />
     </AuthLayout>
   );

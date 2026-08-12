@@ -12,4 +12,5 @@ public class UpdateTaskDto
     public DateTime? DueDate { get; set; }
     public TaskCategory Category { get; set; }
     public int? AssignedUserId { get; set; }
+    public List<int>? AssigneeIds { get; set; }
 }

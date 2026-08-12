@@ -18,7 +18,7 @@ const MEMBERS = [
     name: "Sarah Chen",
     role: "Product Designer",
     status: "Deep Focus",
-    statusColor: "bg-purple-500",
+    statusColor: "bg-primary",
     currentTask: "Design System Specs",
     progress: 45,
     avatarBg: "bg-secondary/20 text-secondary",

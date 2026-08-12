@@ -1,7 +1,7 @@
 import useSettings from "@/features/settings/hooks/useSettings";
-import SettingsSidebar from "@/features/settings/components/SettingsSidebar";
 import ProfileSettings from "@/features/settings/components/ProfileSettings";
-import WorkspaceSettings from "@/features/settings/components/WorkspaceSettings";
+import NotificationSettings from "@/features/settings/components/NotificationSettings";
+import DangerZone from "@/features/settings/components/DangerZone";
 import {
   PageHeader,
   PageLoading,
@@ -12,13 +12,10 @@ import {
 export default function SettingsPage() {
   const {
     settings,
-    activeSection,
-    setActiveSection,
     loading,
     error,
     saveStatus,
     updateProfile,
-    updateWorkspace,
     refetch,
   } = useSettings();
 
@@ -46,35 +43,21 @@ export default function SettingsPage() {
       {/* Page Header */}
       <PageHeader
           icon="settings"
-          title="Account & Workspace Settings"
-          subtitle="Manage your personal profile, notifications, security settings and workspace details."
+          title="Account Settings"
+          subtitle="Manage your personal profile and notifications."
           actions={<SaveIndicator status={saveStatus} />}
       />
 
-      {/* 2-Column Bento Settings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl items-start">
-        {/* Left Column: Settings Navigation Sidebar */}
-        <div className="lg:col-span-3">
-          <SettingsSidebar
-            activeSection={activeSection}
-            onSelectSection={setActiveSection}
-          />
-        </div>
+      {/* Unified Settings Content */}
+      <div className="max-w-[1100px] mx-auto w-full space-y-6">
+        <ProfileSettings
+          profile={settings?.profile}
+          onSaveProfile={updateProfile}
+        />
 
-        {/* Right Column: Settings Content Cards */}
-        <div className="lg:col-span-9 space-y-xl">
-          {/* Card 1: Profile Settings */}
-          <ProfileSettings
-            profile={settings?.profile}
-            onSaveProfile={updateProfile}
-          />
+        <NotificationSettings onSave={() => {}} />
 
-          {/* Card 2: Workspace Settings */}
-          <WorkspaceSettings
-            workspace={settings?.workspace}
-            onSaveWorkspace={updateWorkspace}
-          />
-        </div>
+        <DangerZone />
       </div>
     </div>
   );

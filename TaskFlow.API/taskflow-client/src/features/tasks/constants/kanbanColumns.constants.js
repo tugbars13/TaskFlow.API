@@ -1,4 +1,4 @@
-﻿export const KANBAN_COLUMNS = Object.freeze([
+export const KANBAN_COLUMNS = Object.freeze([
   {
     statusId: "backlog",
     title: "Backlog",

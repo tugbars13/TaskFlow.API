@@ -1,4 +1,4 @@
-﻿export function getTaskPermissions(currentTeam, user, isTeamBoard) {
+export function getTaskPermissions(currentTeam, user, isTeamBoard) {
     const currentRole = (currentTeam?.userRole || "member").toLowerCase();
 
     const isOwner = currentRole === "owner";

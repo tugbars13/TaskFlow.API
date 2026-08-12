@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback, useContext } from "react";
 import { getDashboardMetrics } from "../api/dashboardService";
 import { TaskContext } from "@/features/tasks/context/TaskContext";
+import useAuth from "@/features/auth/hooks/useAuth";
 
 export default function useDashboard() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const taskCtx = useContext(TaskContext);
   const lastUpdated = taskCtx?.lastUpdated;
 
@@ -11,6 +13,8 @@ export default function useDashboard() {
   const [error, setError] = useState("");
 
   const fetchDashboardData = useCallback(async () => {
+    if (!isAuthenticated || authLoading) return;
+    
     setLoading(true);
     setError("");
     try {
@@ -21,7 +25,7 @@ export default function useDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   useEffect(() => {
     fetchDashboardData();

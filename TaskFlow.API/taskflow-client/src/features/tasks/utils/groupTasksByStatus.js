@@ -1,4 +1,4 @@
-﻿const getCleanStatus = (statusStr) => {
+const getCleanStatus = (statusStr) => {
   return String(statusStr ?? "")
     .toLowerCase()
     .replace(/[_\s]/g, "");

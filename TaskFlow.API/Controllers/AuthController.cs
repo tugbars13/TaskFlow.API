@@ -55,4 +55,42 @@ public class AuthController : ControllerBase
 
         return Ok(user);
     }
+
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var updatedUser = await _authService.UpdateProfileAsync(userId, dto);
+        if (updatedUser == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        return Ok(updatedUser);
+    }
+
+    [HttpDelete("me")]
+    [Authorize]
+    public async Task<IActionResult> DeleteAccount()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _authService.DeleteAccountAsync(userId);
+        if (!result)
+        {
+            return NotFound("User not found.");
+        }
+
+        return NoContent();
+    }
 }

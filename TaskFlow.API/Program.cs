@@ -53,12 +53,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // builder.Services.AddControllers(); satırının yakınına ekle
 builder.Services.AddCors(options =>
-{// CORS politikası : Belirli bir kaynaktan gelen istekleri kabul etme veya reddetme kuralları
+{
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://localhost:7033", "http://localhost:5173" , "http://localhost:5175/") // CRA veya Vite portu
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:5174",
+            "http://localhost:5173",
+            "http://localhost:5175"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 builder.Services.AddScoped<ITaskService, TaskService>();
@@ -77,6 +81,8 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITeamAuthorizationService, TeamAuthorizationService>();
 // Validators klasöründeki tüm validator'ları otomatik bulur.

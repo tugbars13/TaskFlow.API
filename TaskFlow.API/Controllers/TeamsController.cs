@@ -12,13 +12,73 @@ namespace TaskFlow.API.Controllers
     public class TeamsController : ControllerBase
     {
         private readonly ITeamService _teamService;
+        private readonly ITeamAuthorizationService _authService;
 
-        public TeamsController(ITeamService teamService)
+        public TeamsController(ITeamService teamService, ITeamAuthorizationService authService)
         {
             _teamService = teamService;
+            _authService = authService;
         }
 
-        // ── GET: api/teams ─────────────────────────────────────────────────────
+        [HttpPost("{teamId}/members/{userId}/invite")]
+        public async Task<IActionResult> InviteUser(int teamId, int userId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+                return Unauthorized();
+
+            var canInvite = await _authService.CanInviteMemberAsync(teamId, currentUserId.Value);
+            if (!canInvite)
+                return Forbid();
+
+            var result = await _teamService.InviteUserAsync(teamId, userId, currentUserId.Value);
+            if (!result.Success)
+            {
+                if (result.Message == "UserNotFound") return NotFound();
+                if (result.Message == "CannotInviteSelf") return BadRequest(new { message = "Kendinizi takıma davet edemezsiniz." });
+                if (result.Message == "AlreadyMember") return Conflict(new { message = "Kullanıcı zaten bu takımın bir üyesi." });
+                if (result.Message == "AlreadyInvited") return Conflict(new { message = "Kullanıcıya zaten bekleyen bir davet gönderilmiş." });
+                return BadRequest(new { message = result.Message });
+            }
+
+            return StatusCode(StatusCodes.Status201Created, new { message = "Kullanıcı davet edildi." });
+        }
+
+        [HttpPost("{teamId}/invitations/accept")]
+        public async Task<IActionResult> AcceptInvitation(int teamId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+                return Unauthorized();
+
+            var result = await _teamService.AcceptInvitationAsync(teamId, currentUserId.Value);
+            if (!result.Success)
+            {
+                if (result.Message == "NotFound") return NotFound(new { message = "Davet bulunamadı." });
+                if (result.Message == "NotPending") return BadRequest(new { message = "Bu davet zaten kabul edilmiş veya reddedilmiş." });
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new { message = "Davet kabul edildi." });
+        }
+
+        [HttpPost("{teamId}/invitations/reject")]
+        public async Task<IActionResult> RejectInvitation(int teamId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+                return Unauthorized();
+
+            var result = await _teamService.RejectInvitationAsync(teamId, currentUserId.Value);
+            if (!result.Success)
+            {
+                if (result.Message == "NotFound") return NotFound(new { message = "Davet bulunamadı." });
+                if (result.Message == "NotPending") return BadRequest(new { message = "Bu davet zaten kabul edilmiş veya reddedilmiş." });
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new { message = "Davet reddedildi." });
+        }
         // Returns all teams with UserRole populated for the calling user.
         [HttpGet]
         public async Task<IActionResult> GetTeams()
@@ -102,9 +162,10 @@ namespace TaskFlow.API.Controllers
 
                 return NoContent();
             }
-            catch (InvalidOperationException ex) when (ex.Message == "HasTasks")
+            catch (Exception)
             {
-                return StatusCode(StatusCodes.Status409Conflict, new { message = "This team still contains tasks and cannot be deleted." });
+                // Optionally log error
+                throw;
             }
         }
 

@@ -22,6 +22,11 @@ export default function TaskProvider({ children }) {
   }, []);
   const location = useLocation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { loadTasks } = useTaskLoader({
+    setTasks,
+    setLoading,
+    setError,
+  });
 
   const currentTeamId = useMemo(() => {
     return (
@@ -74,5 +79,7 @@ export default function TaskProvider({ children }) {
       moveTaskColumn,
     ],
   );
-  return <TaskContext.Provider value={contextValue}></TaskContext.Provider>;
+  return (
+    <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>
+  );
 }
