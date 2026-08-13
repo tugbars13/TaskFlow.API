@@ -62,6 +62,17 @@ namespace TaskFlow.API.Controllers
             return Ok(new { message = "Davet kabul edildi." });
         }
 
+        [HttpGet("{teamId}/invitable-users")]
+        public async Task<IActionResult> GetInvitableUsers(int teamId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+                return Unauthorized();
+
+            var users = await _teamService.GetInvitableUsersAsync(teamId, currentUserId.Value);
+            return Ok(users);
+        }
+
         [HttpPost("{teamId}/invitations/reject")]
         public async Task<IActionResult> RejectInvitation(int teamId)
         {

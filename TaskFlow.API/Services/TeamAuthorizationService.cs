@@ -26,18 +26,7 @@ public class TeamAuthorizationService : ITeamAuthorizationService
 
     public async Task<bool> CanCreateTaskForTeamAsync(int teamId, int userId)
     {
-        var role = await _context.TeamMembers
-            .Where(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted)
-            .Select(tm => (TeamRole?)tm.Role)
-            .FirstOrDefaultAsync();
-
-        var isCreator = await _context.Teams
-            .AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId);
-
-        var isOwner = role == TeamRole.Owner || isCreator;
-        var isAdmin = role == TeamRole.Admin;
-
-        return isOwner || isAdmin;
+        return await IsTeamMemberOrCreatorAsync(teamId, userId);
     }
 
     public async Task<bool> CanInviteMemberAsync(int teamId, int userId)

@@ -156,11 +156,14 @@ export default function TasksHeader({
           {canCreateTasks && (
             <Button
               variant="filled"
-              icon="add"
               onClick={handleOpenNewTaskModal}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-md active:scale-95 transition-transform text-sm font-semibold"
+              startIcon={
+                <span className="material-symbols-outlined !text-[20px] !leading-none">
+                  add
+                </span>
+              }
+              className="px-5 py-2.5 rounded-xl shadow-md active:scale-95 transition-transform text-sm font-semibold"
             >
-              <span className="material-symbols-outlined text-[20px]">add</span>
               New Task
             </Button>
           )}

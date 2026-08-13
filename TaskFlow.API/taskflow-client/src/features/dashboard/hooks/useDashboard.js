@@ -7,6 +7,7 @@ export default function useDashboard() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const taskCtx = useContext(TaskContext);
   const lastUpdated = taskCtx?.lastUpdated;
+  const tasks = taskCtx?.tasks || [];
 
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,16 +37,16 @@ export default function useDashboard() {
       if (!taskCtx?.toggleTaskStatus) return;
 
       await taskCtx.toggleTaskStatus(id);
-      await fetchDashboardData();
+      // Removed await fetchDashboardData() because UI is now reactive from TaskContext
     },
-    [taskCtx, fetchDashboardData],
+    [taskCtx],
   );
 
   return {
     metrics,
-    todayPriorities: metrics?.todayPriorities ?? [],
+    recentTasks: tasks,
     highPriorityTasks: metrics?.highPriorityTasks ?? 0,
-    loading,
+    loading: loading && !tasks.length, // Let it show if tasks are loaded
     error,
     refetch: fetchDashboardData,
     toggleDashboardTask,

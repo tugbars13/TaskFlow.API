@@ -1,124 +1,189 @@
+import React, { useState, useEffect } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-const STATUS_OPTIONS = Object.freeze(["All", "Active", "Completed"]);
 
-const PRIORITY_OPTIONS = Object.freeze([
-  { value: "All", label: "All Priorities" },
-  { value: "High", label: "High" },
-  { value: "Medium", label: "Medium" },
+const PRIORITY_OPTIONS = [
+  { value: "", label: "All" },
   { value: "Low", label: "Low" },
-]);
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
+];
 
-const SORT_OPTIONS = Object.freeze([
-  { value: "newest", label: "Newest First" },
-  { value: "oldest", label: "Oldest First" },
-  { value: "priority", label: "Priority" },
-  { value: "title", label: "Title A-Z" },
-]);
-export default function TaskFilters({
-  searchQuery,
-  onSearchChange,
-  statusFilter,
-  onStatusChange,
-  priorityFilter,
-  onPriorityChange,
-  sortBy,
-  onSortChange,
-  onNewTaskClick,
-}) {
-  const handleSearchChange = (event) => {
-    onSearchChange(event.target.value);
-  };
+const CATEGORY_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "Personal", label: "Personal" },
+  { value: "Work", label: "Work" },
+  { value: "Study", label: "Study" },
+  { value: "Shopping", label: "Shopping" },
+  { value: "Health", label: "Health" },
+];
 
-  const handlePriorityChange = (event) => {
-    onPriorityChange(event.target.value);
-  };
 
-  const handleSortChange = (event) => {
-    onSortChange(event.target.value);
-  };
+const DUEDATE_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "Overdue", label: "Overdue" },
+  { value: "Today", label: "Today" },
+  { value: "ThisWeek", label: "This Week" },
+  { value: "NoDueDate", label: "No Due Date" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "Backlog", label: "Backlog" },
+  { value: "ToDo", label: "To Do" },
+  { value: "InProgress", label: "In Progress" },
+  { value: "Completed", label: "Completed" },
+];
+
+export default function TaskFilters({ filters, onFilterChange, onClearFilters, assigneeOptions, isTeamBoard }) {
+  const [searchTerm, setSearchTerm] = useState(filters.keyword || "");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== filters.keyword) {
+        onFilterChange("keyword", searchTerm);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, filters.keyword, onFilterChange]);
+
+  const activeFilterCount = Object.keys(filters).filter(k => k !== 'keyword' && filters[k] && (isTeamBoard || k !== 'assigneeId')).length;
+
+  // Fallback if assigneeOptions is not provided
+  const safeAssigneeOptions = assigneeOptions || [
+    { value: "", label: "All" },
+    { value: "Me", label: "Me" },
+    { value: "Unassigned", label: "Unassigned" },
+  ];
+
   return (
-    <div className="bg-surface-container-lowest py-2 px-3 rounded-xl border border-outline-variant/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
-      <div className="flex items-center gap-3 flex-1">
-        <div className="flex-1 max-w-[300px]">
+    <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/10 shadow-sm flex flex-col gap-3">
+      {/* Search and Main Filters Row */}
+      <div className="flex flex-col md:flex-row flex-wrap gap-3 items-center">
+        <div className="w-full md:w-64 shrink-0">
           <Input
             icon="search"
             placeholder="Search tasks..."
-            value={searchQuery}
-            onChange={handleSearchChange}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
-        {/* Status Filters */}
-        <div className="hidden md:flex items-center gap-1 border-l border-outline-variant/10 pl-3">
-          {STATUS_OPTIONS.map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => onStatusChange(status)}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
-                statusFilter === status
-                  ? "bg-primary text-on-primary shadow-sm"
-                  : "bg-transparent text-on-surface-variant hover:bg-surface-container-high"
-              }`}
-            >
-              {status}
-            </button>
-          ))}
+
+        <div className="flex flex-wrap items-center gap-2 flex-1">
+          <SelectFilter
+            label="Priority"
+            value={filters.priority || ""}
+            options={PRIORITY_OPTIONS}
+            onChange={(val) => onFilterChange("priority", val)}
+          />
+          <SelectFilter
+            label="Category"
+            value={filters.category || ""}
+            options={CATEGORY_OPTIONS}
+            onChange={(val) => onFilterChange("category", val)}
+          />
+          {isTeamBoard && (
+            <SelectFilter
+              label="Assignee"
+              value={filters.assigneeId || ""}
+              options={safeAssigneeOptions}
+              onChange={(val) => onFilterChange("assigneeId", val)}
+            />
+          )}
+          <SelectFilter
+            label="Due Date"
+            value={filters.dueDateRange || ""}
+            options={DUEDATE_OPTIONS}
+            onChange={(val) => onFilterChange("dueDateRange", val)}
+          />
+          <SelectFilter
+            label="Status"
+            value={filters.status || ""}
+            options={STATUS_OPTIONS}
+            onChange={(val) => onFilterChange("status", val)}
+          />
         </div>
+
+        {(activeFilterCount > 0 || searchTerm) && (
+          <Button variant="text" size="sm" onClick={() => {
+            setSearchTerm("");
+            onClearFilters();
+          }}>
+            Clear Filters
+          </Button>
+        )}
       </div>
 
-      <div className="flex items-center gap-3">
-
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] font-semibold text-outline uppercase">
-              Priority:
-            </span>
-            <select
-              value={priorityFilter}
-              onChange={handlePriorityChange}
-              className="bg-transparent text-on-surface text-[11px] font-medium py-1 px-2 border-none focus:ring-0 cursor-pointer"
-            >
-              {PRIORITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-1">
-            <span className="text-[10px] font-semibold text-outline uppercase">
-              Sort:
-            </span>
-            <select
-              value={sortBy}
-              onChange={handleSortChange}
-              className="bg-transparent text-on-surface text-[11px] font-medium py-1 px-2 border-none focus:ring-0 cursor-pointer"
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Active Filters Bar */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-outline-variant/10">
+          <span className="text-[11px] text-outline uppercase font-semibold">Active:</span>
           
-        {/* Mobile Status Dropdown (Fallback) */}
-        <div className="md:hidden flex items-center gap-1 border-l border-outline-variant/10 pl-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => onStatusChange(e.target.value)}
-              className="bg-transparent text-on-surface text-[11px] font-medium py-1 px-2 border-none focus:ring-0 cursor-pointer"
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+          {filters.priority && (
+            <FilterChip 
+              label={`Priority: ${PRIORITY_OPTIONS.find(o => o.value === filters.priority)?.label}`} 
+              onRemove={() => onFilterChange("priority", "")} 
+            />
+          )}
+          {filters.category && (
+            <FilterChip 
+              label={`Category: ${CATEGORY_OPTIONS.find(o => o.value === filters.category)?.label}`} 
+              onRemove={() => onFilterChange("category", "")} 
+            />
+          )}
+          {isTeamBoard && filters.assigneeId && (
+            <FilterChip 
+              label={`Assignee: ${safeAssigneeOptions.find(o => o.value === filters.assigneeId)?.label || filters.assigneeId}`} 
+              onRemove={() => onFilterChange("assigneeId", "")} 
+            />
+          )}
+          {filters.dueDateRange && (
+            <FilterChip 
+              label={`Due Date: ${DUEDATE_OPTIONS.find(o => o.value === filters.dueDateRange)?.label}`} 
+              onRemove={() => onFilterChange("dueDateRange", "")} 
+            />
+          )}
+          {filters.status && (
+            <FilterChip 
+              label={`Status: ${STATUS_OPTIONS.find(o => o.value === filters.status)?.label}`} 
+              onRemove={() => onFilterChange("status", "")} 
+            />
+          )}
         </div>
-      </div>
+      )}
+    </div>
+  );
+}
+
+function SelectFilter({ label, value, options, onChange }) {
+  return (
+    <div className="flex items-center gap-1 bg-surface-container hover:bg-surface-container-high transition-colors px-2 py-1.5 rounded-lg border border-outline-variant/20">
+      <span className="text-[10px] font-semibold text-outline uppercase">{label}:</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-transparent text-on-surface text-[12px] font-medium border-none focus:ring-0 cursor-pointer min-w-[70px] outline-none"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function FilterChip({ label, onRemove }) {
+  return (
+    <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs font-medium border border-primary/20">
+      {label}
+      <button 
+        onClick={onRemove}
+        className="hover:bg-primary/20 rounded-full p-0.5 transition-colors flex items-center justify-center"
+      >
+        <span className="material-symbols-outlined text-[14px]">close</span>
+      </button>
     </div>
   );
 }

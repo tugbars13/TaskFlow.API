@@ -80,10 +80,10 @@ namespace TaskFlow.API.Controllers
 
         // GET: api/tasks
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<IEnumerable<TaskDto>>>> GetTasks()
+        public async Task<ActionResult<ApiResponse<IEnumerable<TaskDto>>>> GetTasks([FromQuery] TaskFilterDto filter)
         {
             var userId = GetCurrentUserId();
-            var tasks = await _taskService.GetAllByUserIdAsync(userId);
+            var tasks = await _taskService.GetAllByUserIdAsync(userId, filter);
 
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
@@ -95,7 +95,7 @@ namespace TaskFlow.API.Controllers
         
         // GET: api/teams/{teamId}/tasks
         [HttpGet("~/api/teams/{teamId}/tasks")]
-        public async Task<ActionResult<ApiResponse<IEnumerable<TaskDto>>>> GetTeamTasks(int teamId)
+        public async Task<ActionResult<ApiResponse<IEnumerable<TaskDto>>>> GetTeamTasks(int teamId, [FromQuery] TaskFilterDto filter)
         {
             var userId = GetCurrentUserId();
 
@@ -106,7 +106,7 @@ namespace TaskFlow.API.Controllers
                 return Forbid();
             }
 
-            var tasks = await _taskService.GetByTeamIdAsync(teamId);
+            var tasks = await _taskService.GetByTeamIdAsync(teamId, filter, userId);
 
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
@@ -147,11 +147,20 @@ namespace TaskFlow.API.Controllers
         {
             var userId = GetCurrentUserId();
 
+            Console.WriteLine($"[DIAGNOSTIC] CreateTask POST request received.");
+            Console.WriteLine($"[DIAGNOSTIC] currentUserId: {userId}");
+            Console.WriteLine($"[DIAGNOSTIC] teamId: {dto.TeamId}");
+            Console.WriteLine($"[DIAGNOSTIC] assignedUserId: {dto.AssignedUserId}");
+            Console.WriteLine($"[DIAGNOSTIC] assigneeIds: {(dto.AssigneeIds != null ? string.Join(",", dto.AssigneeIds) : "null")}");
+
+
             if (dto.TeamId.HasValue)
             {
                 var canCreate = await _teamAuth.CanCreateTaskForTeamAsync(dto.TeamId.Value, userId);
+                Console.WriteLine($"[DIAGNOSTIC] CanCreateTaskForTeamAsync result: {canCreate}");
                 if (!canCreate)
                 {
+                    Console.WriteLine($"[DIAGNOSTIC] Returning 403 Forbid from CanCreateTaskForTeamAsync check.");
                     return Forbid();
                 }
             }
@@ -162,6 +171,7 @@ namespace TaskFlow.API.Controllers
             {
                 if (!dto.TeamId.HasValue)
                 {
+                    Console.WriteLine($"[DIAGNOSTIC] Returning 400 BadRequest: Missing TeamId for assignees.");
                     return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Kullanıcı atamak için takım belirtmelisiniz." });
                 }
 
@@ -232,14 +242,14 @@ namespace TaskFlow.API.Controllers
                 return NotFound();
             }
             
-            var assignees = task.Assignees?.ToList() ?? new List<TaskAssignee>();
+            List<TaskAssignee>? assignees = null;
 
             if (dto.AssigneeIds != null)
             {
+                assignees = new List<TaskAssignee>();
                 if (task.TeamId.HasValue)
                 {
                     // Temizle ve yeniden oluştur (tam liste değiştirme mantığı)
-                    assignees.Clear();
                     var distinctIds = dto.AssigneeIds.Distinct();
                     foreach (var assigneeId in distinctIds)
                     {

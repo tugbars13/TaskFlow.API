@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const {
     metrics,
-    todayPriorities,
+    recentTasks,
     highPriorityTasks,
     loading: dashboardLoading,
     error,
@@ -42,7 +42,7 @@ export default function DashboardPage() {
 
       <section className="w-full">
         <TodayPriorities
-          tasks={todayPriorities}
+          tasks={recentTasks}
           loading={dashboardLoading}
           onToggle={toggleDashboardTask}
           onViewAll={() => navigate(ROUTES.TASKS)}

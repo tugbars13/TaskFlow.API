@@ -1,5 +1,5 @@
+import { useRef } from "react";
 import { formatDateDDMMYYYY } from "@/utils/dateUtils";
-
 const PRIORITY_BORDER = {
   high: "border-l-[4px] border-l-primary",
   3: "border-l-[4px] border-l-primary",
@@ -19,9 +19,11 @@ export default function TaskCard({
   draggable = false,
   onDragStart,
   onClick,
+  onDoubleClick,
   showAssignee = true,
   showTeam = false,
 }) {
+  const lastClickTime = useRef(0);
   const formattedDueDate = task.dueDate
     ? formatDateDDMMYYYY(task.dueDate)
     : "—";
@@ -29,7 +31,10 @@ export default function TaskCard({
     <div
       draggable={draggable}
       onDragStart={onDragStart}
-      onClick={onClick}
+      onDoubleClick={(event) => {
+        console.log("DOUBLE CLICK WORKS", task.id);
+        onDoubleClick?.(event);
+      }}
       className={`group bg-surface-container-low border border-outline-variant/10 rounded-xl p-3 apple-shadow cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 flex flex-col gap-2 ${getPriorityBorderClass(
         task.priority,
       )}`}
@@ -65,69 +70,69 @@ export default function TaskCard({
           <span className="text-[12px]">📅</span>
           <span>{formattedDueDate}</span>
         </div>
-        
+
         {showAssignee && (
-            <div className="flex -space-x-2">
-              {task.assignees && task.assignees.length > 0 ? (
-                <>
-                  {task.assignees.slice(0, 3).map((assignee, idx) => (
-                    <div
-                      key={assignee.id || idx}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ring-2 ring-surface relative z-10"
-                      title={assignee.fullName}
-                      style={{ zIndex: 10 - idx }}
-                    >
-                      {assignee.avatarUrl ? (
-                        <img
-                          src={assignee.avatarUrl}
-                          alt={assignee.fullName}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                          {assignee.fullName?.charAt(0)?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {task.assignees.length > 3 && (
-                    <div
-                      className="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-[10px] font-bold ring-2 ring-surface text-on-surface relative z-0"
-                      title={`${task.assignees.length - 3} more assignees`}
-                    >
-                      +{task.assignees.length - 3}
-                    </div>
-                  )}
-                </>
-              ) : task.assignedUserId ? (
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ring-2 ring-surface"
-                  title={task.assignedUserFullName}
-                >
-                  {task.assignedUserAvatar ? (
-                    <img
-                      src={task.assignedUserAvatar}
-                      alt={task.assignedUserFullName}
-                      className="w-full h-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                      {task.assignedUserFullName?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  className="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-[12px] ring-2 ring-surface border border-dashed border-outline-variant text-outline"
-                  title="Unassigned"
-                >
-                  <span className="material-symbols-outlined text-[14px]">
-                    person_off
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="flex -space-x-2">
+            {task.assignees && task.assignees.length > 0 ? (
+              <>
+                {task.assignees.slice(0, 3).map((assignee, idx) => (
+                  <div
+                    key={assignee.id || idx}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ring-2 ring-surface relative z-10"
+                    title={assignee.fullName}
+                    style={{ zIndex: 10 - idx }}
+                  >
+                    {assignee.avatarUrl ? (
+                      <img
+                        src={assignee.avatarUrl}
+                        alt={assignee.fullName}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                        {assignee.fullName?.charAt(0)?.toUpperCase() || "U"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {task.assignees.length > 3 && (
+                  <div
+                    className="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-[10px] font-bold ring-2 ring-surface text-on-surface relative z-0"
+                    title={`${task.assignees.length - 3} more assignees`}
+                  >
+                    +{task.assignees.length - 3}
+                  </div>
+                )}
+              </>
+            ) : task.assignedUserId ? (
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ring-2 ring-surface"
+                title={task.assignedUserFullName}
+              >
+                {task.assignedUserAvatar ? (
+                  <img
+                    src={task.assignedUserAvatar}
+                    alt={task.assignedUserFullName}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                    {task.assignedUserFullName?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                className="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-[12px] ring-2 ring-surface border border-dashed border-outline-variant text-outline"
+                title="Unassigned"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  person_off
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

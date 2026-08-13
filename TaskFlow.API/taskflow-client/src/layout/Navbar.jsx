@@ -41,20 +41,7 @@ export default function Navbar({
       )}
     >
       {/* Search */}
-      <div className="flex items-center gap-md flex-1">
-        <div className="relative w-full max-w-md">
-          <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">
-            search
-          </span>
-          <input
-            type="text"
-            aria-label="Search"
-            placeholder="Search tasks, docs, or colleagues..."
-            onChange={(e) => onSearch?.(e.target.value)}
-            className="w-full bg-surface-container-high/50 border border-transparent rounded-full pl-xl pr-md py-sm focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 text-body-md transition-all"
-          />
-        </div>
-      </div>
+      <div className="flex-1"></div>
 
       {/* Actions */}
       <div className="flex items-center gap-lg">

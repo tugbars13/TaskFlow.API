@@ -17,14 +17,14 @@ public class TaskService : ITaskService
         _activityLogService = activityLogService;
     }
 
-    public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId)
+    public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto filter = null)
     {
-        return await _repository.GetAllByUserIdAsync(userId);
+        return await _repository.GetAllByUserIdAsync(userId, filter);
     }
     
-    public async Task<List<TaskItem>> GetByTeamIdAsync(int teamId)
+    public async Task<List<TaskItem>> GetByTeamIdAsync(int teamId, TaskFilterDto filter = null, int? currentUserId = null)
     {
-        return await _repository.GetByTeamIdAsync(teamId);
+        return await _repository.GetByTeamIdAsync(teamId, filter, currentUserId);
     }
     public async Task<List<TaskItem>> GetAllTasksForAdminAsync()
     {

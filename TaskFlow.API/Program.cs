@@ -11,6 +11,7 @@ using TaskFlow.API.Repositories;
 using TaskFlow.API.Services;
 using TaskFlow.API.Validators;
 using Microsoft.OpenApi.Models; // Swagger JWT ayarları
+using TaskFlow.API.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen(options =>
 {
     // Swagger'a Bearer Authentication tanımı ekleniyor.
@@ -98,25 +100,39 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>(); // Repository'yi 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Token doğrulama kuralları
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true, // Issuer kontrolü
-            ValidateAudience = true, // Audience kontrolü
-            ValidateLifetime = true, // Süresi dolmuş mu?
-            ValidateIssuerSigningKey = true, // İmza doğru mu?
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
 
-            // Token'ı oluşturan uygulamanın adı.
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-
-            // Token'ı kullanacak uygulamanın adı.
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
 
-            // SecretKey ile imzayı doğrular.
             IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(
-                builder.Configuration["JwtSettings:SecretKey"]!))
-                };
+                Encoding.UTF8.GetBytes(
+                    builder.Configuration["JwtSettings:SecretKey"]!
+                )
+            )
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs/tasks"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 var app = builder.Build();
@@ -144,5 +160,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 
+app.MapHub<TaskHub>("/hubs/tasks");
 
 app.Run();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
@@ -38,6 +38,18 @@ export default function TaskFormModal({
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState({});
+  const [isAssigneeDropdownOpen, setIsAssigneeDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsAssigneeDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleFieldChange = (field, value) => {
     setFormData((prev) => ({
@@ -56,6 +68,7 @@ export default function TaskFormModal({
     setLoadingMembers(true);
     try {
       const members = await getTeamMembers(teamId);
+      console.log("Team members response from getTeamMembers:", members);
       setTeamMembers(Array.isArray(members) ? members : []);
     } catch (err) {
       console.warn("Failed to load assignees from Users API:", err);
@@ -236,54 +249,76 @@ export default function TaskFormModal({
           />
 
           {/* Assignees (Multi-Select) */}
-          <div className="space-y-xs md:col-span-2">
+          <div className="space-y-xs md:col-span-2" ref={dropdownRef}>
             <label className="block font-label-md text-label-md font-semibold text-on-surface">
               Assigned Users (Optional)
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-sm max-h-48 overflow-y-auto bg-surface-container-high/50 p-sm rounded-2xl">
-              {teamMembers
-                .filter(
-                  (v, i, a) =>
-                    a.findIndex((t) => t.userId === v.userId) === i &&
-                    v.status === 1 // Sadece Accepted (1) olanlar
-                )
-                .map((member) => {
-                  const isSelected = formData.assigneeIds.includes(
-                    String(member.userId)
-                  );
-                  return (
-                    <label
-                      key={member.id}
-                      className={`flex items-center gap-2 p-2 rounded-xl cursor-pointer transition-colors border ${
-                        isSelected
-                          ? "bg-primary/10 border-primary"
-                          : "bg-surface border-outline-variant hover:bg-surface-container"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
-                          const idStr = String(member.userId);
-                          setFormData((prev) => {
-                            const newIds = e.target.checked
-                              ? [...prev.assigneeIds, idStr]
-                              : prev.assigneeIds.filter((id) => id !== idStr);
-                            return { ...prev, assigneeIds: newIds };
-                          });
-                        }}
-                        disabled={submitting || loadingMembers}
-                        className="rounded border-outline-variant text-primary focus:ring-primary"
-                      />
-                      <span className="text-body-sm font-medium">
-                        {member.fullName || member.name}
-                      </span>
-                    </label>
-                  );
-                })}
-              {teamMembers.length === 0 && !loadingMembers && (
-                <div className="col-span-full text-center text-body-sm text-outline p-2">
-                  No accepted team members available.
+            <div className="relative">
+              <div
+                className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 cursor-pointer flex justify-between items-center"
+                onClick={() => setIsAssigneeDropdownOpen(!isAssigneeDropdownOpen)}
+              >
+                <span className={formData.assigneeIds.length === 0 ? "text-outline/60" : "text-on-surface"}>
+                  {formData.assigneeIds.length === 0
+                    ? "Select users..."
+                    : `${formData.assigneeIds.length} user(s) selected`}
+                </span>
+                <span className="material-symbols-outlined text-outline/60">
+                  {isAssigneeDropdownOpen ? "expand_less" : "expand_more"}
+                </span>
+              </div>
+
+              {isAssigneeDropdownOpen && (
+                <div className="absolute z-10 w-full mt-2 bg-surface rounded-2xl shadow-lg border border-outline/20 max-h-60 overflow-y-auto p-2">
+                  {teamMembers
+                    .filter(
+                      (v, i, a) =>
+                        a.findIndex((t) => t.userId === v.userId) === i &&
+                        (v.status === "Active" || v.status === "Accepted" || v.status === 1) // Backend maps accepted members to "Active"
+                    )
+                    .map((member) => {
+                      const isSelected = formData.assigneeIds.includes(
+                        String(member.userId)
+                      );
+                      return (
+                        <label
+                          key={member.id}
+                          className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                            isSelected
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-surface-container-high text-on-surface"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              const idStr = String(member.userId);
+                              setFormData((prev) => {
+                                const newIds = e.target.checked
+                                  ? [...prev.assigneeIds, idStr]
+                                  : prev.assigneeIds.filter((id) => id !== idStr);
+                                return { ...prev, assigneeIds: newIds };
+                              });
+                            }}
+                            disabled={submitting || loadingMembers}
+                            className="rounded border-outline-variant text-primary focus:ring-primary h-4 w-4"
+                          />
+                          <span className="text-body-sm font-medium">
+                            {member.fullName || member.name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  {teamMembers.filter(
+                    (v, i, a) =>
+                      a.findIndex((t) => t.userId === v.userId) === i &&
+                      (v.status === "Active" || v.status === "Accepted" || v.status === 1)
+                  ).length === 0 && !loadingMembers && (
+                    <div className="text-center text-body-sm text-outline p-4">
+                      No accepted team members available.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

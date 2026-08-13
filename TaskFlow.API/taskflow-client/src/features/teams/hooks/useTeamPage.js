@@ -1,11 +1,9 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import useAuth from "@/features/auth/hooks/useAuth";
 import useTasks from "@/features/tasks/hooks/useTasks";
+import useSignalR from "@/features/realtime/useSignalR";
 import useTeam from "./useTeam";
-import {
-  createTeam,
-  deleteTeam,
-} from "../api/teamService.js";
+import { createTeam, deleteTeam } from "../api/teamService.js";
 
 const ROLE_ORDER = { owner: 0, admin: 1, member: 2 };
 const TOAST_TIMEOUT_MS = 4000;
@@ -17,6 +15,7 @@ const TOAST_TIMEOUT_MS = 4000;
  */
 export default function useTeamPage() {
   const { user } = useAuth();
+  const { activeUserIds } = useSignalR(Boolean(user));
   const {
     teams = [],
     members = [],
@@ -45,7 +44,10 @@ export default function useTeamPage() {
   const showToast = useCallback((type, text) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage({ type, text });
-    toastTimerRef.current = setTimeout(() => setToastMessage(null), TOAST_TIMEOUT_MS);
+    toastTimerRef.current = setTimeout(
+      () => setToastMessage(null),
+      TOAST_TIMEOUT_MS,
+    );
   }, []);
 
   useEffect(() => {
@@ -102,13 +104,13 @@ export default function useTeamPage() {
   const stats = useMemo(
     () => ({
       totalMembers: teamsList.length,
-      activeNow: teamsList.reduce(
-        (acc, t) => acc + (t.memberCount || t.members.length),
-        0,
-      ),
+
+      activeNow: activeUserIds.filter((id) => String(id) !== String(user?.id))
+        .length,
+
       openInvitations: teamsList.filter((t) => t.userRole === "Owner").length,
     }),
-    [teamsList],
+    [teamsList, activeUserIds, user?.id],
   );
 
   // Accordion Toggle: Only ONE team can stay open at a time
@@ -167,13 +169,11 @@ export default function useTeamPage() {
         } else if (err?.response?.status === 409) {
           showToast(
             "error",
-            err.response.data?.message || "User is already a member or has a pending invitation.",
+            err.response.data?.message ||
+              "User is already a member or has a pending invitation.",
           );
         } else {
-          showToast(
-            "error",
-            "Failed to invite user to team.",
-          );
+          showToast("error", "Failed to invite user to team.");
         }
       }
     },

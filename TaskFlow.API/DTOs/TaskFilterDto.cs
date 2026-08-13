@@ -1,15 +1,14 @@
-﻿using TaskFlow.API.Models;
+using TaskFlow.API.Models;
 
 namespace TaskFlow.API.DTOs;
 
 public class TaskFilterDto
 {
-    // Öncelik filtresi
+    public string? Keyword { get; set; }
     public TaskPriority? Priority { get; set; }
-
-    // Kategori filtresi
     public TaskCategory? Category { get; set; }
-
-    // Tamamlandı mı?
+    public TaskFlow.API.Models.TaskStatus? Status { get; set; }
     public bool? IsCompleted { get; set; }
+    public string? AssigneeId { get; set; } // Can be "Me", "Unassigned", or a numeric ID string
+    public string? DueDateRange { get; set; } // "Overdue", "Today", "ThisWeek", "NoDueDate"
 }

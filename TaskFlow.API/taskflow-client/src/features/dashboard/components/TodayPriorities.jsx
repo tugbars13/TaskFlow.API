@@ -11,18 +11,13 @@ export default function TodayPriorities({
   onViewAll,
 }) {
   const displayedTasks = (tasks || [])
-    .slice()
+    .filter(task => !task.isCompleted)
     .sort((a, b) => {
-      if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
-      const priorityDiff =
-        (PRIORITY_ORDER[b.priority] ?? 0) - (PRIORITY_ORDER[a.priority] ?? 0);
-      if (priorityDiff !== 0) return priorityDiff;
-      if (a.dueDate && b.dueDate) {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-      return 0;
+      const dateA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+      const dateB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+      return dateB - dateA;
     })
-    .slice(0, 6);
+    .slice(0, 5);
 
   if (loading) {
     return (

@@ -37,12 +37,6 @@ export default function DashboardTaskRow({
       className="w-full py-3.5 px-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 apple-shadow hover:border-primary/30 hover:bg-surface-container-low/30 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 transition-all duration-200 group cursor-pointer flex items-center justify-between text-left gap-4 h-[72px]"
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className={`mt-0.5 shrink-0 transition-colors ${isCompleted ? "text-emerald-500" : "text-outline-variant/60 group-hover:text-primary"}`}>
-          <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
-            {isCompleted ? "check_box" : "check_box_outline_blank"}
-          </span>
-        </div>
-
         <div className="flex-1 min-w-0">
           <h4 className={`text-sm font-semibold truncate leading-tight transition-colors ${isCompleted ? "text-on-surface-variant line-through" : "text-on-surface group-hover:text-primary"}`}>
             {title}
@@ -75,12 +69,6 @@ export default function DashboardTaskRow({
             : "bg-surface-container-high text-on-surface-variant border-outline-variant/20"
         }`}>
           {statusDisplay}
-        </div>
-        
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors hover:bg-surface-container-highest">
-          <span className="material-symbols-outlined text-[20px]">
-            more_vert
-          </span>
         </div>
       </div>
     </button>

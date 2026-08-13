@@ -11,10 +11,12 @@ export default function useTaskBoard({
     moveTaskColumn,
     toggleTaskStatus,
 }) {
-    const [selectedTaskDetails, setSelectedTaskDetails] = useState(null);
+    const [selectedTaskId, setSelectedTaskId] = useState(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isSelectTeamModalOpen, setIsSelectTeamModalOpen] = useState(false);
     const [selectedTeamForTask, setSelectedTeamForTask] = useState(null);
+
+    const selectedTaskDetails = tasks.find(t => t.id === selectedTaskId) || null;
 
     const getEditableTask = useCallback((taskId) => {
         const task = tasks.find((t) => t.id === taskId);
@@ -24,7 +26,7 @@ export default function useTaskBoard({
 
     const handleDeleteTask = useCallback(async (id) => {
         await removeTask(id);
-        setSelectedTaskDetails(null);
+        setSelectedTaskId(null);
     }, [removeTask]);
 
     const handleOpenNewTaskModal = useCallback(() => {
@@ -80,11 +82,11 @@ export default function useTaskBoard({
     }, []);
 
     const handleSelectTaskDetails = useCallback((task) => {
-        setSelectedTaskDetails(task);
+        setSelectedTaskId(task.id);
     }, []);
 
     const handleCloseTaskDetails = useCallback(() => {
-        setSelectedTaskDetails(null);
+        setSelectedTaskId(null);
     }, []);
 
     return {

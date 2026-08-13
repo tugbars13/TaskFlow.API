@@ -43,6 +43,11 @@ export default function TaskProvider({ children }) {
       loadTasks,
       currentTeamId,
     });
+  const currentFilters = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return Object.fromEntries(params.entries());
+  }, [location.search]);
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -51,8 +56,8 @@ export default function TaskProvider({ children }) {
       return;
     }
 
-    loadTasks(currentTeamId);
-  }, [authLoading, isAuthenticated, loadTasks, currentTeamId]);
+    loadTasks(currentTeamId, currentFilters);
+  }, [authLoading, isAuthenticated, loadTasks, currentTeamId, currentFilters]);
   const contextValue = useMemo(
     () => ({
       tasks,

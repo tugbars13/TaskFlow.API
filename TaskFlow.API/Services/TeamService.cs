@@ -427,5 +427,25 @@ namespace TaskFlow.API.Services
                 AvatarUrl = $"https://i.pravatar.cc/150?u={member.UserId}"
             };
         }
+
+        public async Task<List<UserDto>> GetInvitableUsersAsync(int teamId, int currentUserId)
+        {
+            var invitableUsers = await _context.Users
+                .Where(u => u.Id != currentUserId)
+                .Where(u => !_context.TeamMembers.Any(tm => tm.TeamId == teamId && tm.UserId == u.Id && (tm.Status == TeamMemberStatus.Accepted || tm.Status == TeamMemberStatus.Pending)))
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    AvatarUrl = u.AvatarUrl,
+                    DisplayName = u.DisplayName,
+                    FirstName = "",
+                    LastName = ""
+                })
+                .ToListAsync();
+
+            return invitableUsers;
+        }
     }
 }

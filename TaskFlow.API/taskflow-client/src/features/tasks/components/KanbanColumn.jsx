@@ -8,7 +8,6 @@ export default function KanbanColumn({
   tasks = [],
   color = "bg-primary/10 text-primary",
   onTaskClick,
-  onAddTask,
   onDropTask,
   canEditTask = () => true,
   isTeamBoard = true,
@@ -62,7 +61,7 @@ export default function KanbanColumn({
       }`}
     >
       {/* Column Header */}
-      <div className="flex items-center justify-between pb-lg border-b border-outline-variant/10 mb-lg">
+      <div className="flex items-center pb-lg border-b border-outline-variant/10 mb-lg">
         <div className="flex items-center gap-xs">
           <span className={`w-3 h-3 rounded-full ${color.split(" ")[0]}`} />
           <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
@@ -72,15 +71,6 @@ export default function KanbanColumn({
             {count}
           </span>
         </div>
-
-        <button
-          type="button"
-          onClick={() => onAddTask?.(statusId)}
-          aria-label={`Add task to ${title}`}
-          className="text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg w-7 h-7 flex items-center justify-center transition-colors"
-        >
-          +
-        </button>
       </div>
 
       {/* Task Cards List — Dashboard Design System Alignment */}
@@ -91,7 +81,12 @@ export default function KanbanColumn({
             task={task}
             draggable={canEditTask(task)}
             onDragStart={(e) => handleDragStart(e, task.id)}
-            onClick={() => onTaskClick?.(task)}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              console.log("DOUBLE CLICK:", task);
+              onTaskClick?.(task);
+            }}
             showAssignee={isTeamBoard}
             showTeam={!isTeamBoard}
           />

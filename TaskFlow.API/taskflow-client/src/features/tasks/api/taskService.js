@@ -31,26 +31,45 @@ const STATUS_MAP = {
   in_progress: 3,
   completed: 4,
 };
-const buildTaskPayload = (taskData) => ({
-  title: taskData.title,
-  description: taskData.description || "",
-  priority:
-    typeof taskData.priority === "number"
-      ? taskData.priority
-      : (PRIORITY_MAP[taskData.priority?.toLowerCase()] ?? DEFAULT_PRIORITY),
-  category:
-    typeof taskData.category === "number"
-      ? taskData.category
-      : (CATEGORY_MAP[taskData.category?.toLowerCase()] ?? DEFAULT_CATEGORY),
-  dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
-  assignedUserId: taskData.assignedUserId
-    ? Number(taskData.assignedUserId)
-    : null,
-});
+const buildTaskPayload = (taskData) => {
+  const payload = {
+    title: taskData.title,
+    description: taskData.description || "",
+    priority:
+      typeof taskData.priority === "number"
+        ? taskData.priority
+        : (PRIORITY_MAP[taskData.priority?.toLowerCase()] ?? DEFAULT_PRIORITY),
+    category:
+      typeof taskData.category === "number"
+        ? taskData.category
+        : (CATEGORY_MAP[taskData.category?.toLowerCase()] ?? DEFAULT_CATEGORY),
+    dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
+    assignedUserId: taskData.assignedUserId
+      ? Number(taskData.assignedUserId)
+      : null,
+  };
 
-export const getTasks = async (teamId = null) => {
+  if (taskData.assigneeIds !== undefined) {
+    payload.assigneeIds = taskData.assigneeIds;
+  }
+
+  return payload;
+};
+
+export const getTasks = async (teamId = null, filters = {}) => {
   const endpoint = teamId ? `/teams/${teamId}/tasks` : "/tasks";
-  const response = await api.get(endpoint);
+  const queryParams = new URLSearchParams();
+  
+  Object.keys(filters).forEach(key => {
+    if (filters[key] !== null && filters[key] !== undefined && filters[key] !== "") {
+      queryParams.append(key, filters[key]);
+    }
+  });
+
+  const queryString = queryParams.toString();
+  const finalEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
+  
+  const response = await api.get(finalEndpoint);
   return response.data?.data || response.data || [];
 };
 

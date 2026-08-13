@@ -9,14 +9,14 @@ export default function useTaskLoader({
 }) {
   const latestRequestIdRef = useRef(0);
 
-  const loadTasks = useCallback(async (teamId = null) => {
+  const loadTasks = useCallback(async (teamId = null, filters = {}) => {
     const requestId = ++latestRequestIdRef.current;
 
     setLoading(true);
     setError(null);
 
     try {
-      const data = await getTasks(teamId);
+      const data = await getTasks(teamId, filters);
       
       if (requestId !== latestRequestIdRef.current) return;
 

@@ -45,7 +45,7 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-2xl bg-surface-container-lowest rounded-3xl apple-shadow border border-outline-variant/10 min-h-[400px]">
+      <div className="flex flex-col items-center justify-center py-2xl bg-surface-container-lowest rounded-3xl apple-shadow min-h-[400px]">
         <Spinner size="lg" ariaLabel="Loading calendar" />
         <p className="text-body-sm text-on-surface-variant mt-md">
           Loading schedule milestones...
@@ -182,4 +182,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-

@@ -6,8 +6,8 @@ namespace TaskFlow.API.Repositories;
 public interface ITaskRepository
 {
     Task<List<TaskItem>> GetAllAsync();
-    Task<List<TaskItem>> GetAllByUserIdAsync(int userId);
-    Task<List<TaskItem>> GetByTeamIdAsync(int teamId);
+    Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto filter = null);
+    Task<List<TaskItem>> GetByTeamIdAsync(int teamId, TaskFilterDto filter = null, int? currentUserId = null);
     Task<TaskItem?> GetByIdAsync(int id);
     Task<TaskItem> CreateAsync(TaskItem task);
     Task<bool> UpdateAsync(int id, TaskItem task);

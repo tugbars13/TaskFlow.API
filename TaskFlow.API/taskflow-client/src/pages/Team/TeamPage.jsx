@@ -129,6 +129,7 @@ export default function TeamPage() {
         isOpen={Boolean(activeAddMemberTeam)}
         onClose={() => setActiveAddMemberTeam(null)}
         teamName={activeAddMemberTeam?.name}
+        teamId={activeAddMemberTeam?.id}
         onAddMember={handleAddMemberToTeam}
       />
 

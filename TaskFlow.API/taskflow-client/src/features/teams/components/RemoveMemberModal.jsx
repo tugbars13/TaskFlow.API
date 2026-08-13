@@ -22,8 +22,8 @@ export default function RemoveMemberModal({ isOpen, onClose, member, onRemoveMem
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Remove Member" maxWidth="max-w-md">
-      <div className="space-y-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Remove Member">
+      <div className="space-y-lg w-full">
         <div className="p-md rounded-2xl bg-error-container/10 border border-error/20 flex items-start gap-md">
           <span className="material-symbols-outlined text-[24px] text-error shrink-0 mt-0.5">
             warning
@@ -38,7 +38,7 @@ export default function RemoveMemberModal({ isOpen, onClose, member, onRemoveMem
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-md pt-md border-t border-outline-variant/10">
+        <div className="flex items-center justify-end gap-md pt-md border-t border-outline-variant/10 w-full mt-lg">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

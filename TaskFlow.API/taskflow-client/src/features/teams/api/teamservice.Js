@@ -66,3 +66,8 @@ export const rejectTeamInvitation = async (teamId) => {
   const response = await api.post(`/teams/${teamId}/invitations/reject`);
   return unwrapResponse(response);
 };
+
+export const getInvitableUsers = async (teamId) => {
+  const response = await api.get(`/teams/${teamId}/invitable-users`);
+  return unwrapResponse(response, []);
+};

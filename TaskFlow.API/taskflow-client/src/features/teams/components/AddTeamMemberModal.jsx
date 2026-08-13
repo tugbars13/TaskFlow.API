@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
-import { getUsers } from "@/features/users/api/userService";
+import { getInvitableUsers } from "@/features/teams/api/teamService";
 
 const getDisplayName = (u) => u.fullName || u.name || "User";
 
@@ -11,6 +11,7 @@ export default function AddTeamMemberModal({
   onClose,
   onAddMember,
   teamName,
+  teamId,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -21,9 +22,10 @@ export default function AddTeamMemberModal({
   const [statusMessage, setStatusMessage] = useState(null);
 
   const fetchRegisteredUsers = useCallback(async () => {
+    if (!teamId) return;
     setLoadingUsers(true);
     try {
-      const usersList = await getUsers();
+      const usersList = await getInvitableUsers(teamId);
       setRegisteredUsers(Array.isArray(usersList) ? usersList : []);
     } catch (err) {
       console.warn("Failed to fetch registered users:", err);
@@ -31,7 +33,7 @@ export default function AddTeamMemberModal({
     } finally {
       setLoadingUsers(false);
     }
-  }, []);
+  }, [teamId]);
 
   useEffect(() => {
     if (isOpen) {

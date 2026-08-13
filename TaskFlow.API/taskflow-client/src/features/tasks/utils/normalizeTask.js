@@ -85,7 +85,10 @@ export default function normalizeTask(t) {
 
         assignedUserId: t.assignedUserId,
         assignedUserFullName: t.assignedUserFullName,
+        assignedUserAvatar: t.assignedUserAvatar,
+        assignees: t.assignees || [],
         teamId: t.teamId,
         teamName: t.teamName,
+        createdDate: t.createdDate,
     };
 }
