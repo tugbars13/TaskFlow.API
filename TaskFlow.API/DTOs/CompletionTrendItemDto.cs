@@ -21,6 +21,7 @@ public class TeamWorkloadMemberDto
 public class AnalyticsDto
 {
     public string TimeRange { get; set; } = "30d";
+    public string? SmartInsight { get; set; }
     public List<CompletionTrendItemDto> CompletionTrend { get; set; } = new();
     public List<TeamWorkloadMemberDto> TeamWorkload { get; set; } = new();
 }

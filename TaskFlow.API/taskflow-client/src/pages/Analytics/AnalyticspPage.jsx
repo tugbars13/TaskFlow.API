@@ -49,7 +49,7 @@ return (
 
       <CompletionTrendChart trendData={metrics?.completionTrend} />
 
-      <SmartInsights />
+      <SmartInsights insight={metrics?.smartInsight} />
 
       <TaskStatusDistribution />
 

@@ -61,7 +61,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:5174",
             "http://localhost:5173",
-            "http://localhost:5175"
+            "http://localhost:5175",
+            "http://localhost:5176"
         )
         .AllowAnyHeader()
         .AllowAnyMethod();
@@ -96,6 +97,12 @@ builder.Services.Configure<JwtSettings>(
 // Token üretme servisini ekler.
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>(); // Repository'yi DI container'a ekler.
+
+// AI configuration and services
+builder.Services.Configure<AiSettings>(
+    builder.Configuration.GetSection("AiSettings"));
+builder.Services.AddHttpClient<IAiService, GeminiAiService>();
+
 // JWT Authentication servisini ekler.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
