@@ -120,8 +120,8 @@ public class AuthService : IAuthService
         return new UserDto
         {
             Id = user.Id,
-            FullName = user.FullName,
-            FirstName = firstName,
+            FullName = user.FullName ?? string.Empty,
+            FirstName = firstName ?? string.Empty,
             LastName = lastName,
             Email = user.Email,
             DisplayName = user.DisplayName,

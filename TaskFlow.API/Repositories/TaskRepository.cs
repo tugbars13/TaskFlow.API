@@ -28,7 +28,7 @@ public class TaskRepository : ITaskRepository
          .OrderByDescending(x => x.CreatedDate)
          .ToListAsync();
     }
-    private IQueryable<TaskItem> ApplyFilters(IQueryable<TaskItem> query, TaskFilterDto filter, int? currentUserId = null)
+    private IQueryable<TaskItem> ApplyFilters(IQueryable<TaskItem> query, TaskFilterDto? filter, int? currentUserId = null)
     {
         if (filter == null) return query;
 
@@ -91,7 +91,7 @@ public class TaskRepository : ITaskRepository
         return query;
     }
 
-    public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto filter = null)
+    public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto? filter = null)
     {
         var query = GetActiveTasksQuery()
             .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId));
@@ -103,7 +103,7 @@ public class TaskRepository : ITaskRepository
             .ToListAsync();
     }
     
-    public async Task<List<TaskItem>> GetByTeamIdAsync(int teamId, TaskFilterDto filter = null, int? currentUserId = null)
+    public async Task<List<TaskItem>> GetByTeamIdAsync(int teamId, TaskFilterDto? filter = null, int? currentUserId = null)
     {
         var query = GetActiveTasksQuery()
             .Where(x => x.TeamId == teamId);

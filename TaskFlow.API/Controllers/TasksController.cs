@@ -278,7 +278,7 @@ namespace TaskFlow.API.Controllers
                 DueDate = dto.DueDate,
                 Category = dto.Category,
                 AssignedUserId = dto.AssignedUserId,
-                Assignees = assignees
+                Assignees = assignees!
             };
 
             Console.WriteLine($"[DEBUG-TRACE] Calling TaskService.UpdateAsync");

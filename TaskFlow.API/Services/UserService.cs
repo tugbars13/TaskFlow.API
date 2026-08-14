@@ -1,4 +1,4 @@
-﻿// Services/UserService.cs
+// Services/UserService.cs
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
@@ -33,8 +33,8 @@ public class UserService : IUserService
         return new UserDto
         {
             Id = user.Id,
-            FullName = user.FullName,
-            FirstName = firstName,
+            FullName = user.FullName ?? string.Empty,
+            FirstName = firstName ?? string.Empty,
             LastName = lastName,
             Email = user.Email
         };
