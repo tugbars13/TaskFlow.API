@@ -15,12 +15,17 @@ public class TaskRepository : ITaskRepository
     }
     private IQueryable<TaskItem> GetActiveTasksQuery()
     {
+        var archiveDate = DateTime.UtcNow.AddDays(-30);
+
         return _context.Tasks
             .AsNoTracking()
             .Include(x => x.AssignedUser)
             .Include(x => x.Assignees).ThenInclude(a => a.User)
             .Include(x => x.Team)
-            .Where(x => !x.IsDeleted);
+            .Where(x => !x.IsDeleted && 
+                        (!x.IsCompleted || 
+                         x.CompletedDate == null || 
+                         x.CompletedDate >= archiveDate));
     }
     public async Task<List<TaskItem>> GetAllAsync()
     {
@@ -94,7 +99,16 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto? filter = null)
     {
         var query = GetActiveTasksQuery()
-            .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId));
+            .Where(x => 
+                (x.TeamId == null && x.UserId == userId) || 
+                x.AssignedUserId == userId || 
+                x.Assignees.Any(a => a.UserId == userId) ||
+                (x.ParentTaskId != null && (
+                    (x.ParentTask!.TeamId == null && x.ParentTask.UserId == userId) || 
+                    x.ParentTask.AssignedUserId == userId || 
+                    x.ParentTask.Assignees.Any(a => a.UserId == userId)
+                ))
+            );
         
         query = ApplyFilters(query, filter, userId);
 

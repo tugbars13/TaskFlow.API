@@ -1,4 +1,5 @@
 //using : ASP.NET Corun sontroller sınıflarını kullanabilmek için yazarız
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,12 +20,14 @@ namespace TaskFlow.API.Controllers
         private readonly ITaskService _taskService;
         private readonly ITeamAuthorizationService _teamAuth;
         private readonly TaskFlow.API.Data.AppDbContext _context;
+        private readonly IAiService _aiService;
 
-        public TasksController(ITaskService taskService, ITeamAuthorizationService teamAuth, TaskFlow.API.Data.AppDbContext context)
+        public TasksController(ITaskService taskService, ITeamAuthorizationService teamAuth, TaskFlow.API.Data.AppDbContext context, IAiService aiService)
         {
             _taskService = taskService;
             _teamAuth = teamAuth;
             _context = context;
+            _aiService = aiService;
         }
 
         private TaskDto MapToDto(TaskItem task)
@@ -53,7 +56,8 @@ namespace TaskFlow.API.Controllers
                     AvatarUrl = a.User?.AvatarUrl 
                 }).ToList() ?? new List<AssigneeDto>(),
                 TeamId = task.TeamId,
-                TeamName = task.Team?.Name
+                TeamName = task.Team?.Name,
+                ParentTaskId = task.ParentTaskId
             };
         }
 
@@ -187,6 +191,16 @@ namespace TaskFlow.API.Controllers
                 }
             }
 
+            if (dto.ParentTaskId.HasValue)
+            {
+                var parentTask = await _taskService.GetByIdAsync(dto.ParentTaskId.Value);
+                var isAdmin = User.IsInRole("Admin");
+                if (parentTask == null || !await _teamAuth.CanManageTaskAsync(parentTask, userId, isAdmin))
+                {
+                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Geçersiz veya yetkisiz Parent Task." });
+                }
+            }
+
             var task = new TaskItem
             {
                 Title = dto.Title,
@@ -199,7 +213,8 @@ namespace TaskFlow.API.Controllers
                 UserId = userId,
                 CreatedDate = DateTime.UtcNow,
                 IsDeleted = false,
-                Assignees = assignees
+                Assignees = assignees,
+                ParentTaskId = dto.ParentTaskId
             };
 
             var createdTask = await _taskService.CreateAsync(task);
@@ -213,6 +228,93 @@ namespace TaskFlow.API.Controllers
                     Message = "Görev başarıyla oluşturuldu.",
                     Data = taskDto
                 });
+        }
+
+        // GET: api/tasks/ai-order
+        [HttpGet("ai-order")]
+        public async Task<ActionResult<ApiResponse<List<AiTaskOrderDto>>>> GenerateTaskOrder()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var tasks = await _taskService.GetAllByUserIdAsync(userId);
+                
+                var activeTasks = tasks.Where(t => !t.IsCompleted && !t.IsDeleted).ToList();
+                if (!activeTasks.Any())
+                {
+                    return Ok(new ApiResponse<List<AiTaskOrderDto>>
+                    {
+                        Success = true,
+                        Message = "Sıralanacak aktif görev bulunmuyor.",
+                        Data = new List<AiTaskOrderDto>()
+                    });
+                }
+                
+                var analyticsRepo = HttpContext.RequestServices.GetRequiredService<TaskFlow.API.Repositories.IAnalyticsRepository>();
+                var metrics = await analyticsRepo.GetAdvancedAnalyticsDataAsync(userId);
+                
+                var orderedTasks = await _aiService.GenerateTaskOrderAsync(tasks, metrics);
+                
+                return Ok(new ApiResponse<List<AiTaskOrderDto>>
+                {
+                    Success = true,
+                    Message = "AI Task Order generated successfully.",
+                    Data = orderedTasks
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<List<AiTaskOrderDto>>
+                {
+                    Success = false,
+                    Message = $"Error generating AI Task Order: {ex.Message}"
+                });
+            }
+        }
+
+        // POST: api/tasks/{id}/breakdown
+        [HttpPost("{id}/breakdown")]
+        public async Task<ActionResult<ApiResponse<TaskBreakdownResultDto>>> GenerateBreakdown(int id)
+        {
+            var userId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
+
+            var task = await _taskService.GetByIdAsync(id);
+            if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin))
+            {
+                return NotFound(new ApiResponse<TaskBreakdownResultDto>
+                {
+                    Success = false,
+                    Message = "Görev bulunamadı veya yetkiniz yok."
+                });
+            }
+
+            try
+            {
+                var result = await _aiService.GenerateTaskBreakdownAsync(task);
+                
+                // Existing subtasks check
+                var existingSubtasksCount = await _context.Tasks.CountAsync(t => t.ParentTaskId == id && !t.IsDeleted);
+                
+                result.ExistingSubtaskCount = existingSubtasksCount;
+                result.HasExistingSubtasks = existingSubtasksCount > 0;
+
+                return Ok(new ApiResponse<TaskBreakdownResultDto>
+                {
+                    Success = true,
+                    Message = "Alt görev önerileri başarıyla oluşturuldu.",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                // Return 502 Bad Gateway for external AI API errors, or 500
+                return StatusCode(502, new ApiResponse<TaskBreakdownResultDto>
+                {
+                    Success = false,
+                    Message = "Bu görev için şu anda AI alt görev önerileri oluşturulamadı."
+                });
+            }
         }
 
         // PUT: api/tasks/5

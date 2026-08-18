@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   HubConnectionBuilder,
   HttpTransportType,
@@ -6,7 +6,7 @@ import {
 } from "@microsoft/signalr";
 import { tokenStorage } from "@/utils/tokenStorage";
 
-const API_BASE_URL = "https://localhost:5208";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://localhost:7033/api").replace(/\/api\/?$/, "");
 
 export default function useSignalR(enabled = true) {
   const [activeUserIds, setActiveUserIds] = useState([]);
@@ -29,7 +29,7 @@ export default function useSignalR(enabled = true) {
         transport: HttpTransportType.WebSockets,
       })
       .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
+      .configureLogging(LogLevel.Critical)
       .build();
 
     const handleActiveUsersChanged = (userIds) => {
@@ -62,7 +62,12 @@ export default function useSignalR(enabled = true) {
           setConnectionState("Connected");
         }
       } catch (error) {
-        if (!cancelled) {
+        // StrictMode mount-unmount-mount dongusunde connection baslarken stop edilirse,
+        // SignalR "The connection was stopped during negotiation." hatasi firlatir.
+        // Bu durum React'in dogal cleanup surecinden kaynaklandigi icin goz ardi etmeliyiz.
+        const isNegotiationCancel = error.message && error.message.includes("stopped during negotiation");
+        
+        if (!cancelled && !isNegotiationCancel) {
           console.error("SignalR connection failed:", error);
           setConnectionState("Disconnected");
         }
@@ -83,3 +88,4 @@ export default function useSignalR(enabled = true) {
     connectionState,
   };
 }
+

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.API.DTOs.Team;
@@ -13,11 +13,13 @@ namespace TaskFlow.API.Controllers
     {
         private readonly ITeamService _teamService;
         private readonly ITeamAuthorizationService _authService;
+        private readonly ITeamAnalyticsService _teamAnalyticsService;
 
-        public TeamsController(ITeamService teamService, ITeamAuthorizationService authService)
+        public TeamsController(ITeamService teamService, ITeamAuthorizationService authService, ITeamAnalyticsService teamAnalyticsService)
         {
             _teamService = teamService;
             _authService = authService;
+            _teamAnalyticsService = teamAnalyticsService;
         }
 
         [HttpPost("{teamId}/members/{userId}/invite")]
@@ -35,13 +37,13 @@ namespace TaskFlow.API.Controllers
             if (!result.Success)
             {
                 if (result.Message == "UserNotFound") return NotFound();
-                if (result.Message == "CannotInviteSelf") return BadRequest(new { message = "Kendinizi takıma davet edemezsiniz." });
-                if (result.Message == "AlreadyMember") return Conflict(new { message = "Kullanıcı zaten bu takımın bir üyesi." });
-                if (result.Message == "AlreadyInvited") return Conflict(new { message = "Kullanıcıya zaten bekleyen bir davet gönderilmiş." });
+                if (result.Message == "CannotInviteSelf") return BadRequest(new { message = "Kendinizi takÄ±ma davet edemezsiniz." });
+                if (result.Message == "AlreadyMember") return Conflict(new { message = "KullanÄ±cÄ± zaten bu takÄ±mÄ±n bir Ã¼yesi." });
+                if (result.Message == "AlreadyInvited") return Conflict(new { message = "KullanÄ±cÄ±ya zaten bekleyen bir davet gÃ¶nderilmiÅŸ." });
                 return BadRequest(new { message = result.Message });
             }
 
-            return StatusCode(StatusCodes.Status201Created, new { message = "Kullanıcı davet edildi." });
+            return StatusCode(StatusCodes.Status201Created, new { message = "KullanÄ±cÄ± davet edildi." });
         }
 
         [HttpPost("{teamId}/invitations/accept")]
@@ -54,8 +56,8 @@ namespace TaskFlow.API.Controllers
             var result = await _teamService.AcceptInvitationAsync(teamId, currentUserId.Value);
             if (!result.Success)
             {
-                if (result.Message == "NotFound") return NotFound(new { message = "Davet bulunamadı." });
-                if (result.Message == "NotPending") return BadRequest(new { message = "Bu davet zaten kabul edilmiş veya reddedilmiş." });
+                if (result.Message == "NotFound") return NotFound(new { message = "Davet bulunamadÄ±." });
+                if (result.Message == "NotPending") return BadRequest(new { message = "Bu davet zaten kabul edilmiÅŸ veya reddedilmiÅŸ." });
                 return BadRequest(new { message = result.Message });
             }
 
@@ -83,8 +85,8 @@ namespace TaskFlow.API.Controllers
             var result = await _teamService.RejectInvitationAsync(teamId, currentUserId.Value);
             if (!result.Success)
             {
-                if (result.Message == "NotFound") return NotFound(new { message = "Davet bulunamadı." });
-                if (result.Message == "NotPending") return BadRequest(new { message = "Bu davet zaten kabul edilmiş veya reddedilmiş." });
+                if (result.Message == "NotFound") return NotFound(new { message = "Davet bulunamadÄ±." });
+                if (result.Message == "NotPending") return BadRequest(new { message = "Bu davet zaten kabul edilmiÅŸ veya reddedilmiÅŸ." });
                 return BadRequest(new { message = result.Message });
             }
 
@@ -102,7 +104,7 @@ namespace TaskFlow.API.Controllers
             return Ok(teams);
         }
 
-        // ── GET: api/teams/5 ───────────────────────────────────────────────────
+        // â”€â”€ GET: api/teams/5 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeam(int id)
         {
@@ -114,7 +116,7 @@ namespace TaskFlow.API.Controllers
             return Ok(team);
         }
 
-        // ── POST: api/teams ────────────────────────────────────────────────────
+        // â”€â”€ POST: api/teams â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Creates the team and auto-assigns the caller as Owner.
         [HttpPost]
         public async Task<IActionResult> CreateTeam([FromBody] CreateTeamDto dto)
@@ -131,7 +133,7 @@ namespace TaskFlow.API.Controllers
                 created);
         }
 
-        // ── PUT: api/teams/5 ───────────────────────────────────────────────────
+        // â”€â”€ PUT: api/teams/5 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Only the team Owner or Admin can update team info.
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamDto dto)
@@ -152,7 +154,7 @@ namespace TaskFlow.API.Controllers
             return NoContent();
         }
 
-        // ── DELETE: api/teams/5 ────────────────────────────────────────────────
+        // â”€â”€ DELETE: api/teams/5 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Only the Owner can delete a team.
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
@@ -180,13 +182,39 @@ namespace TaskFlow.API.Controllers
             }
         }
 
-        // ── Helper ─────────────────────────────────────────────────────────────
+        // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private int? GetCurrentUserId()
         {
             var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (int.TryParse(claim, out var id))
                 return id;
             return null;
+        }
+    
+        [HttpGet("{teamId}/analytics")]
+        public async Task<IActionResult> GetTeamAnalytics(int teamId, [FromQuery] string period = "weekly")
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized();
+
+            var role = await _teamService.GetUserRoleInTeamAsync(teamId, userId.Value);
+            if (string.IsNullOrEmpty(role))
+                return Forbid();
+
+            if (!string.Equals(role, "Owner", StringComparison.OrdinalIgnoreCase) && 
+                !string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            var analytics = await _teamAnalyticsService.GetTeamAnalyticsAsync(teamId, period, userId.Value);
+            return Ok(new TaskFlow.API.Responses.ApiResponse<TaskFlow.API.DTOs.Team.TeamAnalyticsDto>
+            {
+                Success = true,
+                Message = "Takım analizi başarıyla getirildi.",
+                Data = analytics
+            });
         }
     }
 }

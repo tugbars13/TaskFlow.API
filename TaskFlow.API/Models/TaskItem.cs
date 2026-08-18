@@ -30,4 +30,9 @@ public class TaskItem
     public Team? Team { get; set; }
 
     public bool IsDeleted { get; set; } = false;
+
+    // Parent-child relationship for AI Task Breakdown
+    public int? ParentTaskId { get; set; }
+    public TaskItem? ParentTask { get; set; }
+    public ICollection<TaskItem> SubTasks { get; set; } = new List<TaskItem>();
 }

@@ -4,7 +4,7 @@ import SmartInsights from "@/features/analytics/components/SmartInsights";
 import TaskStatusDistribution from "@/features/analytics/components/TaskStatusDistribution";
 import CategoryBreakdown from "@/features/analytics/components/CategoryBreakdown";
 import AnalyticsKpiCards from "@/features/analytics/components/AnalyticsKpiCards";
-import TaskInsights from "@/features/analytics/components/TaskInsights";
+import GroupProgress from "@/features/analytics/components/GroupProgress";
 
 import {
   PageHeader,
@@ -49,13 +49,13 @@ return (
 
       <CompletionTrendChart trendData={metrics?.completionTrend} />
 
-      <SmartInsights insight={metrics?.smartInsight} />
+      <SmartInsights insight={metrics?.smartInsight} completionTrend={metrics?.completionTrend} />
 
       <TaskStatusDistribution />
 
       <CategoryBreakdown />
 
-      <TaskInsights />
+      <GroupProgress />
 
     </div>
 

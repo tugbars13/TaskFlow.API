@@ -33,18 +33,12 @@ export default function useTaskBoard({
         if (isTeamBoard) {
             setSelectedTeamForTask(Number(teamId));
             setIsFormModalOpen(true);
-            return;
-        }
-
-        if (teams.length === 1) {
-            setSelectedTeamForTask(teams[0].id);
-            setIsFormModalOpen(true);
-        } else if (teams.length > 1) {
-            setIsSelectTeamModalOpen(true);
         } else {
+            // Personal Task mode
+            setSelectedTeamForTask(null);
             setIsFormModalOpen(true);
         }
-    }, [isTeamBoard, teamId, teams]);
+    }, [isTeamBoard, teamId]);
 
     const handleFormSubmit = useCallback(async (data) => {
         await addTask(data);

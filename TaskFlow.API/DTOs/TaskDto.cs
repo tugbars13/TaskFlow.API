@@ -21,4 +21,5 @@ public class TaskDto
     public List<AssigneeDto>? Assignees { get; set; } = new List<AssigneeDto>();
     public int? TeamId { get; set; }
     public string? TeamName { get; set; }
+    public int? ParentTaskId { get; set; }
 }

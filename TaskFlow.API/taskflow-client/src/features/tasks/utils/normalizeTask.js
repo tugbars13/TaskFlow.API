@@ -90,5 +90,6 @@ export default function normalizeTask(t) {
         teamId: t.teamId,
         teamName: t.teamName,
         createdDate: t.createdDate,
+        parentTaskId: t.parentTaskId,
     };
 }

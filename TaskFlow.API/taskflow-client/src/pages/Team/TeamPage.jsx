@@ -1,4 +1,6 @@
+import { useState } from "react";
 import useTeamPage from "@/features/teams/hooks/useTeamPage";
+import TeamAnalyticsView from "@/features/teams/components/TeamAnalyticsView";
 import TeamToolbar from "@/features/teams/components/TeamToolbar";
 import TeamStats from "@/features/teams/components/TeamStats";
 import TeamCard from "@/features/teams/components/TeamCard";
@@ -40,6 +42,8 @@ export default function TeamPage() {
     handleDeleteTeam,
   } = useTeamPage();
 
+  const [activeAnalyticsTeam, setActiveAnalyticsTeam] = useState(null);
+
   if (loading) {
     return <PageLoading message="Loading Teams..." />;
   }
@@ -73,50 +77,60 @@ export default function TeamPage() {
         </div>
       )}
 
-      {/* 1. Header Toolbar */}
-      <TeamToolbar onCreateTeamClick={() => setIsCreateModalOpen(true)} />
+      {activeAnalyticsTeam ? (
+        <TeamAnalyticsView 
+          team={activeAnalyticsTeam} 
+          onBack={() => setActiveAnalyticsTeam(null)} 
+        />
+      ) : (
+        <>
+          {/* 1. Header Toolbar */}
+          <TeamToolbar onCreateTeamClick={() => setIsCreateModalOpen(true)} />
 
-      {/* 2. Teams Statistics Overview */}
-      <TeamStats stats={stats} />
+          {/* 2. Teams Statistics Overview */}
+          <TeamStats stats={stats} />
 
-      {/* 3. Teams List (Accordion Cards) or Clean SaaS Empty State */}
-      <div className="space-y-md w-full">
-        {teamsList.length === 0 ? (
-          <div className="w-full bg-surface-container-lowest rounded-3xl border border-outline-variant/10 apple-shadow py-20 px-lg text-center flex flex-col items-center justify-center my-md">
-            {/* Soft Purple Circular Icon Background */}
-            <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-lg shadow-sm shrink-0">
-              <span className="material-symbols-outlined text-[38px]">
-                groups
-              </span>
-            </div>
+          {/* 3. Teams List (Accordion Cards) or Clean SaaS Empty State */}
+          <div className="space-y-md w-full">
+            {teamsList.length === 0 ? (
+              <div className="w-full bg-surface-container-lowest rounded-3xl border border-outline-variant/10 apple-shadow py-20 px-lg text-center flex flex-col items-center justify-center my-md">
+                {/* Soft Purple Circular Icon Background */}
+                <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-lg shadow-sm shrink-0">
+                  <span className="material-symbols-outlined text-[38px]">
+                    groups
+                  </span>
+                </div>
 
-            {/* Title: 32px 700 */}
-            <h3 className="text-[32px] font-bold text-on-surface tracking-tight mb-sm">
-              No Teams Created Yet
-            </h3>
+                {/* Title: 32px 700 */}
+                <h3 className="text-[32px] font-bold text-on-surface tracking-tight mb-sm">
+                  No Teams Created Yet
+                </h3>
 
-            {/* Description: 16px neutral gray centered */}
-            <p className="text-[16px] text-on-surface-variant max-w-[400px] mx-auto text-center leading-relaxed font-medium">
-              You haven&apos;t created any teams yet. Click &quot;Create New
-              Team&quot; in the top-right corner to create your first team.
-            </p>
+                {/* Description: 16px neutral gray centered */}
+                <p className="text-[16px] text-on-surface-variant max-w-[400px] mx-auto text-center leading-relaxed font-medium">
+                  You haven&apos;t created any teams yet. Click &quot;Create New
+                  Team&quot; in the top-right corner to create your first team.
+                </p>
+              </div>
+            ) : (
+              teamsList.map((team) => (
+                <TeamCard
+                  key={team.id}
+                  team={team}
+                  isExpanded={expandedTeamId === team.id}
+                  onToggleExpand={handleToggleExpand}
+                  onOpenAddMember={(t) => setActiveAddMemberTeam(t)}
+                  onOpenAssignTask={(m) => setActiveAssignTaskMember(m)}
+                  onOpenChangeRole={(m) => setActiveChangeRoleMember(m)}
+                  onOpenRemoveMember={(m) => setActiveRemoveMember(m)}
+                  onOpenDeleteTeam={(t) => setActiveDeleteTeam(t)}
+                  onOpenAnalytics={(t) => setActiveAnalyticsTeam(t)}
+                />
+              ))
+            )}
           </div>
-        ) : (
-          teamsList.map((team) => (
-            <TeamCard
-              key={team.id}
-              team={team}
-              isExpanded={expandedTeamId === team.id}
-              onToggleExpand={handleToggleExpand}
-              onOpenAddMember={(t) => setActiveAddMemberTeam(t)}
-              onOpenAssignTask={(m) => setActiveAssignTaskMember(m)}
-              onOpenChangeRole={(m) => setActiveChangeRoleMember(m)}
-              onOpenRemoveMember={(m) => setActiveRemoveMember(m)}
-              onOpenDeleteTeam={(t) => setActiveDeleteTeam(t)}
-            />
-          ))
-        )}
-      </div>
+        </>
+      )}
 
       {/* Modals */}
       <CreateTeamModal

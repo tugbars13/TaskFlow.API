@@ -40,6 +40,13 @@ public class AppDbContext : DbContext
             .HasForeignKey(t => t.AssignedUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // TaskItem self-referencing: Parent-Child (AI Task Breakdown)
+        modelBuilder.Entity<TaskItem>()
+            .HasOne(t => t.ParentTask)
+            .WithMany(t => t.SubTasks)
+            .HasForeignKey(t => t.ParentTaskId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<TeamMember>()
             .HasOne(tm => tm.Team)
             .WithMany(t => t.Members)

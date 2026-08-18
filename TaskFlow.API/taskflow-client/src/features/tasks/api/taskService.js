@@ -52,6 +52,10 @@ const buildTaskPayload = (taskData) => {
   if (taskData.assigneeIds !== undefined) {
     payload.assigneeIds = taskData.assigneeIds;
   }
+  
+  if (taskData.parentTaskId !== undefined) {
+    payload.parentTaskId = taskData.parentTaskId;
+  }
 
   return payload;
 };
@@ -105,4 +109,9 @@ export const updateTask = async (id, taskData) => {
 export const deleteTask = async (id) => {
   await api.delete(`/tasks/${id}`);
   return true;
+};
+
+export const generateTaskBreakdown = async (taskId) => {
+  const response = await api.post(`/tasks/${taskId}/breakdown`);
+  return response.data?.data || response.data;
 };

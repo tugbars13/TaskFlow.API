@@ -4,6 +4,7 @@ export default function TaskFooter({
   task,
   onToggleStatus,
   onDeleteTask,
+  onBreakdown,
   onClose,
   isReadOnly = false,
 }) {
@@ -31,6 +32,12 @@ export default function TaskFooter({
           className="text-error hover:text-error"
         >
           Delete
+        </Button>
+      )}
+
+      {!task.isCompleted && (
+        <Button variant="tonal" onClick={onBreakdown}>
+          ✨ AI ile parçalara ayır
         </Button>
       )}
 

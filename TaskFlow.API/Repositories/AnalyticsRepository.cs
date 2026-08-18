@@ -71,10 +71,18 @@ public class AnalyticsRepository : IAnalyticsRepository
     public async Task<AiInsightDataDto> GetAdvancedAnalyticsDataAsync(int userId)
     {
         var tasks = await _context.Tasks
-            .AsNoTracking()
-            .Where(t => t.UserId == userId && !t.IsDeleted)
-            .ToListAsync();
-
+    .AsNoTracking()
+    .Include(t => t.AssignedUser)
+    .Include(t => t.Assignees)
+    .Include(t => t.Team)
+    .Where(t =>
+        !t.IsDeleted &&
+        (
+            (t.TeamId == null && t.UserId == userId) ||
+            t.AssignedUserId == userId ||
+            t.Assignees.Any(a => a.UserId == userId)
+        ))
+    .ToListAsync();
         var completedTasks = tasks.Where(t => t.IsCompleted && t.CompletedDate.HasValue).ToList();
 
         // Calculate Medians and Averages

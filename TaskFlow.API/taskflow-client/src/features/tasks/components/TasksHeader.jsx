@@ -1,5 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "@/components/ui/Button";
+import AITaskOrderDrawer from "./AITaskOrderDrawer";
+import { useState } from "react";
+
 export default function TasksHeader({
   isTeamBoard,
   currentTeam,
@@ -12,6 +15,8 @@ export default function TasksHeader({
   canCreateTasks,
   handleOpenNewTaskModal,
 }) {
+  const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+
   const progressPercentage =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const teamStats = [
@@ -153,6 +158,21 @@ export default function TasksHeader({
           {/* Filters */}
           {/* Filters Removed */}
 
+          {!isTeamBoard && (
+            <Button
+              variant="outline"
+              onClick={() => setIsAiDrawerOpen(true)}
+              startIcon={
+                <span className="material-symbols-outlined !text-[20px] !leading-none text-primary">
+                  auto_awesome
+                </span>
+              }
+              className="px-4 py-2.5 rounded-xl shadow-sm hover:bg-primary/10 transition-colors text-sm font-semibold border-primary/20 text-primary"
+            >
+              AI Task Order
+            </Button>
+          )}
+
           {canCreateTasks && (
             <Button
               variant="filled"
@@ -169,6 +189,13 @@ export default function TasksHeader({
           )}
         </div>
       </div>
+
+      {!isTeamBoard && (
+        <AITaskOrderDrawer 
+          isOpen={isAiDrawerOpen} 
+          onClose={() => setIsAiDrawerOpen(false)} 
+        />
+      )}
     </>
   );
 }

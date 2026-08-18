@@ -2,6 +2,8 @@ using TaskFlow.API.DTOs;
 using TaskFlow.API.Repositories;
 using System.Text;
 
+using Microsoft.Extensions.Caching.Memory;
+
 namespace TaskFlow.API.Services;
 
 public class AnalyticsService : IAnalyticsService
@@ -9,12 +11,14 @@ public class AnalyticsService : IAnalyticsService
     private readonly IAnalyticsRepository _repository;
     private readonly IAiService _aiService;
     private readonly ILogger<AnalyticsService> _logger;
+    private readonly IMemoryCache _cache;
 
-    public AnalyticsService(IAnalyticsRepository repository, IAiService aiService, ILogger<AnalyticsService> logger)
+    public AnalyticsService(IAnalyticsRepository repository, IAiService aiService, ILogger<AnalyticsService> logger, IMemoryCache cache)
     {
         _repository = repository;
         _aiService = aiService;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task<AnalyticsDto> GetAnalyticsMetricsAsync(int userId)
@@ -22,21 +26,46 @@ public class AnalyticsService : IAnalyticsService
         var metrics = await _repository.GetAnalyticsMetricsAsync(userId);
         var advancedData = await _repository.GetAdvancedAnalyticsDataAsync(userId);
 
+        // Verinin tamamen aynı olup olmadığını kontrol etmek için JSON Hash'ini çıkarıyoruz
+        var dataJson = System.Text.Json.JsonSerializer.Serialize(advancedData);
+        string dataHash;
+        using (var sha256 = System.Security.Cryptography.SHA256.Create())
+        {
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(dataJson));
+            dataHash = Convert.ToBase64String(hashBytes);
+        }
+
+        var cacheKey = $"smartinsight_user_{userId}_{dataHash}";
         string? smartInsight = null;
 
-        try
+        if (!_cache.TryGetValue(cacheKey, out smartInsight))
         {
-            smartInsight = await _aiService.GenerateInsightAsync(advancedData);
-
-            if (string.IsNullOrWhiteSpace(smartInsight))
+            _logger.LogInformation("Cache MISS for user {UserId}. Fetching from Gemini API.", userId);
+            try
             {
+                smartInsight = await _aiService.GenerateInsightAsync(advancedData);
+
+                if (string.IsNullOrWhiteSpace(smartInsight))
+                {
+                    smartInsight = BuildFallbackInsight(advancedData);
+                }
+                else
+                {
+                    // AI'dan başarılı sonuç dönerse cache'le (Örn: 1 saat boyunca)
+                    var cacheOptions = new MemoryCacheEntryOptions()
+                        .SetAbsoluteExpiration(TimeSpan.FromHours(1));
+                    _cache.Set(cacheKey, smartInsight, cacheOptions);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to generate AI insight for user {UserId}. Using fallback.", userId);
                 smartInsight = BuildFallbackInsight(advancedData);
             }
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogWarning(ex, "Failed to generate AI insight for user {UserId}. Using fallback.", userId);
-            smartInsight = BuildFallbackInsight(advancedData);
+            _logger.LogInformation("Cache HIT for user {UserId}. Using cached insight.", userId);
         }
 
         metrics.SmartInsight = smartInsight;

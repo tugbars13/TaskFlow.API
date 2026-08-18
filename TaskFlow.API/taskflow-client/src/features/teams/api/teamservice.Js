@@ -71,3 +71,8 @@ export const getInvitableUsers = async (teamId) => {
   const response = await api.get(`/teams/${teamId}/invitable-users`);
   return unwrapResponse(response, []);
 };
+
+export const getTeamAnalytics = async (teamId, period = "weekly") => {
+  const response = await api.get(`/teams/${teamId}/analytics`, { params: { period } });
+  return unwrapResponse(response);
+};

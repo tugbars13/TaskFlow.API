@@ -1,7 +1,7 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 
-// ── Role badge config ──────────────────────────────────────────────────────────
+// â”€â”€ Role badge config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns a styled badge element for a given team role string.
 function RoleBadge({ role }) {
   const r = (role || "").toLowerCase();
@@ -15,7 +15,7 @@ function RoleBadge({ role }) {
   if (r === "admin") {
     return (
       <span className="inline-flex items-center gap-[3px] text-[11px] font-bold px-[10px] py-[3px] rounded-xl bg-primary/10 text-primary dark:text-primary">
-        🛡 Admin
+        🛡️ Admin
       </span>
     );
   }
@@ -35,13 +35,14 @@ export default function TeamCard({
   onOpenChangeRole,
   onOpenRemoveMember,
   onOpenDeleteTeam,
+  onOpenAnalytics,
 }) {
   if (!team) return null;
 
   const { id, name, memberCount, userRole, members = [], icon = "groups" } = team;
   const [activeMenuMemberId, setActiveMenuMemberId] = useState(null);
 
-  // ── Permission flags for the current user ─────────────────────────────────
+  // â”€â”€ Permission flags for the current user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Normalize to lowercase. If userRole is empty the user has no team role — treat as Member.
   const currentRole = (userRole || "member").toLowerCase();
   const isOwner = currentRole === "owner";
@@ -115,6 +116,16 @@ export default function TeamCard({
                 <span className="material-symbols-outlined text-[16px]">task</span>
                 Tasks
               </Link>
+              {(isOwner || isAdmin) && (
+                <button
+                  type="button"
+                  onClick={() => onOpenAnalytics?.(team)}
+                  className="flex items-center gap-xs px-md py-xs bg-surface border border-primary/20 text-primary font-bold text-xs rounded-xl hover:bg-primary/5 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[16px]">insights</span>
+                  Analiz
+                </button>
+              )}
               {canAddMember && (
                 <button
                   type="button"
@@ -261,3 +272,4 @@ export default function TeamCard({
     </div>
   );
 }
+

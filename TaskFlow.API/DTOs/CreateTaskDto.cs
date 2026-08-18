@@ -16,4 +16,5 @@ public class CreateTaskDto
     public int? AssignedUserId { get; set; }
     public List<int>? AssigneeIds { get; set; }
     public int? TeamId { get; set; }
+    public int? ParentTaskId { get; set; }
 }
