@@ -1,4 +1,4 @@
-using TaskFlow.API.DTOs;
+﻿using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
 
@@ -8,13 +8,22 @@ public class TaskService : ITaskService
 {
     private readonly ITaskRepository _repository;
     private readonly IActivityLogService _activityLogService;
+    private readonly IServiceProvider _serviceProvider;
 
     public TaskService(
     ITaskRepository repository,
-    IActivityLogService activityLogService)
+    IActivityLogService activityLogService, IServiceProvider serviceProvider)
     {
         _repository = repository;
         _activityLogService = activityLogService;
+        _serviceProvider = serviceProvider;
+    }
+
+        private async Task InvalidateProfileAsync(int userId)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var profileService = scope.ServiceProvider.GetRequiredService<IUserBehaviorProfileService>();
+        await profileService.InvalidateProfileAsync(userId);
     }
 
     public async Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto? filter = null)
@@ -49,13 +58,14 @@ public class TaskService : ITaskService
         await _activityLogService.LogAsync(
             createdTask.UserId,
             "Create Task",
-            $"'{createdTask.Title}' isimli görev oluşturuldu.");
+            $"'{createdTask.Title}' isimli gÃ¶rev oluÅŸturuldu.");
 
+        await InvalidateProfileAsync(createdTask.UserId);
         return createdTask;
     }
 
-    // Görevi günceller.
-    // Önce görevin gerçekten bu kullanıcıya ait olup olmadığını kontrol eder.
+    // GÃ¶revi gÃ¼nceller.
+    // Ã–nce gÃ¶revin gerÃ§ekten bu kullanÄ±cÄ±ya ait olup olmadÄ±ÄŸÄ±nÄ± kontrol eder.
     public async Task<bool> UpdateAsync(
         int id,
         int userId,
@@ -106,9 +116,10 @@ public class TaskService : ITaskService
             await _activityLogService.LogAsync(
                 userId,
                 "Update Task",
-                $"'{updatedTask.Title}' isimli görev güncellendi.");
+                $"'{updatedTask.Title}' isimli gÃ¶rev gÃ¼ncellendi.");
         }
 
+        if (result) await InvalidateProfileAsync(userId);
         return result;
     }
 
@@ -126,9 +137,10 @@ public class TaskService : ITaskService
             await _activityLogService.LogAsync(
                 userId,
                 "Delete Task",
-                $"'{task.Title}' isimli görev silindi.");
+                $"'{task.Title}' isimli gÃ¶rev silindi.");
         }
 
+        if (result) await InvalidateProfileAsync(userId);
         return result;
     }
     public async Task<List<TaskItem>> FilterAsync(
@@ -182,3 +194,4 @@ public class TaskService : ITaskService
     }
 
 }
+

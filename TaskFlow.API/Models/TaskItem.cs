@@ -30,6 +30,7 @@ public class TaskItem
     public Team? Team { get; set; }
 
     public bool IsDeleted { get; set; } = false;
+    public bool IsArchived { get; set; } = false;
 
     // Parent-child relationship for AI Task Breakdown
     public int? ParentTaskId { get; set; }

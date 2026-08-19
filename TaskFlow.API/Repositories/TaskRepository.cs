@@ -22,7 +22,7 @@ public class TaskRepository : ITaskRepository
             .Include(x => x.AssignedUser)
             .Include(x => x.Assignees).ThenInclude(a => a.User)
             .Include(x => x.Team)
-            .Where(x => !x.IsDeleted && 
+            .Where(x => !x.IsDeleted && !x.IsArchived &&
                         (!x.IsCompleted || 
                          x.CompletedDate == null || 
                          x.CompletedDate >= archiveDate));

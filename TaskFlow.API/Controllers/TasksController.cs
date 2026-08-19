@@ -1,4 +1,4 @@
-//using : ASP.NET Corun sontroller sınıflarını kullanabilmek için yazarız
+﻿//using : ASP.NET Corun sontroller sÄ±nÄ±flarÄ±nÄ± kullanabilmek iÃ§in yazarÄ±z
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +12,10 @@ using TaskFlow.API.Services;
 
 namespace TaskFlow.API.Controllers
 {
-    [ApiController] // bu sınıf bir web API Controllerıdır
-    [Route("api/[controller]")] //url oluşturur
-    [Authorize] // Bu controller'daki tüm endpoint'ler artık JWT ister.
-    public class TasksController : ControllerBase //inheritance ile ControllerBase sınıfından türetilir
+    [ApiController] // bu sÄ±nÄ±f bir web API ControllerÄ±dÄ±r
+    [Route("api/[controller]")] //url oluÅŸturur
+    [Authorize] // Bu controller'daki tÃ¼m endpoint'ler artÄ±k JWT ister.
+    public class TasksController : ControllerBase //inheritance ile ControllerBase sÄ±nÄ±fÄ±ndan tÃ¼retilir
     {
         private readonly ITaskService _taskService;
         private readonly ITeamAuthorizationService _teamAuth;
@@ -67,7 +67,7 @@ namespace TaskFlow.API.Controllers
             return int.Parse(userId!);
         }
 
-        // Sadece Admin kullanıcıları tüm görevleri görebilir.
+        // Sadece Admin kullanÄ±cÄ±larÄ± tÃ¼m gÃ¶revleri gÃ¶rebilir.
         [Authorize(Roles = "Admin")]
         [HttpGet("all")]
         public async Task<IActionResult> GetAllTasks()
@@ -77,7 +77,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Tüm görevler getirildi.",
+                Message = "TÃ¼m gÃ¶revler getirildi.",
                 Data = tasks.Select(MapToDto)
             });
         }
@@ -92,7 +92,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Görevler başarıyla getirildi.",
+                Message = "GÃ¶revler baÅŸarÄ±yla getirildi.",
                 Data = tasks.Select(MapToDto)
             });
         }
@@ -115,7 +115,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Takım görevleri başarıyla getirildi.",
+                Message = "TakÄ±m gÃ¶revleri baÅŸarÄ±yla getirildi.",
                 Data = tasks.Select(MapToDto)
             });
         }
@@ -133,14 +133,14 @@ namespace TaskFlow.API.Controllers
                 return NotFound(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Görev bulunamadı."
+                    Message = "GÃ¶rev bulunamadÄ±."
                 });
             }
 
             return Ok(new ApiResponse<TaskDto>
             {
                 Success = true,
-                Message = "Görev bulundu.",
+                Message = "GÃ¶rev bulundu.",
                 Data = MapToDto(task)
             });
         }
@@ -176,7 +176,7 @@ namespace TaskFlow.API.Controllers
                 if (!dto.TeamId.HasValue)
                 {
                     Console.WriteLine($"[DIAGNOSTIC] Returning 400 BadRequest: Missing TeamId for assignees.");
-                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Kullanıcı atamak için takım belirtmelisiniz." });
+                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "KullanÄ±cÄ± atamak iÃ§in takÄ±m belirtmelisiniz." });
                 }
 
                 foreach (var assigneeId in dto.AssigneeIds)
@@ -184,7 +184,7 @@ namespace TaskFlow.API.Controllers
                     var isMember = _context.TeamMembers.Any(tm => tm.TeamId == dto.TeamId.Value && tm.UserId == assigneeId && tm.Status == TeamMemberStatus.Accepted);
                     if (!isMember)
                     {
-                        return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"Geçersiz kullanıcı ataması: {assigneeId}" });
+                        return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"GeÃ§ersiz kullanÄ±cÄ± atamasÄ±: {assigneeId}" });
                     }
                     
                     assignees.Add(new TaskAssignee { UserId = assigneeId });
@@ -197,7 +197,7 @@ namespace TaskFlow.API.Controllers
                 var isAdmin = User.IsInRole("Admin");
                 if (parentTask == null || !await _teamAuth.CanManageTaskAsync(parentTask, userId, isAdmin))
                 {
-                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Geçersiz veya yetkisiz Parent Task." });
+                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "GeÃ§ersiz veya yetkisiz Parent Task." });
                 }
             }
 
@@ -225,7 +225,7 @@ namespace TaskFlow.API.Controllers
                 new ApiResponse<TaskDto>
                 {
                     Success = true,
-                    Message = "Görev başarıyla oluşturuldu.",
+                    Message = "GÃ¶rev baÅŸarÄ±yla oluÅŸturuldu.",
                     Data = taskDto
                 });
         }
@@ -245,21 +245,119 @@ namespace TaskFlow.API.Controllers
                     return Ok(new ApiResponse<List<AiTaskOrderDto>>
                     {
                         Success = true,
-                        Message = "Sıralanacak aktif görev bulunmuyor.",
+                        Message = "SÄ±ralanacak aktif gÃ¶rev bulunmuyor.",
                         Data = new List<AiTaskOrderDto>()
                     });
                 }
                 
-                var analyticsRepo = HttpContext.RequestServices.GetRequiredService<TaskFlow.API.Repositories.IAnalyticsRepository>();
-                var metrics = await analyticsRepo.GetAdvancedAnalyticsDataAsync(userId);
+                var profileService = HttpContext.RequestServices.GetRequiredService<TaskFlow.API.Services.IUserBehaviorProfileService>();
+                var profile = await profileService.GetOrCalculateProfileAsync(userId);
                 
-                var orderedTasks = await _aiService.GenerateTaskOrderAsync(tasks, metrics);
+                var aiResultTasks = await _aiService.GenerateTaskOrderAsync(tasks, profile);
+                var finalOrderedTasks = new List<AiTaskOrderDto>();
+                var validTaskIds = new HashSet<int>(activeTasks.Select(t => t.Id));
+                var processedTaskIds = new HashSet<int>();
+
+                // 3. Calculate Organic Backend Score
+                int currentScore = 95 + (activeTasks.Count % 4);
+
+                // 1. Map AI results to real task data
+                foreach (var aiItem in aiResultTasks.OrderBy(x => x.Rank))
+                {
+                    // Ignore fake IDs or duplicates
+                    if (!validTaskIds.Contains(aiItem.TaskId) || processedTaskIds.Contains(aiItem.TaskId))
+                        continue;
+
+                    var realTask = activeTasks.First(t => t.Id == aiItem.TaskId);
+                    
+                    int drop = 7; // Base drop
+                    
+                    if (realTask.Priority == TaskFlow.API.Models.TaskPriority.High) drop -= 3;
+                    else if (realTask.Priority == TaskFlow.API.Models.TaskPriority.Low) drop += 2;
+                    
+                    if (realTask.DueDate.HasValue)
+                    {
+                        var days = (realTask.DueDate.Value - DateTime.UtcNow).TotalDays;
+                        if (days < 0) drop -= 3;
+                        else if (days < 2) drop -= 2;
+                        else if (days > 7) drop += 3;
+                    }
+                    
+                    if (realTask.Status == TaskFlow.API.Models.TaskStatus.InProgress) drop -= 1;
+                    
+                    if (profile.CategoryBehaviors != null)
+                    {
+                        var catPerf = profile.CategoryBehaviors.FirstOrDefault(c => c.Category == realTask.Category);
+                        if (catPerf != null && (catPerf.LateTasks > 0 || catPerf.ProcrastinatedTasks > 0))
+                        {
+                             drop -= 2; // User risk category
+                        }
+                    }
+                    
+                    if (drop < 1) drop = 1 + (realTask.Id % 2);
+                    if (drop > 15) drop = 14 + (realTask.Id % 2);
+                    
+                    if (finalOrderedTasks.Count == 0)
+                    {
+                        currentScore -= (drop / 2);
+                        if (currentScore > 99) currentScore = 99;
+                    }
+                    else
+                    {
+                        currentScore -= drop;
+                    }
+                    if (currentScore < 15) currentScore = 15;
+
+                    var dto = new AiTaskOrderDto
+                    {
+                        TaskId = realTask.Id,
+                        Title = realTask.Title,
+                        Priority = realTask.Priority.ToString(),
+                        DueDate = realTask.DueDate?.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                        Status = realTask.Status.ToString(),
+                        Category = realTask.Category.ToString(),
+                        Rank = aiItem.Rank,
+                        Score = currentScore,
+                        Reasoning = aiItem.Reasoning
+                    };
+                    
+                    finalOrderedTasks.Add(dto);
+                    processedTaskIds.Add(realTask.Id);
+                }
+
+                // 2. Append missing active tasks that AI forgot
+                var missingTasks = activeTasks.Where(t => !processedTaskIds.Contains(t.Id)).ToList();
+                if (missingTasks.Any())
+                {
+                    int nextRank = finalOrderedTasks.Any() ? finalOrderedTasks.Max(x => x.Rank) + 1 : 1;
+                    foreach (var missingTask in missingTasks.OrderBy(t => t.DueDate ?? DateTime.MaxValue).ThenByDescending(t => t.Priority))
+                    {
+                        currentScore -= 8;
+                        if (currentScore < 5) currentScore = 5;
+
+                        finalOrderedTasks.Add(new AiTaskOrderDto
+                        {
+                            TaskId = missingTask.Id,
+                            Title = missingTask.Title,
+                            Priority = missingTask.Priority.ToString(),
+                            DueDate = missingTask.DueDate?.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                            Status = missingTask.Status.ToString(),
+                            Category = missingTask.Category.ToString(),
+                            Rank = nextRank++,
+                            Score = currentScore,
+                            Reasoning = "AI deÄŸerlendirmesine girmediÄŸi iÃ§in standart Ã¶nceliÄŸe gÃ¶re sÄ±ralandÄ±."
+                        });
+                    }
+                }
+                
+                // Re-sort final list by rank
+                finalOrderedTasks = finalOrderedTasks.OrderBy(x => x.Rank).ToList();
                 
                 return Ok(new ApiResponse<List<AiTaskOrderDto>>
                 {
                     Success = true,
                     Message = "AI Task Order generated successfully.",
-                    Data = orderedTasks
+                    Data = finalOrderedTasks
                 });
             }
             catch (Exception ex)
@@ -285,7 +383,7 @@ namespace TaskFlow.API.Controllers
                 return NotFound(new ApiResponse<TaskBreakdownResultDto>
                 {
                     Success = false,
-                    Message = "Görev bulunamadı veya yetkiniz yok."
+                    Message = "GÃ¶rev bulunamadÄ± veya yetkiniz yok."
                 });
             }
 
@@ -302,7 +400,7 @@ namespace TaskFlow.API.Controllers
                 return Ok(new ApiResponse<TaskBreakdownResultDto>
                 {
                     Success = true,
-                    Message = "Alt görev önerileri başarıyla oluşturuldu.",
+                    Message = "Alt gÃ¶rev Ã¶nerileri baÅŸarÄ±yla oluÅŸturuldu.",
                     Data = result
                 });
             }
@@ -312,7 +410,7 @@ namespace TaskFlow.API.Controllers
                 return StatusCode(502, new ApiResponse<TaskBreakdownResultDto>
                 {
                     Success = false,
-                    Message = "Bu görev için şu anda AI alt görev önerileri oluşturulamadı."
+                    Message = "Bu gÃ¶rev iÃ§in ÅŸu anda AI alt gÃ¶rev Ã¶nerileri oluÅŸturulamadÄ±."
                 });
             }
         }
@@ -351,14 +449,14 @@ namespace TaskFlow.API.Controllers
                 assignees = new List<TaskAssignee>();
                 if (task.TeamId.HasValue)
                 {
-                    // Temizle ve yeniden oluştur (tam liste değiştirme mantığı)
+                    // Temizle ve yeniden oluÅŸtur (tam liste deÄŸiÅŸtirme mantÄ±ÄŸÄ±)
                     var distinctIds = dto.AssigneeIds.Distinct();
                     foreach (var assigneeId in distinctIds)
                     {
                         var isMember = _context.TeamMembers.Any(tm => tm.TeamId == task.TeamId.Value && tm.UserId == assigneeId && tm.Status == TeamMemberStatus.Accepted);
                         if (!isMember)
                         {
-                            return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"Geçersiz kullanıcı ataması: {assigneeId}" });
+                            return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"GeÃ§ersiz kullanÄ±cÄ± atamasÄ±: {assigneeId}" });
                         }
                         
                         assignees.Add(new TaskAssignee { TaskId = id, UserId = assigneeId });
@@ -366,7 +464,7 @@ namespace TaskFlow.API.Controllers
                 }
                 else if (dto.AssigneeIds.Any())
                 {
-                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "Kullanıcı atamak için takım belirtmelisiniz." });
+                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "KullanÄ±cÄ± atamak iÃ§in takÄ±m belirtmelisiniz." });
                 }
             }
 
@@ -416,7 +514,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<bool>
             {
                 Success = true,
-                Message = "Görev tamamlanma durumu güncellendi.",
+                Message = "GÃ¶rev tamamlanma durumu gÃ¼ncellendi.",
                 Data = task.IsCompleted
             });
         }
@@ -450,7 +548,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Filtrelenmiş görevler getirildi.",
+                Message = "FiltrelenmiÅŸ gÃ¶revler getirildi.",
                 Data = tasks.Select(MapToDto)
             });
         }
@@ -465,7 +563,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Arama sonuçları getirildi.",
+                Message = "Arama sonuÃ§larÄ± getirildi.",
                 Data = tasks.Select(MapToDto)
             });
         }
@@ -480,7 +578,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Görevler sayfalı getirildi.",
+                Message = "GÃ¶revler sayfalÄ± getirildi.",
                 Data = tasks.Select(MapToDto)
             });
         }
@@ -510,9 +608,12 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<IEnumerable<TaskDto>>
             {
                 Success = true,
-                Message = "Görevler sıralandı.",
+                Message = "GÃ¶revler sÄ±ralandÄ±.",
                 Data = tasks.Select(MapToDto)
             });
         }
     }
 }
+
+
+

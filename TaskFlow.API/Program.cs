@@ -84,6 +84,7 @@ builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IUserBehaviorProfileService, UserBehaviorProfileService>();
 builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
@@ -99,7 +100,8 @@ builder.Services.Configure<JwtSettings>(
 
 // Token Ã¼retme servisini ekler.
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<ITaskRepository, TaskRepository>(); // Repository'yi DI container'a ekler.
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI container'a ekler.
 
 // AI configuration and services
 builder.Services.Configure<AiSettings>(
@@ -173,4 +175,13 @@ app.MapControllers();
 app.MapHub<TaskHub>("/hubs/tasks");
 
 app.Run();
+
+
+
+
+
+
+
+
+
 

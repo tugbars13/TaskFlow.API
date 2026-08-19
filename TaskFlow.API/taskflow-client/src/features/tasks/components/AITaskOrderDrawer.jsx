@@ -76,14 +76,14 @@ export default function AITaskOrderDrawer({ isOpen, onClose }) {
               {error}
             </div>
           ) : (
-            orderedTasks.map((task, index) => (
+            orderedTasks.map((task) => (
               <div key={task.taskId} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 shadow-sm flex gap-3 items-start hover:border-primary/30 transition-colors">
                 <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                  {index + 1}
+                  {task.rank || '?'}
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-on-surface mb-1">{task.title}</h4>
-                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider mb-2">
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-on-surface mb-1 truncate">{task.title}</h4>
+                  <div className="flex items-center flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider mb-2">
                     <span className={
                       task.priority === "High" ? "text-error" : 
                       task.priority === "Medium" ? "text-orange-500" : 
@@ -93,8 +93,16 @@ export default function AITaskOrderDrawer({ isOpen, onClose }) {
                     </span>
                     <span className="text-outline-variant/60">•</span>
                     <span className="text-on-surface-variant">
-                      {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No Date'}
+                      {task.dueDate && !isNaN(Date.parse(task.dueDate)) ? new Date(task.dueDate).toLocaleDateString() : 'NO DATE'}
                     </span>
+                    <span className="text-outline-variant/60">•</span>
+                    <span className="text-primary/70">{task.category}</span>
+                    {task.score > 0 && (
+                      <>
+                        <span className="text-outline-variant/60">•</span>
+                        <span className="text-emerald-500">SCORE: {task.score}</span>
+                      </>
+                    )}
                   </div>
                   <p className="text-xs text-on-surface-variant bg-surface-container/50 p-2 rounded-lg italic">
                     "{task.reasoning}"

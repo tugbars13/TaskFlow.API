@@ -1,4 +1,4 @@
-import api from "@/api/client/axios";
+﻿import api from "@/api/client/axios";
 
 const unwrapResponse = (response, fallback = null) => {
   return response.data?.data ?? response.data ?? fallback;
@@ -76,3 +76,4 @@ export const getTeamAnalytics = async (teamId, period = "weekly") => {
   const response = await api.get(`/teams/${teamId}/analytics`, { params: { period } });
   return unwrapResponse(response);
 };
+

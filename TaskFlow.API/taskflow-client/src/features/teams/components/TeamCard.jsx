@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 // â”€â”€ Role badge config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -116,16 +116,7 @@ export default function TeamCard({
                 <span className="material-symbols-outlined text-[16px]">task</span>
                 Tasks
               </Link>
-              {(isOwner || isAdmin) && (
-                <button
-                  type="button"
-                  onClick={() => onOpenAnalytics?.(team)}
-                  className="flex items-center gap-xs px-md py-xs bg-surface border border-primary/20 text-primary font-bold text-xs rounded-xl hover:bg-primary/5 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                >
-                  <span className="material-symbols-outlined text-[16px]">insights</span>
-                  Analiz
-                </button>
-              )}
+
               {canAddMember && (
                 <button
                   type="button"

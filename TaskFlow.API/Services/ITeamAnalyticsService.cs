@@ -4,5 +4,6 @@ namespace TaskFlow.API.Services;
 
 public interface ITeamAnalyticsService
 {
-    Task<TeamAnalyticsDto> GetTeamAnalyticsAsync(int teamId, string period, int currentUserId);
+    Task<TeamAnalyticsDto> GetTeamAnalyticsAsync(int teamId, string period, int currentUserId, DateTime? targetDate = null);
 }
+

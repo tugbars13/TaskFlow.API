@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Data;
@@ -10,10 +10,10 @@ public class AppDbContext : DbContext
     {
     }
 
-    // Veritabanındaki Tasks tablosunu temsil eder.
+    // VeritabanÄ±ndaki Tasks tablosunu temsil eder.
     public DbSet<TaskItem> Tasks { get; set; }
 
-    // Veritabanındaki Users tablosunu temsil eder.
+    // VeritabanÄ±ndaki Users tablosunu temsil eder.
     public DbSet<User> Users { get; set; }
 
     public DbSet<ActivityLog> ActivityLogs { get; set; }
@@ -21,18 +21,27 @@ public class AppDbContext : DbContext
     public DbSet<Team> Teams { get; set; }
     public DbSet<TeamMember> TeamMembers { get; set; }
     public DbSet<TaskAssignee> TaskAssignees { get; set; }
+    public DbSet<UserBehaviorProfile> UserBehaviorProfiles { get; set; }
+    public DbSet<UserCategoryBehavior> UserCategoryBehaviors { get; set; }
+    public DbSet<TeamAnalyticsSnapshot> TeamAnalyticsSnapshots { get; set; }
 
-    // Model oluşturulurken çalışır.
+    // Model oluÅŸturulurken Ã§alÄ±ÅŸÄ±r.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // User (1) ---- (*) TaskItem ilişkisini tanımlar.
+        modelBuilder.Entity<UserBehaviorProfile>()
+            .HasMany(p => p.CategoryBehaviors)
+            .WithOne(c => c.Profile)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // User (1) ---- (*) TaskItem iliÅŸkisini tanÄ±mlar.
         modelBuilder.Entity<TaskItem>()
-            .HasOne(t => t.User)              // Her Task'ın bir User'ı vardır.
-            .WithMany(u => u.Tasks)           // Bir User'ın birçok Task'ı olabilir.
-            .HasForeignKey(t => t.UserId)     // Foreign Key alanı UserId'dir.
-            .OnDelete(DeleteBehavior.Cascade);// User silinirse Task'ları da silinir.
+            .HasOne(t => t.User)              // Her Task'Ä±n bir User'Ä± vardÄ±r.
+            .WithMany(u => u.Tasks)           // Bir User'Ä±n birÃ§ok Task'Ä± olabilir.
+            .HasForeignKey(t => t.UserId)     // Foreign Key alanÄ± UserId'dir.
+            .OnDelete(DeleteBehavior.Cascade);// User silinirse Task'larÄ± da silinir.
 
         modelBuilder.Entity<TaskItem>()
             .HasOne(t => t.AssignedUser)
@@ -59,7 +68,7 @@ public class AppDbContext : DbContext
             .HasForeignKey(tm => tm.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Bir kullanÄ±cÄ± bir takÄ±ma yalnÄ±zca bir kez eklenebilir.
+        // Bir kullanÃ„Â±cÃ„Â± bir takÃ„Â±ma yalnÃ„Â±zca bir kez eklenebilir.
         modelBuilder.Entity<TeamMember>()
             .HasIndex(tm => new { tm.TeamId, tm.UserId })
             .IsUnique();
@@ -84,3 +93,4 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskFlow.API.Data;
 
@@ -11,9 +12,11 @@ using TaskFlow.API.Data;
 namespace TaskFlow.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819083354_AddTaskArchival")]
+    partial class AddTaskArchival
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,71 +143,6 @@ namespace TaskFlow.API.Migrations
                     b.ToTable("Teams");
                 });
 
-            modelBuilder.Entity("TaskFlow.API.Models.TeamAnalyticsSnapshot", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ActiveMembersJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AiSummary")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CompletedTasks")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CompletionRate")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InProgressTasks")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MemberCount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OverdueTasks")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OverdueTasksListJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PeriodType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PreviousPeriodCompletionRate")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProgressTrendJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("TeamAnalyticsSnapshots");
-                });
-
             modelBuilder.Entity("TaskFlow.API.Models.TeamMember", b =>
                 {
                     b.Property<int>("Id")
@@ -277,83 +215,6 @@ namespace TaskFlow.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.UserBehaviorProfile", b =>
-                {
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<double>("AverageCompletionDays")
-                        .HasColumnType("float");
-
-                    b.Property<int>("CompletedTasks")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CurrentOverdueTasks")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LastCalculatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LateTasks")
-                        .HasColumnType("int");
-
-                    b.Property<double>("OnTimeCompletionRate")
-                        .HasColumnType("float");
-
-                    b.Property<int>("ProcrastinatedTasks")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalTasks")
-                        .HasColumnType("int");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("UserBehaviorProfiles");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.UserCategoryBehavior", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Category")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CompletedTasks")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LastCalculatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LateTasks")
-                        .HasColumnType("int");
-
-                    b.Property<double>("OnTimeCompletionRate")
-                        .HasColumnType("float");
-
-                    b.Property<int>("ProcrastinatedTasks")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RiskLevel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TotalTasks")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserCategoryBehaviors");
                 });
 
             modelBuilder.Entity("TaskItem", b =>
@@ -464,17 +325,6 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TaskFlow.API.Models.TeamAnalyticsSnapshot", b =>
-                {
-                    b.HasOne("TaskFlow.API.Models.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Team");
-                });
-
             modelBuilder.Entity("TaskFlow.API.Models.TeamMember", b =>
                 {
                     b.HasOne("TaskFlow.API.Models.Team", "Team")
@@ -492,28 +342,6 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("Team");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.UserBehaviorProfile", b =>
-                {
-                    b.HasOne("TaskFlow.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.UserCategoryBehavior", b =>
-                {
-                    b.HasOne("TaskFlow.API.Models.UserBehaviorProfile", "Profile")
-                        .WithMany("CategoryBehaviors")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Profile");
                 });
 
             modelBuilder.Entity("TaskItem", b =>
@@ -559,11 +387,6 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("Tasks");
 
                     b.Navigation("TeamMemberships");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.UserBehaviorProfile", b =>
-                {
-                    b.Navigation("CategoryBehaviors");
                 });
 
             modelBuilder.Entity("TaskItem", b =>

@@ -173,6 +173,21 @@ export default function TasksHeader({
             </Button>
           )}
 
+          {isTeamBoard && (
+            <Button
+              variant="outline"
+              onClick={() => navigate('/team', { state: { analyticsTeamId: teamId } })}
+              startIcon={
+                <span className="material-symbols-outlined !text-[20px] !leading-none text-primary">
+                  insights
+                </span>
+              }
+              className="px-4 py-2.5 rounded-xl shadow-sm hover:bg-primary/10 transition-colors text-sm font-semibold border-primary/20 text-primary"
+            >
+              Takım Analiz
+            </Button>
+          )}
+
           {canCreateTasks && (
             <Button
               variant="filled"

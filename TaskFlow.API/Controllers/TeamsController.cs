@@ -192,7 +192,7 @@ namespace TaskFlow.API.Controllers
         }
     
         [HttpGet("{teamId}/analytics")]
-        public async Task<IActionResult> GetTeamAnalytics(int teamId, [FromQuery] string period = "weekly")
+        public async Task<IActionResult> GetTeamAnalytics(int teamId, [FromQuery] string period = "daily", [FromQuery] DateTime? date = null)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -208,7 +208,7 @@ namespace TaskFlow.API.Controllers
                 return Forbid();
             }
 
-            var analytics = await _teamAnalyticsService.GetTeamAnalyticsAsync(teamId, period, userId.Value);
+            var analytics = await _teamAnalyticsService.GetTeamAnalyticsAsync(teamId, period, userId.Value, date);
             return Ok(new TaskFlow.API.Responses.ApiResponse<TaskFlow.API.DTOs.Team.TeamAnalyticsDto>
             {
                 Success = true,
@@ -218,3 +218,4 @@ namespace TaskFlow.API.Controllers
         }
     }
 }
+

@@ -118,46 +118,6 @@ export default function Sidebar({ isCollapsed, onToggle }) {
           })}
         </nav>
 
-        {/* Workspace Footer Badge */}
-        <div
-          className={cn(
-            "shrink-0 transition-all duration-300",
-            isCollapsed ? "px-2 pb-6 pt-4" : "p-[14px]",
-          )}
-        >
-          <div
-            className={cn(
-              "rounded-2xl bg-surface-container-low border border-[var(--color-sidebar-border)] flex items-center transition-all duration-300 overflow-hidden cursor-pointer hover:bg-[var(--color-sidebar-hover)]",
-              isCollapsed
-                ? "flex-col p-2 gap-2"
-                : "p-[14px] gap-[14px] w-full justify-between",
-            )}
-          >
-            <div
-              className={cn(
-                "flex items-center",
-                isCollapsed ? "flex-col gap-2" : "gap-[14px]",
-              )}
-            >
-              <div className="size-[40px] rounded-full bg-surface-container-high border border-[var(--color-sidebar-border)] text-[var(--color-sidebar-text-variant)] flex items-center justify-center font-bold text-sm shrink-0">
-                WS
-              </div>
-              {!isCollapsed && (
-                <div className="min-w-0 flex-1 flex flex-col justify-center">
-                  <p className="font-label-md text-[14px] font-bold text-[var(--color-sidebar-text)] truncate leading-tight">
-                    My Workspace
-                  </p>
-                  <p className="text-[12px] text-[var(--color-sidebar-text-variant)] font-medium truncate mt-0.5">
-                    Pro Plan
-                  </p>
-                </div>
-              )}
-            </div>
-            <span className="material-symbols-outlined text-[18px] text-[var(--color-sidebar-text-variant)] shrink-0">
-              expand_more
-            </span>
-          </div>
-        </div>
       </div>
     </aside>
   );

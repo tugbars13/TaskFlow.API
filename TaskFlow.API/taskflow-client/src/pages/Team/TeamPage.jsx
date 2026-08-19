@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import useTeamPage from "@/features/teams/hooks/useTeamPage";
 import TeamAnalyticsView from "@/features/teams/components/TeamAnalyticsView";
 import TeamToolbar from "@/features/teams/components/TeamToolbar";
@@ -13,6 +14,8 @@ import TaskFormModal from "@/features/tasks/components/TaskFormModal";
 import { PageLoading, PageError } from "@/components/common";
 
 export default function TeamPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const {
     teamsList,
     stats,
@@ -43,6 +46,16 @@ export default function TeamPage() {
   } = useTeamPage();
 
   const [activeAnalyticsTeam, setActiveAnalyticsTeam] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.analyticsTeamId && teamsList && teamsList.length > 0) {
+      const targetTeam = teamsList.find(t => String(t.id) === String(location.state.analyticsTeamId));
+      if (targetTeam) {
+        setActiveAnalyticsTeam(targetTeam);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, teamsList, navigate, location.pathname]);
 
   if (loading) {
     return <PageLoading message="Loading Teams..." />;

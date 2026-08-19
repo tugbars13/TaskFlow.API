@@ -6,7 +6,6 @@ import { cn } from "@/utils/cn";
 export default function Navbar({
   user = DEFAULT_USER,
   onSearch,
-  onOpenAssistant,
   onOpenNotifications,
   unreadCount = 0,
   onOpenHelp,
@@ -45,16 +44,7 @@ export default function Navbar({
 
       {/* Actions */}
       <div className="flex items-center gap-lg">
-        <button
-          type="button"
-          onClick={onOpenAssistant}
-          className="text-primary font-semibold text-sm flex items-center gap-1.5 hover:bg-primary/5 px-3 py-1.5 rounded-full transition-all"
-        >
-          <span className="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
-          AI Assistant
-        </button>
-
-        <div className="flex items-center gap-4 border-l border-outline-variant/30 pl-5">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             aria-label="Notifications"

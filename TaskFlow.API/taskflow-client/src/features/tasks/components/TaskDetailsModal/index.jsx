@@ -14,7 +14,7 @@ export default function TaskDetailsModal({
   isReadOnly = false,
 }) {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
-  
+
   // Safe use of context - TasksPage provides it, CalendarPage might not if not wrapped,
   // but CalendarPage does use TasksProvider at the root. We can use it safely.
   let addTask;
@@ -32,7 +32,7 @@ export default function TaskDetailsModal({
 
   const handleAddSubtasks = async (subtasks) => {
     if (!addTask) return;
-    
+
     // Create each subtask
     for (const st of subtasks) {
       await addTask({
@@ -42,14 +42,18 @@ export default function TaskDetailsModal({
         priority: task.priority,
         dueDate: null,
         parentTaskId: task.id,
-        teamId: task.teamId
+        teamId: null,
       });
     }
   };
 
   return (
     <>
-      <Modal isOpen={isOpen && !isBreakdownOpen} onClose={onClose} title={task.title}>
+      <Modal
+        isOpen={isOpen && !isBreakdownOpen}
+        onClose={onClose}
+        title={task.title}
+      >
         <TaskDetailsView task={task} />
 
         <TaskFooter
