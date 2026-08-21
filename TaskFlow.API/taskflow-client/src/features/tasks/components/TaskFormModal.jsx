@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
-import { getTeamMembers } from "@/features/teams/api/teamService";
+import useTeam from "@/features/teams/hooks/useTeam";
 
 const DEFAULT_FORM_VALUES = Object.freeze({
   title: "",
@@ -33,8 +33,13 @@ export default function TaskFormModal({
   teamId = null,
 }) {
   const [formData, setFormData] = useState(DEFAULT_FORM_VALUES);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
+  const { members: allMembers, loading: loadingMembers } = useTeam();
+
+  const teamMembers = useMemo(() => {
+    if (!allMembers || !teamId) return [];
+    return allMembers.filter((m) => Number(m.teamId) === Number(teamId));
+  }, [allMembers, teamId]);
+
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState({});
@@ -57,26 +62,6 @@ export default function TaskFormModal({
       [field]: value,
     }));
   };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchAssignees();
-    }
-  }, [isOpen, teamId]);
-
-  const fetchAssignees = useCallback(async () => {
-    setLoadingMembers(true);
-    try {
-      const members = await getTeamMembers(teamId);
-      console.log("Team members response from getTeamMembers:", members);
-      setTeamMembers(Array.isArray(members) ? members : []);
-    } catch (err) {
-      console.warn("Failed to load assignees from Users API:", err);
-      setTeamMembers([]);
-    } finally {
-      setLoadingMembers(false);
-    }
-  }, [teamId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -122,6 +107,8 @@ export default function TaskFormModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+
     setTouched({ title: true, priority: true, category: true, dueDate: true });
 
     if (!isFormValid) return;
@@ -155,6 +142,7 @@ export default function TaskFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      disableClose={submitting}
       title={initialData && initialData.id ? "Edit Task" : "Create New Task"}
       maxWidth="max-w-2xl"
     >

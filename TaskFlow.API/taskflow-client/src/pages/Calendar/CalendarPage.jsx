@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routesConstants";
 import useCalendarPage, {
@@ -42,6 +43,17 @@ export default function CalendarPage() {
     setIsSelectTeamModalOpen,
     handleSelectTeam,
   } = useCalendarPage();
+
+  const [crudError, setCrudError] = useState(null);
+
+  const safeAction = (action) => async (...args) => {
+    try {
+      setCrudError(null);
+      await action(...args);
+    } catch (err) {
+      setCrudError(err.message || "An error occurred while updating the task.");
+    }
+  };
 
   if (loading) {
     return (
@@ -122,6 +134,19 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Main Content Area */}
+      {crudError && (
+        <div className="mb-4 p-md bg-error-container/20 border border-error/30 rounded-2xl text-error text-sm font-semibold flex items-center justify-between gap-sm animate-fade-in shadow-sm">
+          <div className="flex items-center gap-sm">
+            <span className="material-symbols-outlined text-[20px]">error</span>
+            {crudError}
+          </div>
+          <button onClick={() => setCrudError(null)} className="hover:bg-error/10 p-1 rounded-full transition-colors flex items-center justify-center">
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      )}
+
       {/* 2. Main Two-Column Layout (65% / 35%) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT SIDE (65% / 8 Columns): Large Monthly Calendar */}
@@ -159,8 +184,8 @@ export default function CalendarPage() {
         isOpen={Boolean(selectedTaskDetails)}
         onClose={() => setSelectedTaskDetails(null)}
         task={selectedTaskDetails}
-        onToggleStatus={toggleTaskStatus}
-        onDeleteTask={removeTask}
+        onToggleStatus={safeAction(toggleTaskStatus)}
+        onDeleteTask={safeAction(removeTask)}
       />
 
       {/* Team Selection Modal */}

@@ -41,10 +41,10 @@ export default function useTaskBoard({
     }, [isTeamBoard, teamId]);
 
     const handleFormSubmit = useCallback(async (data) => {
-        await addTask(data);
+        await addTask({ ...data, teamId: selectedTeamForTask || Number(teamId) || null });
         setIsFormModalOpen(false);
         setSelectedTeamForTask(null);
-    }, [addTask]);
+    }, [addTask, selectedTeamForTask, teamId]);
 
     const handleDragDropTask = useCallback((taskId, statusId) => {
         const task = getEditableTask(taskId);

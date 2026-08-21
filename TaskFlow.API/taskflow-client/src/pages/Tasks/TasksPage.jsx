@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useTeam from "@/features/teams/hooks/useTeam";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -6,24 +6,39 @@ import KanbanColumn from "@/features/tasks/components/KanbanColumn";
 import TaskDetailsModal from "@/features/tasks/components/TaskDetailsModal";
 import TaskFormModal from "@/features/tasks/components/TaskFormModal";
 import SelectTeamModal from "@/features/teams/components/SelectTeamModal";
-import { PageLoading } from "@/components/common";
+import { PageLoading, PageError } from "@/components/common";
 import TasksHeader from "@/features/tasks/components/TasksHeader";
 import TaskFilters from "@/features/tasks/components/TaskFilters";
 import useTaskBoard from "@/features/tasks/hooks/useTaskBoard";
 import useTaskBoardData from "@/features/tasks/hooks/useTaskBoardData";
 import useTasks from "@/features/tasks/hooks/useTasks";
+
 export default function TasksPage() {
   const {
     tasks,
     loading: tasksLoading,
+    error: tasksError,
+    loadTasks,
     addTask,
     removeTask,
     toggleTaskStatus,
     moveTaskColumn,
   } = useTasks();
 
-  const { teams, members: teamMembers } = useTeam();
   const { teamId } = useParams();
+
+  const [crudError, setCrudError] = useState(null);
+
+  const safeAction = (action) => async (...args) => {
+    try {
+      setCrudError(null);
+      await action(...args);
+    } catch (err) {
+      setCrudError(err.message || "An error occurred while updating the task.");
+    }
+  };
+
+  const { teams, members: teamMembers } = useTeam();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,10 +75,12 @@ export default function TasksPage() {
       teams,
       teamId,
       isTeamBoard,
+      filters,
+      currentUserId: user?.id,
     },
   );
 
-  const assigneeOptions = React.useMemo(() => {
+  const assigneeOptions = useMemo(() => {
     const options = [
       { value: "", label: "All" },
       { value: "Me", label: user ? `Me (${user.fullName || user.displayName || user.name})` : "Me" },
@@ -120,12 +137,38 @@ export default function TasksPage() {
     isTeamBoard,
     canEditTask,
     addTask,
-    removeTask,
-    moveTaskColumn,
-    toggleTaskStatus,
+    removeTask: safeAction(removeTask),
+    moveTaskColumn: safeAction(moveTaskColumn),
+    toggleTaskStatus: safeAction(toggleTaskStatus),
   });
   const canEditSelectedTask =
     selectedTaskDetails && canEditTask(selectedTaskDetails);
+
+  if (tasksError) {
+    return (
+      <div className="w-full">
+        <TasksHeader
+          isTeamBoard={isTeamBoard}
+          currentTeam={currentTeam}
+          teams={teams}
+          teamId={teamId}
+          navigate={navigate}
+          teamMembers={teamMembers}
+          totalCount={0}
+          completedCount={0}
+          canCreateTasks={false}
+        />
+        <div className="mt-md">
+          <PageError
+            icon="task"
+            title="Tasks could not be loaded"
+            description={tasksError}
+            onRetry={() => loadTasks(teamId)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-4 transition-all duration-300 w-full overflow-hidden">
@@ -150,6 +193,18 @@ export default function TasksPage() {
         assigneeOptions={assigneeOptions}
         isTeamBoard={isTeamBoard}
       />
+
+      {crudError && (
+        <div className="p-md bg-error-container/20 border border-error/30 rounded-2xl text-error text-sm font-semibold flex items-center justify-between gap-sm animate-fade-in shadow-sm">
+          <div className="flex items-center gap-sm">
+            <span className="material-symbols-outlined text-[20px]">error</span>
+            {crudError}
+          </div>
+          <button onClick={() => setCrudError(null)} className="hover:bg-error/10 p-1 rounded-full transition-colors flex items-center justify-center">
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. 4-Column Kanban Board */}
       {tasksLoading ? (

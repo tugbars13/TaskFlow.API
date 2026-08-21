@@ -29,15 +29,14 @@ export default function useCalendarPage() {
   const {
     currentMonthIndex,
     currentYear,
-    loading: calendarLoading,
-    error: calendarError,
     navigateCalendar,
-    refetch,
   } = useCalendar();
 
   const {
     tasks,
     loading: tasksLoading,
+    error: tasksError,
+    loadTasks,
     addTask,
     toggleTaskStatus,
     removeTask,
@@ -114,13 +113,12 @@ export default function useCalendarPage() {
 
   const handleCreateTaskModal = useCallback(
     async (taskData) => {
-      await addTask(taskData);
+      await addTask({ ...taskData, teamId: selectedTeamForTask });
       setIsTaskModalOpen(false);
       setSelectedTaskModalData(null);
       setSelectedTeamForTask(null);
-      refetch();
     },
-    [addTask, refetch],
+    [addTask],
   );
 
   const handleCloseTaskModal = useCallback(() => {
@@ -134,16 +132,20 @@ export default function useCalendarPage() {
     setIsTaskModalOpen(true);
   }, []);
 
+  const handleRefetch = useCallback(() => {
+    loadTasks(null); // Calendar is global, so it fetches all tasks
+  }, [loadTasks]);
+
   return {
     // calendar
     currentMonthIndex,
     currentYear,
     navigateCalendar,
-    refetch,
+    refetch: handleRefetch,
 
     // status
-    loading: calendarLoading || tasksLoading,
-    error: calendarError,
+    loading: tasksLoading,
+    error: tasksError,
 
     // derived data
     tasks,

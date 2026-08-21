@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useContext } from "react";
+import { useEffect, useState, useCallback, useContext, useRef } from "react";
 import { getDashboardMetrics } from "../api/dashboardService";
 import { TaskContext } from "@/features/tasks/context/TaskContext";
 import useAuth from "@/features/auth/hooks/useAuth";
@@ -13,18 +13,30 @@ export default function useDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const latestRequestIdRef = useRef(0);
+
   const fetchDashboardData = useCallback(async () => {
     if (!isAuthenticated || authLoading) return;
-    
+
+    const requestId = ++latestRequestIdRef.current;
+
     setLoading(true);
     setError("");
     try {
       const data = await getDashboardMetrics();
+
+      // Only apply if this is still the latest request
+      if (requestId !== latestRequestIdRef.current) return;
+
       setMetrics(data);
     } catch (err) {
+      if (requestId !== latestRequestIdRef.current) return;
+
       setError(err.message ?? "Failed to load dashboard metrics.");
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [isAuthenticated, authLoading]);
 
