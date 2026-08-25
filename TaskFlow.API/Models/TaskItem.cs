@@ -1,4 +1,4 @@
-using TaskFlow.API.Models;
+﻿using TaskFlow.API.Models;
 
 public class TaskItem
 {
@@ -20,10 +20,6 @@ public class TaskItem
 
     public int UserId { get; set; }
     public User User { get; set; } = null!;
-
-    public int? AssignedUserId { get; set; }
-    public User? AssignedUser { get; set; }
-    
     public ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
 
     public int? TeamId { get; set; }

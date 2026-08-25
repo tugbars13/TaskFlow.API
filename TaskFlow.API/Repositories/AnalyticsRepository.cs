@@ -74,14 +74,12 @@ public class AnalyticsRepository : IAnalyticsRepository
     {
         var tasks = await _context.Tasks
             .AsNoTracking()
-            .Include(t => t.AssignedUser)
             .Include(t => t.Assignees)
             .Include(t => t.Team)
             .Where(t =>
                 !t.IsDeleted &&
                 (
                     (t.TeamId == null && t.UserId == userId) ||
-                    t.AssignedUserId == userId ||
                     t.Assignees.Any(a => a.UserId == userId)
                 ))
             .ToListAsync();
@@ -89,3 +87,4 @@ public class AnalyticsRepository : IAnalyticsRepository
         return AnalyticsCalculator.CalculateAdvancedMetrics(tasks);
     }
 }
+

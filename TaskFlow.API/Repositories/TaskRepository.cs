@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
@@ -19,7 +19,6 @@ public class TaskRepository : ITaskRepository
 
         return _context.Tasks
             .AsNoTracking()
-            .Include(x => x.AssignedUser)
             .Include(x => x.Assignees).ThenInclude(a => a.User)
             .Include(x => x.Team)
             .Where(x => !x.IsDeleted && !x.IsArchived &&
@@ -59,15 +58,15 @@ public class TaskRepository : ITaskRepository
         {
             if (filter.AssigneeId == "Me" && currentUserId.HasValue)
             {
-                query = query.Where(x => x.AssignedUserId == currentUserId.Value || x.Assignees.Any(a => a.UserId == currentUserId.Value));
+                query = query.Where(x => x.Assignees.Any(a => a.UserId == currentUserId.Value));
             }
             else if (filter.AssigneeId == "Unassigned")
             {
-                query = query.Where(x => x.AssignedUserId == null && !x.Assignees.Any());
+                query = query.Where(x => !x.Assignees.Any());
             }
             else if (int.TryParse(filter.AssigneeId, out int aId))
             {
-                query = query.Where(x => x.AssignedUserId == aId || x.Assignees.Any(a => a.UserId == aId));
+                query = query.Where(x => x.Assignees.Any(a => a.UserId == aId));
             }
         }
 
@@ -101,11 +100,11 @@ public class TaskRepository : ITaskRepository
         var query = GetActiveTasksQuery()
             .Where(x => 
                 (x.TeamId == null && x.UserId == userId) || 
-                x.AssignedUserId == userId || 
+                
                 x.Assignees.Any(a => a.UserId == userId) ||
                 (x.ParentTaskId != null && (
                     (x.ParentTask!.TeamId == null && x.ParentTask.UserId == userId) || 
-                    x.ParentTask.AssignedUserId == userId || 
+                    
                     x.ParentTask.Assignees.Any(a => a.UserId == userId)
                 ))
             );
@@ -133,7 +132,6 @@ public class TaskRepository : ITaskRepository
     {
         return await _context.Tasks
             .AsNoTracking()
-            .Include(x => x.AssignedUser)
             .Include(x => x.Assignees).ThenInclude(a => a.User)
             .Include(x => x.Team)
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
@@ -149,21 +147,45 @@ public class TaskRepository : ITaskRepository
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        // Kaydedilen görevi, AssignedUser bilgisiyle birlikte tek sorguda tekrar çek
+        // Kaydedilen gÃ¶revi, AssignedUser bilgisiyle birlikte tek sorguda tekrar Ã§ek
         return await _context.Tasks
-            .Include(t => t.AssignedUser)
             .Include(t => t.Assignees).ThenInclude(a => a.User)
             .FirstAsync(t => t.Id == task.Id);
     }
 
+        public async Task<TaskItem?> GetByIdTrackingAsync(int id)
+    {
+        return await _context.Tasks
+            .Include(x => x.Assignees).ThenInclude(a => a.User)
+            .Include(x => x.Team)
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+    }
+
+    public async Task<bool> UpdateTaskAsync(TaskItem task)
+    {
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteTaskAsync(TaskItem task)
+    {
+        task.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<int> GetSubtaskCountAsync(int parentTaskId)
+    {
+        return await _context.Tasks.CountAsync(t => t.ParentTaskId == parentTaskId && !t.IsDeleted);
+    }
+
     public async Task<bool> UpdateAsync(int id, TaskItem updatedTask)
     {
-        Console.WriteLine($"[TRACE] TaskRepository.UpdateAsync entered. id={id}");
         var task = await _context.Tasks.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
 
         if (task == null)
         {
-            Console.WriteLine($"[TRACE] TaskRepository: task is null. This means the query didn't find the task for this user.");
+            Console.WriteLine("[TRACE] TaskRepository: task is null. This means the query didn't find the task for this user.");
             return false;
         }
 
@@ -176,9 +198,7 @@ public class TaskRepository : ITaskRepository
         task.Priority = updatedTask.Priority;
         task.DueDate = updatedTask.DueDate;
         task.Category = updatedTask.Category;
-        task.AssignedUserId = updatedTask.AssignedUserId;
-
-        // Sadece Assignees listesi açıkça gönderilmişse güncelle (null değilse)
+        // Sadece Assignees listesi aÃ§Ä±kÃ§a gÃ¶nderilmiÅŸse gÃ¼ncelle (null deÄŸilse)
         if (updatedTask.Assignees != null)
         {
             var existingAssignees = await _context.TaskAssignees.Where(ta => ta.TaskId == id).ToListAsync();
@@ -220,7 +240,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> FilterAsync(int userId, TaskFilterDto filter)
     {
         var query = GetActiveTasksQuery()
-        .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId));
+        .Where(x => (x.TeamId == null && x.UserId == userId) || x.Assignees.Any(a => a.UserId == userId));
 
         if (filter.Priority.HasValue)
         {
@@ -241,17 +261,10 @@ public class TaskRepository : ITaskRepository
             .OrderByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
-    public async Task<List<TaskItem>> GetDashboardTasksAsync(int userId)
-    {
-        return await GetActiveTasksQuery()
-            .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
-            .ToListAsync();
-    }
-
     public async Task<DashboardDto> GetDashboardAsync(int userId)
     {
         var tasks = await GetActiveTasksQuery()
-        .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
+        .Where(x => (x.TeamId == null && x.UserId == userId) || x.Assignees.Any(a => a.UserId == userId))
         .ToListAsync();
 
         var todayPriorities = tasks
@@ -308,7 +321,7 @@ public class TaskRepository : ITaskRepository
                 Title = t.Title,
                 DueDate = t.DueDate,
                 Priority = t.Priority.ToString(),
-                AssignedUser = t.AssignedUser != null ? t.AssignedUser.FullName : "Alex M.",
+                AssignedUser = t.Assignees.Any() ? (t.Assignees.First().User != null ? t.Assignees.First().User.FullName : "Alex M.") : "Alex M.",
                 Category = t.Category.ToString()
             })
             .ToList();
@@ -332,7 +345,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> SortAsync(int userId, TaskSortDto sort)
     {
         var query = GetActiveTasksQuery()
-            .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId));
+            .Where(x => (x.TeamId == null && x.UserId == userId) || x.Assignees.Any(a => a.UserId == userId));
 
         var sortBy = sort.SortBy?.ToLower() ?? "createddate";
         var isDescending = sort.IsDescending;
@@ -351,7 +364,7 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> SearchAsync(int userId, string keyword)
     {
         return await GetActiveTasksQuery()
-            .Where(x => ((x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId)) &&
+            .Where(x => ((x.TeamId == null && x.UserId == userId) || x.Assignees.Any(a => a.UserId == userId)) &&
                 (x.Title.Contains(keyword) ||
                  (x.Description != null && x.Description.Contains(keyword))))
             .ToListAsync();
@@ -360,10 +373,11 @@ public class TaskRepository : ITaskRepository
     public async Task<List<TaskItem>> GetPagedAsync(int userId, PaginationDto pagination)
     {
         return await GetActiveTasksQuery()
-        .Where(x => (x.TeamId == null && x.UserId == userId) || x.AssignedUserId == userId || x.Assignees.Any(a => a.UserId == userId))
+        .Where(x => (x.TeamId == null && x.UserId == userId) || x.Assignees.Any(a => a.UserId == userId))
         .OrderByDescending(x => x.CreatedDate)
         .Skip((pagination.PageNumber - 1) * pagination.PageSize)
         .Take(pagination.PageSize)
         .ToListAsync();
     }
 }
+

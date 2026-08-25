@@ -1,4 +1,4 @@
-// Repositories/UserRepository.cs
+﻿// Repositories/UserRepository.cs
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
@@ -33,7 +33,7 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users.FindAsync(id);
     }
-    public async Task<List<User>> GetAllAsync() // BU METOT EKLENDİ
+    public async Task<List<User>> GetAllAsync() // BU METOT EKLENDÄ°
     {
         return await _context.Users.AsNoTracking().ToListAsync();
     }
@@ -50,10 +50,10 @@ public class UserRepository : IUserRepository
             }
 
             // 1. TaskItem (AssignedUserId) - Restrict
-            var assignedTasks = await _context.Tasks.Where(t => t.AssignedUserId == userId).ToListAsync();
+            var assignedTasks = await _context.Tasks.Where(t => t.Assignees.Any(a => a.UserId == userId)).ToListAsync();
             foreach (var task in assignedTasks)
             {
-                task.AssignedUserId = null;
+                task.Assignees.Clear();
             }
 
             // 2. TaskAssignee - Restrict

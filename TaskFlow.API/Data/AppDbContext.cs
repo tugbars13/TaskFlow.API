@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
 
     // VeritabanÄ±ndaki Tasks tablosunu temsil eder.
     public DbSet<TaskItem> Tasks { get; set; }
+    public DbSet<CustomCategory> CustomCategories { get; set; }
 
     // VeritabanÄ±ndaki Users tablosunu temsil eder.
     public DbSet<User> Users { get; set; }
@@ -43,11 +44,7 @@ public class AppDbContext : DbContext
             .HasForeignKey(t => t.UserId)     // Foreign Key alanÄ± UserId'dir.
             .OnDelete(DeleteBehavior.Cascade);// User silinirse Task'larÄ± da silinir.
 
-        modelBuilder.Entity<TaskItem>()
-            .HasOne(t => t.AssignedUser)
-            .WithMany()
-            .HasForeignKey(t => t.AssignedUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+        
 
         // TaskItem self-referencing: Parent-Child (AI Task Breakdown)
         modelBuilder.Entity<TaskItem>()

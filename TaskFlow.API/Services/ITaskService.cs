@@ -1,4 +1,4 @@
-using TaskFlow.API.DTOs;
+﻿using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Services;
@@ -13,8 +13,12 @@ public interface ITaskService
 
     Task<TaskItem?> GetByIdAsync(int id);
 
+    Task<TaskItem> CreateTaskAsync(int userId, TaskFlow.API.DTOs.CreateTaskDto dto, bool isAdmin);
     Task<TaskItem> CreateAsync(TaskItem task);
 
+    Task<bool?> ToggleTaskAsync(int id, int userId, bool isAdmin);
+    Task<bool> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin);
+    Task<bool> DeleteTaskAsync(int id, int userId, bool isAdmin);
     Task<bool> UpdateAsync(
         int id,
         int userId,
@@ -36,6 +40,8 @@ public interface ITaskService
         int userId,
         PaginationDto pagination);
 
+    Task<int> GetSubtaskCountAsync(int parentTaskId);
+
     Task<DashboardDto> GetDashboardAsync(
         int userId);
 
@@ -44,3 +50,4 @@ public interface ITaskService
         TaskSortDto sort);
 
 }
+

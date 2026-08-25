@@ -3,21 +3,21 @@ using TaskFlow.API.DTOs;
 
 namespace TaskFlow.API.Validators;
 
-// CreateTaskDto için doğrulama kuralları
+// CreateTaskDto icin dogrulama kurallari
 public class CreateTaskDtoValidator : AbstractValidator<CreateTaskDto>
 {
     public CreateTaskDtoValidator()
     {
         RuleFor(x => x.Title)
-            .NotEmpty() // Boş olamaz
-            .WithMessage("Başlık boş bırakılamaz.")
-            .MinimumLength(3) // En az 3 karakter
-            .WithMessage("Başlık en az 3 karakter olmalıdır.")
-            .MaximumLength(100) // En fazla 100 karakter
-            .WithMessage("Başlık en fazla 100 karakter olabilir.");
+            .NotEmpty()
+            .WithMessage("Baslik bos birakilamaz.")
+            .MinimumLength(3)
+            .WithMessage("Baslik en az 3 karakter olmalidir.")
+            .MaximumLength(100)
+            .WithMessage("Baslik en fazla 100 karakter olabilir.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(500) // Açıklama sınırı
-            .WithMessage("Açıklama en fazla 500 karakter olabilir.");
+            .MaximumLength(50000)
+            .WithMessage("Aciklama en fazla 50000 karakter olabilir.");
     }
 }

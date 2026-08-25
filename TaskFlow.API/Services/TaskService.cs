@@ -6,17 +6,24 @@ namespace TaskFlow.API.Services;
 
 public class TaskService : ITaskService
 {
-    private readonly ITaskRepository _repository;
+        private readonly ITaskRepository _repository;
     private readonly IActivityLogService _activityLogService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ITeamAuthorizationService _teamAuth;
+    private readonly IDescriptionSanitizerService _descriptionSanitizer;
 
     public TaskService(
     ITaskRepository repository,
-    IActivityLogService activityLogService, IServiceProvider serviceProvider)
+    IActivityLogService activityLogService,
+    IServiceProvider serviceProvider,
+    ITeamAuthorizationService teamAuth,
+    IDescriptionSanitizerService descriptionSanitizer)
     {
         _repository = repository;
         _activityLogService = activityLogService;
         _serviceProvider = serviceProvider;
+        _teamAuth = teamAuth;
+        _descriptionSanitizer = descriptionSanitizer;
     }
 
         private async Task InvalidateProfileAsync(int userId)
@@ -44,6 +51,152 @@ public class TaskService : ITaskService
         return await _repository.GetByIdAsync(id);
     }
 
+        public async Task<TaskItem> CreateTaskAsync(int userId, TaskFlow.API.DTOs.CreateTaskDto dto, bool isAdmin)
+    {
+        if (dto.TeamId.HasValue)
+        {
+            var canCreate = await _teamAuth.CanCreateTaskForTeamAsync(dto.TeamId.Value, userId);
+            if (!canCreate) throw new UnauthorizedAccessException("Bu takıma görev ekleme yetkiniz yok.");
+        }
+
+        var assignees = new List<TaskAssignee>();
+
+        var effectiveAssignees = dto.AssigneeIds ?? new List<int>();
+        if (dto.AssignedUserId.HasValue && !effectiveAssignees.Contains(dto.AssignedUserId.Value))
+        {
+            effectiveAssignees = effectiveAssignees.ToList();
+            effectiveAssignees.Add(dto.AssignedUserId.Value);
+        }
+        if (effectiveAssignees.Any())
+        {
+            if (!dto.TeamId.HasValue) throw new ArgumentException("Kullanıcı atamak için takım belirtmelisiniz.");
+            var distinctIds = effectiveAssignees.Distinct();
+            foreach (var assigneeId in distinctIds)
+            {
+                var isMember = await _teamAuth.IsTeamMemberOrCreatorAsync(dto.TeamId.Value, assigneeId);
+                if (!isMember) throw new ArgumentException($"Geçersiz kullanıcı ataması: {assigneeId}");
+                assignees.Add(new TaskAssignee { UserId = assigneeId });
+            }
+        }
+
+        if (dto.ParentTaskId.HasValue)
+        {
+            var parentTask = await GetByIdAsync(dto.ParentTaskId.Value);
+            if (parentTask == null || !await _teamAuth.CanManageTaskAsync(parentTask, userId, isAdmin))
+                throw new ArgumentException("Geçersiz veya yetkisiz Parent Task.");
+        }
+
+        var task = new TaskItem
+        {
+            Title = dto.Title,
+            Description = _descriptionSanitizer.Sanitize(dto.Description),
+            Priority = dto.Priority,
+            DueDate = dto.DueDate,
+            Category = dto.Category,
+
+            TeamId = dto.TeamId,
+            UserId = userId,
+            CreatedDate = DateTime.UtcNow,
+            IsDeleted = false,
+            Assignees = assignees,
+            ParentTaskId = dto.ParentTaskId
+        };
+
+        return await CreateAsync(task);
+    }
+
+    public async Task<bool> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin)
+    {
+        var task = await _repository.GetByIdTrackingAsync(id);
+        if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin)) return false;
+
+        List<TaskAssignee>? newAssignees = null;
+        var effectiveUpdateAssignees = dto.AssigneeIds;
+        if (dto.AssignedUserId.HasValue)
+        {
+            var list = effectiveUpdateAssignees?.ToList() ?? new List<int>();
+            if (!list.Contains(dto.AssignedUserId.Value)) list.Add(dto.AssignedUserId.Value);
+            effectiveUpdateAssignees = list;
+        }
+        if (effectiveUpdateAssignees != null)
+        {
+            newAssignees = new List<TaskAssignee>();
+            if (task.TeamId.HasValue)
+            {
+                var distinctIds = effectiveUpdateAssignees.Distinct();
+                foreach (var assigneeId in distinctIds)
+                {
+                    var isMember = await _teamAuth.IsTeamMemberOrCreatorAsync(task.TeamId.Value, assigneeId);
+                    if (!isMember) throw new ArgumentException($"Geçersiz kullanıcı ataması: {assigneeId}");
+                    newAssignees.Add(new TaskAssignee { TaskId = id, UserId = assigneeId });
+                }
+            }
+        }
+
+        task.Title = dto.Title;
+        task.Description = _descriptionSanitizer.Sanitize(dto.Description);
+
+        bool isCompleted = dto.Status == TaskFlow.API.Models.TaskStatus.Completed || dto.IsCompleted;
+        task.IsCompleted = isCompleted;
+        task.Status = dto.Status != 0 ? dto.Status : (isCompleted ? TaskFlow.API.Models.TaskStatus.Completed : TaskFlow.API.Models.TaskStatus.Backlog);
+
+        if (isCompleted && task.CompletedDate == null) task.CompletedDate = DateTime.UtcNow;
+        else if (!isCompleted) task.CompletedDate = null;
+
+        task.Priority = dto.Priority;
+        task.DueDate = dto.DueDate;
+        task.Category = dto.Category;
+
+
+        if (newAssignees != null)
+        {
+            task.Assignees.Clear();
+            foreach (var a in newAssignees) task.Assignees.Add(a);
+        }
+
+        var result = await _repository.UpdateTaskAsync(task);
+        if (result)
+        {
+            await _activityLogService.LogAsync(userId, "Update Task", $"'{task.Title}' isimli görev güncellendi.");
+            await InvalidateProfileAsync(userId);
+        }
+        return result;
+    }
+
+            public async Task<bool?> ToggleTaskAsync(int id, int userId, bool isAdmin)
+    {
+        var task = await _repository.GetByIdTrackingAsync(id);
+        if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin)) return null;
+
+        task.IsCompleted = !task.IsCompleted;
+        if (task.IsCompleted && task.CompletedDate == null) task.CompletedDate = DateTime.UtcNow;
+        else if (!task.IsCompleted) task.CompletedDate = null;
+
+        task.Status = task.IsCompleted ? TaskFlow.API.Models.TaskStatus.Completed : TaskFlow.API.Models.TaskStatus.Backlog;
+
+        var result = await _repository.UpdateTaskAsync(task);
+        if (result)
+        {
+            await _activityLogService.LogAsync(userId, "Toggle Task", $"'{task.Title}' isimli görev durumu değiştirildi.");
+            await InvalidateProfileAsync(userId);
+            return task.IsCompleted;
+        }
+        return null;
+    }
+
+    public async Task<bool> DeleteTaskAsync(int id, int userId, bool isAdmin)
+    {
+        var task = await _repository.GetByIdTrackingAsync(id);
+        if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin)) return false;
+
+        var result = await _repository.DeleteTaskAsync(task);
+        if (result)
+        {
+            await _activityLogService.LogAsync(userId, "Delete Task", $"'{task.Title}' isimli görev silindi.");
+            await InvalidateProfileAsync(userId);
+        }
+        return result;
+    }
     public async Task<TaskItem> CreateAsync(TaskItem task)
     {
         task.CreatedDate = DateTime.UtcNow;
@@ -161,29 +314,13 @@ public class TaskService : ITaskService
     {
         return await _repository.GetPagedAsync(userId, pagination);
     }
+        public async Task<int> GetSubtaskCountAsync(int parentTaskId)
+    {
+        return await _repository.GetSubtaskCountAsync(parentTaskId);
+    }
+
     public async Task<DashboardDto> GetDashboardAsync(int userId)
     {
-        var tasks = await _repository.GetDashboardTasksAsync(userId);
-        var todayPriorities = tasks
-        .OrderBy(x => x.IsCompleted ? 1 : 0)
-        .ThenByDescending(x => x.Priority)
-        .ThenBy(x => x.DueDate ?? DateTime.MaxValue)
-        .Take(3)
-        .Select(t => new TodayPriorityTaskDto
-        {
-            Id = t.Id,
-            Title = t.Title,
-            Priority = t.Priority.ToString(),
-            IsCompleted = t.IsCompleted,
-            CompletedText = t.IsCompleted
-                ? $"Completed at {t.CompletedDate?.ToString("HH:mm") ?? "10:00"}"
-                : null,
-            Progress = t.IsCompleted ? 100 : 0,
-            Category = t.Category.ToString(),
-            DueDate = t.DueDate
-        })
-
-        .ToList();
         return await _repository.GetDashboardAsync(userId);
     }
     public async Task<List<TaskItem>> SortAsync(

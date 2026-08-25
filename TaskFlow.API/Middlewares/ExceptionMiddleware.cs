@@ -1,7 +1,10 @@
+using TaskFlow.API.Exceptions;
 ﻿using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using TaskFlow.API.Responses;
+using FluentValidation;
 
 namespace TaskFlow.API.Middlewares;
 
@@ -50,10 +53,28 @@ public class ExceptionMiddleware
             KeyNotFoundException => StatusCodes.Status404NotFound,
             InvalidOperationException => StatusCodes.Status409Conflict,
             ArgumentException => StatusCodes.Status400BadRequest,
+            ValidationException => StatusCodes.Status400BadRequest,
+            AiServiceException => StatusCodes.Status502BadGateway,
             _ => StatusCodes.Status500InternalServerError
         };
 
         context.Response.StatusCode = statusCode;
+
+        object? responseData = null;
+
+        if (exception is ValidationException validationException)
+        {
+            responseData = validationException.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
+        }
+        else if (_environment.IsDevelopment())
+        {
+            responseData = new
+            {
+                exception = exception.GetType().Name,
+                message = exception.Message,
+                stackTrace = exception.StackTrace
+            };
+        }
 
         var response = new ApiResponse<object>
         {
@@ -61,15 +82,15 @@ public class ExceptionMiddleware
             Message = statusCode == StatusCodes.Status500InternalServerError
                 ? "An unexpected error occurred."
                 : exception.Message,
-            Data = _environment.IsDevelopment()
-                ? new
-                {
-                    exception = exception.Message,
-                    stackTrace = exception.StackTrace
-                }
-                : null
+            Data = responseData
         };
 
-        return context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        var jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        return context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
     }
 }

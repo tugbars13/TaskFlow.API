@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+﻿import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
@@ -200,9 +200,9 @@ export default function TaskFormModal({
               disabled={submitting}
               className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
             >
-              <option value="High">🔴 High Priority</option>
-              <option value="Medium">🟡 Medium Priority</option>
-              <option value="Low">🔵 Low Priority</option>
+              <option value="High">ğŸ”´ High Priority</option>
+              <option value="Medium">ğŸŸ¡ Medium Priority</option>
+              <option value="Low">ğŸ”µ Low Priority</option>
             </select>
           </div>
 
@@ -347,3 +347,4 @@ export default function TaskFormModal({
     </Modal>
   );
 }
+

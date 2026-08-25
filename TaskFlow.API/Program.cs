@@ -71,6 +71,7 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IDescriptionSanitizerService, DescriptionSanitizerService>();
 // Auth iÅŸlemlerini yÃ¶neten servisi Dependency Injection container'Ä±na ekler.
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -81,6 +82,8 @@ builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITeamAnalyticsService, TeamAnalyticsService>();
 builder.Services.AddScoped<ICalendarRepository, CalendarRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
@@ -175,13 +178,4 @@ app.MapControllers();
 app.MapHub<TaskHub>("/hubs/tasks");
 
 app.Run();
-
-
-
-
-
-
-
-
-
 

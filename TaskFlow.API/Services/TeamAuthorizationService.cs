@@ -1,4 +1,4 @@
-// Services/TeamAuthorizationService.cs
+﻿// Services/TeamAuthorizationService.cs
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
@@ -50,7 +50,7 @@ public class TeamAuthorizationService : ITeamAuthorizationService
         if (!task.TeamId.HasValue)
         {
             // Personal task: Only owner or assignee can manage
-            return task.UserId == userId || task.AssignedUserId == userId || (task.Assignees != null && task.Assignees.Any(a => a.UserId == userId));
+            return task.UserId == userId || (task.Assignees != null && task.Assignees.Any(a => a.UserId == userId));
         }
 
         // Team task: Admin (above), Team Creator, or Team Member can manage

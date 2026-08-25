@@ -48,14 +48,12 @@ namespace TaskFlow.API.Services
         {
             var tasks = await _context.Tasks
                 .AsNoTracking()
-                .Include(t => t.AssignedUser)
                 .Include(t => t.Assignees)
                 .Include(t => t.Team)
                 .Where(t =>
                     !t.IsDeleted &&
                     (
                         (t.TeamId == null && t.UserId == userId) ||
-                        t.AssignedUserId == userId ||
                         t.Assignees.Any(a => a.UserId == userId)
                     ))
                 .ToListAsync();
@@ -131,3 +129,4 @@ namespace TaskFlow.API.Services
         }
     }
 }
+

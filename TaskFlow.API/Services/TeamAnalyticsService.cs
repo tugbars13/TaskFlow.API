@@ -92,9 +92,9 @@ public class TeamAnalyticsService : ITeamAnalyticsService
                 OverdueTasks = existingSnapshot.OverdueTasks,
                 CompletionRate = existingSnapshot.CompletionRate,
                 PreviousPeriodCompletionRate = existingSnapshot.PreviousPeriodCompletionRate,
-                ProgressTrend = string.IsNullOrEmpty(existingSnapshot.ProgressTrendJson) ? new List<ProgressTrendDto>() : JsonSerializer.Deserialize<List<ProgressTrendDto>>(existingSnapshot.ProgressTrendJson),
-                ActiveMembers = string.IsNullOrEmpty(existingSnapshot.ActiveMembersJson) ? new List<ActiveMemberDto>() : JsonSerializer.Deserialize<List<ActiveMemberDto>>(existingSnapshot.ActiveMembersJson),
-                OverdueTasksList = string.IsNullOrEmpty(existingSnapshot.OverdueTasksListJson) ? new List<OverdueTaskDto>() : JsonSerializer.Deserialize<List<OverdueTaskDto>>(existingSnapshot.OverdueTasksListJson),
+                ProgressTrend = string.IsNullOrEmpty(existingSnapshot.ProgressTrendJson) ? new List<ProgressTrendDto>() : JsonSerializer.Deserialize<List<ProgressTrendDto>>(existingSnapshot.ProgressTrendJson) ?? new List<ProgressTrendDto>(),
+                ActiveMembers = string.IsNullOrEmpty(existingSnapshot.ActiveMembersJson) ? new List<ActiveMemberDto>() : JsonSerializer.Deserialize<List<ActiveMemberDto>>(existingSnapshot.ActiveMembersJson) ?? new List<ActiveMemberDto>(),
+                OverdueTasksList = string.IsNullOrEmpty(existingSnapshot.OverdueTasksListJson) ? new List<OverdueTaskDto>() : JsonSerializer.Deserialize<List<OverdueTaskDto>>(existingSnapshot.OverdueTasksListJson) ?? new List<OverdueTaskDto>(),
                 AiSummary = existingSnapshot.AiSummary,
                 PeriodDateRange = $"{startDate:dd MMM yyyy} - {endDate:dd MMM yyyy}"
             };
@@ -109,7 +109,7 @@ public class TeamAnalyticsService : ITeamAnalyticsService
 
         int completedTasks = currentActive.Count(t => IsTaskCompletedInPeriod(t, startDate, endDate));
         int inProgressTasks = currentActive.Count(t => !t.IsCompleted || (t.IsCompleted && t.CompletedDate > endDate));
-        var overdueTasks = currentActive.Where(t => !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value < now).ToList();
+        var overdueTasks = currentActive.Where(t => !t.IsCompleted && t.DueDate.HasValue && (t.DueDate ?? now) < now).ToList();
 
         int completionRate = currentActive.Count > 0 ? (int)Math.Round((double)completedTasks / currentActive.Count * 100) : 0;
 
@@ -181,7 +181,7 @@ public class TeamAnalyticsService : ITeamAnalyticsService
 
         // Active members
         var activeMembers = members.Select(m => {
-            var mTasks = currentActive.Where(t => t.AssignedUserId == m.UserId || t.Assignees.Any(a => a.UserId == m.UserId)).ToList();
+            var mTasks = currentActive.Where(t => t.Assignees.Any(a => a.UserId == m.UserId)).ToList();
             return new ActiveMemberDto
             {
                 UserId = m.UserId,
@@ -197,16 +197,16 @@ public class TeamAnalyticsService : ITeamAnalyticsService
         .ToList();
 
         var overdueTasksList = overdueTasks
-            .OrderByDescending(t => (now - t.DueDate.Value).TotalDays)
+            .OrderByDescending(t => (now - (t.DueDate ?? now)).TotalDays)
             .Take(5)
             .Select(t => new OverdueTaskDto
             {
                 TaskId = t.Id,
                 Title = t.Title,
-                OverdueDays = (int)(now - t.DueDate.Value).TotalDays,
+                OverdueDays = (int)(now - (t.DueDate ?? now)).TotalDays,
                 AssigneeName = (t.Assignees != null && t.Assignees.Any()) 
                     ? string.Join(", ", t.Assignees.Where(a => a.User != null).Select(a => a.User.FullName))
-                    : (t.AssignedUser?.FullName ?? "AtanmamÃ„Â±Ã…Å¸")
+                    : ((t.Assignees != null ? t.Assignees.FirstOrDefault() : null)?.User?.FullName ?? "Atanmamış")
             }).ToList();
 
         var dto = new TeamAnalyticsDto
@@ -255,7 +255,6 @@ public class TeamAnalyticsService : ITeamAnalyticsService
         return dto;
     }
 }
-
 
 
 

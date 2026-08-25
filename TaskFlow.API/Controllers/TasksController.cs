@@ -19,14 +19,12 @@ namespace TaskFlow.API.Controllers
     {
         private readonly ITaskService _taskService;
         private readonly ITeamAuthorizationService _teamAuth;
-        private readonly TaskFlow.API.Data.AppDbContext _context;
         private readonly IAiService _aiService;
 
-        public TasksController(ITaskService taskService, ITeamAuthorizationService teamAuth, TaskFlow.API.Data.AppDbContext context, IAiService aiService)
+        public TasksController(ITaskService taskService, ITeamAuthorizationService teamAuth, IAiService aiService)
         {
             _taskService = taskService;
             _teamAuth = teamAuth;
-            _context = context;
             _aiService = aiService;
         }
 
@@ -46,9 +44,9 @@ namespace TaskFlow.API.Controllers
                 Progress = task.IsCompleted ? 100 : (task.Status == TaskStatus.InProgress ? 75 : task.Status == TaskStatus.ToDo ? 25 : 0),
                 CommentsCount = 2,
                 AttachmentsCount = 1,
-                AssignedUserId = task.AssignedUserId,
-                AssignedUserFullName = task.AssignedUser?.FullName,
-                AssignedUserAvatar = task.AssignedUser?.AvatarUrl,
+                AssignedUserId = task.Assignees?.FirstOrDefault()?.UserId,
+                AssignedUserFullName = task.Assignees?.FirstOrDefault()?.User?.FullName,
+                AssignedUserAvatar = task.Assignees?.FirstOrDefault()?.User?.AvatarUrl,
                 Assignees = task.Assignees?.Select(a => new AssigneeDto 
                 { 
                     Id = a.UserId, 
@@ -150,93 +148,21 @@ namespace TaskFlow.API.Controllers
         public async Task<ActionResult<ApiResponse<TaskDto>>> CreateTask([FromBody] CreateTaskDto dto)
         {
             var userId = GetCurrentUserId();
+            var isAdmin = User.IsInRole("Admin");
 
-            Console.WriteLine($"[DIAGNOSTIC] CreateTask POST request received.");
-            Console.WriteLine($"[DIAGNOSTIC] currentUserId: {userId}");
-            Console.WriteLine($"[DIAGNOSTIC] teamId: {dto.TeamId}");
-            Console.WriteLine($"[DIAGNOSTIC] assignedUserId: {dto.AssignedUserId}");
-            Console.WriteLine($"[DIAGNOSTIC] assigneeIds: {(dto.AssigneeIds != null ? string.Join(",", dto.AssigneeIds) : "null")}");
-
-
-            if (dto.TeamId.HasValue)
+            var task = await _taskService.CreateTaskAsync(userId, dto, isAdmin);
+            return CreatedAtAction(nameof(GetTask), new { id = task.Id }, new ApiResponse<TaskDto>
             {
-                var canCreate = await _teamAuth.CanCreateTaskForTeamAsync(dto.TeamId.Value, userId);
-                Console.WriteLine($"[DIAGNOSTIC] CanCreateTaskForTeamAsync result: {canCreate}");
-                if (!canCreate)
-                {
-                    Console.WriteLine($"[DIAGNOSTIC] Returning 403 Forbid from CanCreateTaskForTeamAsync check.");
-                    return Forbid();
-                }
-            }
-
-            var assignees = new List<TaskAssignee>();
-
-            if (dto.AssigneeIds != null && dto.AssigneeIds.Any())
-            {
-                if (!dto.TeamId.HasValue)
-                {
-                    Console.WriteLine($"[DIAGNOSTIC] Returning 400 BadRequest: Missing TeamId for assignees.");
-                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "KullanÄ±cÄ± atamak iÃ§in takÄ±m belirtmelisiniz." });
-                }
-
-                foreach (var assigneeId in dto.AssigneeIds)
-                {
-                    var isMember = _context.TeamMembers.Any(tm => tm.TeamId == dto.TeamId.Value && tm.UserId == assigneeId && tm.Status == TeamMemberStatus.Accepted);
-                    if (!isMember)
-                    {
-                        return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"GeÃ§ersiz kullanÄ±cÄ± atamasÄ±: {assigneeId}" });
-                    }
-                    
-                    assignees.Add(new TaskAssignee { UserId = assigneeId });
-                }
-            }
-
-            if (dto.ParentTaskId.HasValue)
-            {
-                var parentTask = await _taskService.GetByIdAsync(dto.ParentTaskId.Value);
-                var isAdmin = User.IsInRole("Admin");
-                if (parentTask == null || !await _teamAuth.CanManageTaskAsync(parentTask, userId, isAdmin))
-                {
-                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "GeÃ§ersiz veya yetkisiz Parent Task." });
-                }
-            }
-
-            var task = new TaskItem
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                Priority = dto.Priority,
-                DueDate = dto.DueDate,
-                Category = dto.Category,
-                AssignedUserId = dto.AssignedUserId,
-                TeamId = dto.TeamId,
-                UserId = userId,
-                CreatedDate = DateTime.UtcNow,
-                IsDeleted = false,
-                Assignees = assignees,
-                ParentTaskId = dto.ParentTaskId
-            };
-
-            var createdTask = await _taskService.CreateAsync(task);
-            var taskDto = MapToDto(createdTask);
-
-            return CreatedAtAction(nameof(GetTask),
-                new { id = createdTask.Id },
-                new ApiResponse<TaskDto>
-                {
-                    Success = true,
-                    Message = "GÃ¶rev baÅŸarÄ±yla oluÅŸturuldu.",
-                    Data = taskDto
-                });
+                Success = true,
+                Message = "Görev başarıyla oluşturuldu.",
+                Data = MapToDto(task)
+            });
         }
-
         // GET: api/tasks/ai-order
         [HttpGet("ai-order")]
         public async Task<ActionResult<ApiResponse<List<AiTaskOrderDto>>>> GenerateTaskOrder()
         {
-            try
-            {
-                var userId = GetCurrentUserId();
+            var userId = GetCurrentUserId();
                 var tasks = await _taskService.GetAllByUserIdAsync(userId);
                 
                 var activeTasks = tasks.Where(t => !t.IsCompleted && !t.IsDeleted).ToList();
@@ -360,16 +286,6 @@ namespace TaskFlow.API.Controllers
                     Data = finalOrderedTasks
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponse<List<AiTaskOrderDto>>
-                {
-                    Success = false,
-                    Message = $"Error generating AI Task Order: {ex.Message}"
-                });
-            }
-        }
-
         // POST: api/tasks/{id}/breakdown
         [HttpPost("{id}/breakdown")]
         public async Task<ActionResult<ApiResponse<TaskBreakdownResultDto>>> GenerateBreakdown(int id)
@@ -383,38 +299,24 @@ namespace TaskFlow.API.Controllers
                 return NotFound(new ApiResponse<TaskBreakdownResultDto>
                 {
                     Success = false,
-                    Message = "GÃ¶rev bulunamadÄ± veya yetkiniz yok."
+                    Message = "Görev bulunamadı veya yetkiniz yok."
                 });
             }
 
-            try
-            {
-                var result = await _aiService.GenerateTaskBreakdownAsync(task);
-                
-                // Existing subtasks check
-                var existingSubtasksCount = await _context.Tasks.CountAsync(t => t.ParentTaskId == id && !t.IsDeleted);
-                
-                result.ExistingSubtaskCount = existingSubtasksCount;
-                result.HasExistingSubtasks = existingSubtasksCount > 0;
+            var result = await _aiService.GenerateTaskBreakdownAsync(task!);
 
-                return Ok(new ApiResponse<TaskBreakdownResultDto>
-                {
-                    Success = true,
-                    Message = "Alt gÃ¶rev Ã¶nerileri baÅŸarÄ±yla oluÅŸturuldu.",
-                    Data = result
-                });
-            }
-            catch (Exception ex)
+            var existingSubtasksCount = await _taskService.GetSubtaskCountAsync(id);
+
+            result.ExistingSubtaskCount = existingSubtasksCount;
+            result.HasExistingSubtasks = existingSubtasksCount > 0;
+
+            return Ok(new ApiResponse<TaskBreakdownResultDto>
             {
-                // Return 502 Bad Gateway for external AI API errors, or 500
-                return StatusCode(502, new ApiResponse<TaskBreakdownResultDto>
-                {
-                    Success = false,
-                    Message = "Bu gÃ¶rev iÃ§in ÅŸu anda AI alt gÃ¶rev Ã¶nerileri oluÅŸturulamadÄ±."
-                });
-            }
+                Success = true,
+                Message = "Alt görev önerileri başarıyla oluşturuldu.",
+                Data = result
+            });
         }
-
         // PUT: api/tasks/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskDto dto)
@@ -422,103 +324,27 @@ namespace TaskFlow.API.Controllers
             var userId = GetCurrentUserId();
             var isAdmin = User.IsInRole("Admin");
 
-            // 1. Find the task and check authorization
-            var task = await _taskService.GetByIdAsync(id);
-
-            Console.WriteLine($"[DEBUG-TRACE] PUT /api/tasks/{id} started.");
-            Console.WriteLine($"[DEBUG-TRACE] current userId: {userId}, isAdmin: {isAdmin}");
-            Console.WriteLine($"[DEBUG-TRACE] task found? {(task != null)}");
-
-            if (task != null)
-            {
-                Console.WriteLine($"[DEBUG-TRACE] task.Id: {task.Id}, task.TeamId: {task.TeamId}, task.UserId: {task.UserId}, task.AssignedUserId: {task.AssignedUserId}");
-                var canManage = await _teamAuth.CanManageTaskAsync(task, userId, isAdmin);
-                Console.WriteLine($"[DEBUG-TRACE] CanManageTaskAsync returned: {canManage}");
-            }
-
-            if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin))
-            {
-                Console.WriteLine($"[DEBUG-TRACE] Returning NotFound (1st check). task == null: {task == null}");
-                return NotFound();
-            }
-            
-            List<TaskAssignee>? assignees = null;
-
-            if (dto.AssigneeIds != null)
-            {
-                assignees = new List<TaskAssignee>();
-                if (task.TeamId.HasValue)
-                {
-                    // Temizle ve yeniden oluÅŸtur (tam liste deÄŸiÅŸtirme mantÄ±ÄŸÄ±)
-                    var distinctIds = dto.AssigneeIds.Distinct();
-                    foreach (var assigneeId in distinctIds)
-                    {
-                        var isMember = _context.TeamMembers.Any(tm => tm.TeamId == task.TeamId.Value && tm.UserId == assigneeId && tm.Status == TeamMemberStatus.Accepted);
-                        if (!isMember)
-                        {
-                            return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = $"GeÃ§ersiz kullanÄ±cÄ± atamasÄ±: {assigneeId}" });
-                        }
-                        
-                        assignees.Add(new TaskAssignee { TaskId = id, UserId = assigneeId });
-                    }
-                }
-                else if (dto.AssigneeIds.Any())
-                {
-                    return BadRequest(new ApiResponse<TaskDto> { Success = false, Message = "KullanÄ±cÄ± atamak iÃ§in takÄ±m belirtmelisiniz." });
-                }
-            }
-
-            var updatedTask = new TaskItem
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                IsCompleted = dto.Status == TaskStatus.Completed || dto.IsCompleted,
-                Status = dto.Status != 0 ? dto.Status : (dto.IsCompleted ? TaskStatus.Completed : TaskStatus.Backlog),
-                Priority = dto.Priority,
-                DueDate = dto.DueDate,
-                Category = dto.Category,
-                AssignedUserId = dto.AssignedUserId,
-                Assignees = assignees!
-            };
-
-            Console.WriteLine($"[DEBUG-TRACE] Calling TaskService.UpdateAsync");
-            var updated = await _taskService.UpdateAsync(id, userId, updatedTask);
-            Console.WriteLine($"[DEBUG-TRACE] TaskService.UpdateAsync returned: {updated}");
-
-            if (!updated)
-            {
-                Console.WriteLine($"[DEBUG-TRACE] Returning NotFound (2nd check). updated is false.");
-                return NotFound();
-            }
-
+            var updated = await _taskService.UpdateTaskAsync(id, userId, dto, isAdmin);
+            if (!updated) return NotFound();
             return NoContent();
         }
-
         // PUT: api/tasks/5/toggle
         [HttpPut("{id}/toggle")]
-        public async Task<IActionResult> ToggleTask(int id)
+                public async Task<IActionResult> ToggleTask(int id)
         {
             var userId = GetCurrentUserId();
             var isAdmin = User.IsInRole("Admin");
 
-            var task = await _taskService.GetByIdAsync(id);
-            if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin))
-                return NotFound();
-
-            task.IsCompleted = !task.IsCompleted;
-            var updated = await _taskService.UpdateAsync(id, userId, task);
-
-            if (!updated)
-                return NotFound();
+            var newStatus = await _taskService.ToggleTaskAsync(id, userId, isAdmin);
+            if (newStatus == null) return NotFound();
 
             return Ok(new ApiResponse<bool>
             {
                 Success = true,
-                Message = "GÃ¶rev tamamlanma durumu gÃ¼ncellendi.",
-                Data = task.IsCompleted
+                Message = "Görev tamamlanma durumu güncellendi.",
+                Data = newStatus.Value
             });
         }
-
         // DELETE: api/tasks/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
@@ -614,6 +440,4 @@ namespace TaskFlow.API.Controllers
         }
     }
 }
-
-
 

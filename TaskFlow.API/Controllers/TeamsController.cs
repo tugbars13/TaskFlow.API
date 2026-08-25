@@ -167,19 +167,11 @@ namespace TaskFlow.API.Controllers
             if (!string.Equals(role, "Owner", StringComparison.OrdinalIgnoreCase))
                 return Forbid();
 
-            try
-            {
-                var deleted = await _teamService.DeleteTeamAsync(id);
+            var deleted = await _teamService.DeleteTeamAsync(id);
                 if (!deleted)
                     return NotFound();
 
                 return NoContent();
-            }
-            catch (Exception)
-            {
-                // Optionally log error
-                throw;
-            }
         }
 
         // â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
