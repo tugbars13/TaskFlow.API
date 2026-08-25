@@ -106,6 +106,10 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI container'a ekler.
 
+builder.Services.AddScoped<IMySpaceFolderRepository, MySpaceFolderRepository>();
+builder.Services.AddScoped<IMySpacePageRepository, MySpacePageRepository>();
+builder.Services.AddScoped<IMySpaceService, MySpaceService>();
+
 // AI configuration and services
 builder.Services.Configure<AiSettings>(
     builder.Configuration.GetSection("AiSettings"));
@@ -178,4 +182,5 @@ app.MapControllers();
 app.MapHub<TaskHub>("/hubs/tasks");
 
 app.Run();
+
 

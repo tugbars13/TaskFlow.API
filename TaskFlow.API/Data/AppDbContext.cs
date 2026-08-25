@@ -24,7 +24,10 @@ public class AppDbContext : DbContext
     public DbSet<TaskAssignee> TaskAssignees { get; set; }
     public DbSet<UserBehaviorProfile> UserBehaviorProfiles { get; set; }
     public DbSet<UserCategoryBehavior> UserCategoryBehaviors { get; set; }
-    public DbSet<TeamAnalyticsSnapshot> TeamAnalyticsSnapshots { get; set; }
+        public DbSet<TeamAnalyticsSnapshot> TeamAnalyticsSnapshots { get; set; }
+
+    public DbSet<MySpaceFolder> MySpaceFolders { get; set; }
+    public DbSet<MySpacePage> MySpacePages { get; set; }
 
     // Model oluÅŸturulurken Ã§alÄ±ÅŸÄ±r.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -83,11 +86,25 @@ public class AppDbContext : DbContext
             .HasForeignKey(ta => ta.TaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<TaskAssignee>()
+                modelBuilder.Entity<TaskAssignee>()
             .HasOne(ta => ta.User)
             .WithMany(u => u.TaskAssignees)
             .HasForeignKey(ta => ta.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // MySpace Relationships
+        modelBuilder.Entity<MySpacePage>()
+            .HasOne(p => p.Folder)
+            .WithMany(f => f.Pages)
+            .HasForeignKey(p => p.FolderId)
+            // Gvenli iliki: Klasr silindiinde iindeki sayfalar silinmesin (cascade olmasn).
+            // DeleteBehavior.Restrict ile klasr silinmesi engellenebilir veya
+            // DeleteBehavior.SetNull ile sayfalar root'a (FolderId = null) denbilir.
+            // "cascade yerine gvenli bir iliki tercih et" ve "root sayfalar desteklensin" 
+            // kurallarna istinaden sayfalarn kaybolmamas iin Restrict kullanlyoruz. 
+            // Bylece klasr silinmeden nce sayfalarn manuel olarak baka yere tanmas/karlmas istenir.
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
 

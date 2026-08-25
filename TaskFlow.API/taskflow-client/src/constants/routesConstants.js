@@ -8,8 +8,10 @@ export const ROUTES = {
   ANALYTICS: "/analytics",
   TEAM: "/team",
   TEAM_TASKS: "/teams/:teamId/tasks",
+  MY_SPACE: "/myspace",
   SETTINGS: "/settings",
   PROFILE: "/profile",
 
   teamTasks: (teamId) => `/teams/${teamId}/tasks`,
 };
+

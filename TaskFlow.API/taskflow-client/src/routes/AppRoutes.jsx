@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+﻿import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import { ROUTES } from "../constants/routesConstants";
@@ -14,6 +14,7 @@ const CalendarPage = lazy(() => import("../pages/Calendar/CalendarPage"));
 const Analytics = lazy(() => import("../pages/Analytics/AnalyticspPage"));
 const TeamPage = lazy(() => import("../pages/Team/TeamPage"));
 const SettingsPage = lazy(() => import("../pages/Settings/SettingsPage"));
+const MySpacePage = lazy(() => import("../features/myspace/pages/MySpacePage"));
 const MainLayout = lazy(() => import("../layout/MainLayout"));
 
 export default function AppRoutes() {
@@ -40,6 +41,7 @@ export default function AppRoutes() {
             <Route path={ROUTES.CALENDAR} element={<CalendarPage />} />
             <Route path={ROUTES.ANALYTICS} element={<Analytics />} />
             <Route path={ROUTES.TEAM} element={<TeamPage />} />
+            <Route path={ROUTES.MY_SPACE + "/*"} element={<MySpacePage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
           </Route>
         </Route>
@@ -50,3 +52,5 @@ export default function AppRoutes() {
     </Suspense>
   );
 }
+
+

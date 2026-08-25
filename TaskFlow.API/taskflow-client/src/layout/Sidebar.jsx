@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { path: ROUTES.CALENDAR, label: "Calendar", icon: "calendar_today" },
   { path: ROUTES.ANALYTICS, label: "Analytics", icon: "analytics" },
   { path: ROUTES.TEAM, label: "Team", icon: "group" },
+  { path: ROUTES.MY_SPACE, label: "My Space", icon: "space_dashboard" },
   { path: ROUTES.SETTINGS, label: "Settings", icon: "settings" },
 ];
 
@@ -122,3 +123,4 @@ export default function Sidebar({ isCollapsed, onToggle }) {
     </aside>
   );
 }
+

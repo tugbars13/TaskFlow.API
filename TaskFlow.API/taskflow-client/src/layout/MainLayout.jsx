@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { cn } from "@/utils/cn";
 import Sidebar from "./Sidebar";
@@ -16,7 +16,8 @@ export default function MainLayout({ children }) {
   const { user, logout } = useAuth();
   
   const location = useLocation();
-  const isFullWidthPage = location.pathname.includes('/tasks');
+  const isFullWidthPage = location.pathname.includes('/tasks') || location.pathname.includes('/myspace');
+  const isNoPaddingPage = location.pathname.includes('/myspace');
 
   // teamsRefetch is not directly available in MainLayout, we pass null.
   // User will need to refresh the team page to see the new team, or it will be handled by the Team component's own mount.
@@ -68,11 +69,11 @@ export default function MainLayout({ children }) {
 
       <main 
         className={cn(
-          "min-h-[calc(100vh-72px)] pt-md pb-lg px-md md:px-lg transition-all duration-300 overflow-x-hidden",
+          "min-h-[calc(100vh-72px)] transition-all duration-300 overflow-x-hidden", !isNoPaddingPage && "pt-md pb-lg px-md md:px-lg",
           isSidebarCollapsed ? "ml-[80px]" : "ml-[300px]"
         )}
       >
-        <div className={`${isFullWidthPage ? 'w-full' : 'max-w-[var(--spacing-container-max)] mx-auto'} space-y-xl`}>
+        <div className={cn(isFullWidthPage ? "w-full" : "max-w-[var(--spacing-container-max)] mx-auto", !isNoPaddingPage && "space-y-xl", isNoPaddingPage && "h-[calc(100vh-72px)]")}>
           {children ?? <Outlet />}
         </div>
       </main>
@@ -80,3 +81,5 @@ export default function MainLayout({ children }) {
     </div>
   );
 }
+
+

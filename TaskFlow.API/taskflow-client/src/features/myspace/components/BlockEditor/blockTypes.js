@@ -1,0 +1,23 @@
+export const BLOCK_TYPES = {
+  TEXT: "text",
+  HEADING_1: "heading_1",
+  HEADING_2: "heading_2",
+  HEADING_3: "heading_3",
+  TODO: "todo",
+  BULLET_LIST: "bullet_list",
+  NUMBERED_LIST: "numbered_list",
+  QUOTE: "quote",
+  DIVIDER: "divider",
+  CODE: "code",
+  CALLOUT: "callout",
+  TOGGLE: "toggle",
+  LINK: "link",
+  IMAGE: "image",
+  FILE: "file",
+  BOOKMARK: "bookmark",
+  EMBED: "embed",
+  TABLE: "table",
+  COLUMNS: "columns",
+  EQUATION: "equation",
+  DATABASE: "database"
+};
