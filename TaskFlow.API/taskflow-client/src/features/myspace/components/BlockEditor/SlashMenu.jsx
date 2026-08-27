@@ -1,13 +1,15 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SLASH_COMMANDS } from "./slashCommands";
 
 export default function SlashMenu({ query, onSelect, onClose, position }) {
   const menuRef = useRef(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [coords, setCoords] = useState({ top: -9999, left: -9999, opacity: 0 });
 
-  const filteredCommands = SLASH_COMMANDS.filter(cmd => 
-    cmd.label.toLowerCase().includes(query.toLowerCase()) || 
-    cmd.keywords.some(k => k.includes(query.toLowerCase()))
+  const filteredCommands = SLASH_COMMANDS.filter(
+    (cmd) =>
+      cmd.label.toLowerCase().includes(query.toLowerCase()) ||
+      cmd.keywords.some((k) => k.includes(query.toLowerCase())),
   );
 
   useEffect(() => {
@@ -15,23 +17,71 @@ export default function SlashMenu({ query, onSelect, onClose, position }) {
   }, [query]);
 
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!menuRef.current || !menuRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  // Handle positioning and viewport boundaries
+  useEffect(() => {
+    if (menuRef.current && position) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let newTop = position.y;
+      let newLeft = position.x;
+
+      // Check right overflow
+      if (newLeft + rect.width > viewportWidth - 16) {
+        newLeft = Math.max(16, viewportWidth - rect.width - 16);
+      }
+
+      // Check bottom overflow
+      if (newTop + rect.height > viewportHeight - 16) {
+        // If it overflows the bottom, place it above the caret
+        // We use position.caretTop if available, else approximate
+        const caretTop = position.caretTop || position.y - 28;
+        newTop = Math.max(16, caretTop - rect.height - 8);
+      }
+
+      setCoords({ top: newTop, left: newLeft, opacity: 1 });
+    }
+  }, [position, query]);
+
+  useEffect(() => {
+    if (filteredCommands.length === 0) {
+      onClose();
+    }
+  }, [filteredCommands.length, onClose]);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
+      if (filteredCommands.length === 0) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIndex(prev => (prev + 1) % filteredCommands.length);
+        setSelectedIndex((prev) => (prev + 1) % filteredCommands.length);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+        setSelectedIndex(
+          (prev) =>
+            (prev - 1 + filteredCommands.length) % filteredCommands.length,
+        );
       } else if (e.key === "Enter") {
-        e.preventDefault();
         if (filteredCommands[selectedIndex]) {
+          e.preventDefault();
           onSelect(filteredCommands[selectedIndex].type);
         }
       } else if (e.key === "Escape") {
         onClose();
       }
     };
-    
+
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [filteredCommands, selectedIndex, onSelect, onClose]);
@@ -47,31 +97,48 @@ export default function SlashMenu({ query, onSelect, onClose, position }) {
   let globalIndex = 0;
 
   return (
-    <div 
+    <div
       ref={menuRef}
-      className="absolute z-50 bg-white border border-gray-200 shadow-xl rounded-lg w-72 max-h-80 overflow-y-auto text-gray-800"
-      style={{ top: position.y, left: position.x }}
+      className="fixed z-[100] bg-white border border-gray-200 shadow-xl rounded-lg w-72 max-h-80 overflow-y-auto text-gray-800"
+      style={{ 
+        top: coords.top, 
+        left: coords.left,
+        opacity: coords.opacity,
+        visibility: coords.opacity === 0 ? "hidden" : "visible"
+      }}
     >
-      {Object.keys(grouped).map(cat => (
+      {Object.keys(grouped).map((cat) => (
         <div key={cat}>
           <div className="text-[11px] font-semibold text-gray-400 px-3 py-2 uppercase tracking-wider bg-gray-50/80 sticky top-0">
             {cat}
           </div>
-          {grouped[cat].map(cmd => {
+          {grouped[cat].map((cmd) => {
             const currentIndex = globalIndex++;
             return (
               <button
                 key={cmd.type}
-                className={"w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-100 transition-colors " + (selectedIndex === currentIndex ? "bg-gray-100" : "")}
+                className={
+                  "w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-100 transition-colors " +
+                  (selectedIndex === currentIndex ? "bg-gray-100" : "")
+                }
                 onMouseEnter={() => setSelectedIndex(currentIndex)}
                 onClick={() => onSelect(cmd.type)}
               >
                 <div className="w-8 h-8 rounded border border-gray-200 bg-white flex items-center justify-center shrink-0 shadow-sm">
-                  <span className="material-symbols-outlined text-[18px] text-gray-600" style={{ fontVariationSettings: "'FILL' 1" }}>{cmd.icon}</span>
+                  <span
+                    className="material-symbols-outlined text-[18px] text-gray-600"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    {cmd.icon}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium text-gray-900 truncate">{cmd.label}</div>
-                  <div className="text-[11px] text-gray-500 truncate">{cmd.description}</div>
+                  <div className="text-[13px] font-medium text-gray-900 truncate">
+                    {cmd.label}
+                  </div>
+                  <div className="text-[11px] text-gray-500 truncate">
+                    {cmd.description}
+                  </div>
                 </div>
               </button>
             );

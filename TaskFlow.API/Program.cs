@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // JWT doÄŸrulama
 using Microsoft.EntityFrameworkCore;
@@ -104,7 +104,7 @@ builder.Services.Configure<JwtSettings>(
 // Token Ã¼retme servisini ekler.
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
-builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI container'a ekler.
+//builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI container'a ekler.
 
 builder.Services.AddScoped<IMySpaceFolderRepository, MySpaceFolderRepository>();
 builder.Services.AddScoped<IMySpacePageRepository, MySpacePageRepository>();
@@ -167,6 +167,7 @@ if (app.Environment.IsDevelopment())
 // TÃ¼m beklenmeyen hatalarÄ± yakalar.
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 // CORS 
 app.UseCors("AllowReactApp");
 

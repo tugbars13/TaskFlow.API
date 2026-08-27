@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
 using TaskFlow.API.Utils;
@@ -75,13 +75,11 @@ namespace TaskFlow.API.Services
             {
                 foreach (var catPerf in metrics.CategoryPerformances)
                 {
-                    if (!Enum.TryParse<TaskCategory>(catPerf.CategoryName, out var categoryEnum))
-                        continue;
 
-                    var catBehavior = profile.CategoryBehaviors.FirstOrDefault(c => c.Category == categoryEnum);
+                    var catBehavior = profile.CategoryBehaviors.FirstOrDefault(c => c.CategoryId == catPerf.CategoryId);
                     if (catBehavior == null)
                     {
-                        catBehavior = new UserCategoryBehavior { Category = categoryEnum };
+                        catBehavior = new UserCategoryBehavior { CategoryId = catPerf.CategoryId };
                         profile.CategoryBehaviors.Add(catBehavior);
                     }
 
@@ -104,11 +102,11 @@ namespace TaskFlow.API.Services
                     var procRate = catPerf.TotalTasks > 0 ? (double)catPerf.ProcrastinatedTasks / catPerf.TotalTasks : 0;
 
                     if (lateRate > 0.3 || procRate > 0.3 || catPerf.LateTasks > 1 || catPerf.ProcrastinatedTasks > 1)
-                        catBehavior.RiskLevel = "YÜKSEK";
+                        catBehavior.RiskLevel = "Y�KSEK";
                     else if (lateRate > 0.1 || procRate > 0.1 || catPerf.LateTasks > 0 || catPerf.ProcrastinatedTasks > 0)
                         catBehavior.RiskLevel = "ORTA";
                     else
-                        catBehavior.RiskLevel = "DÜŞÜK";
+                        catBehavior.RiskLevel = "D���K";
 
                     catBehavior.LastCalculatedAt = DateTime.UtcNow;
                 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import useTeam from "@/features/teams/hooks/useTeam";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -26,6 +26,10 @@ export default function TasksPage() {
   } = useTasks();
 
   const { teamId } = useParams();
+
+  useEffect(() => {
+    loadTasks(teamId || null);
+  }, [teamId, loadTasks]);
 
   const [crudError, setCrudError] = useState(null);
 

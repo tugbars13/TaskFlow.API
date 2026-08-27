@@ -22,6 +22,7 @@ const mapTodayPriority = (task) => ({
   title: task.title,
   priority: task.priority,
   category: task.category,
+  categoryId: task.categoryId,
   dueDate: task.dueDate,
   progress: task.progress ?? (task.isCompleted ? 100 : 0),
   isCompleted: task.isCompleted,
@@ -85,6 +86,7 @@ const mapTodayPriority = (task) => ({
 const mapUpcomingDeadline = (deadline) => ({
   id: deadline.id,
   title: deadline.title,
+  categoryId: deadline.categoryId,
   dueDate: deadline.dueDate
     ? new Date(deadline.dueDate).toLocaleString([], {
         dateStyle: "short",

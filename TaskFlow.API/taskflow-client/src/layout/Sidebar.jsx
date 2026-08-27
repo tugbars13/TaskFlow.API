@@ -87,7 +87,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
           )}
         >
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
             return (
               <Link
                 key={item.path}

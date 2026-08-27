@@ -17,7 +17,6 @@ export const BLOCK_TYPES = {
   BOOKMARK: "bookmark",
   EMBED: "embed",
   TABLE: "table",
-  COLUMNS: "columns",
   EQUATION: "equation",
-  DATABASE: "database"
+  CANVAS: "canvas"
 };

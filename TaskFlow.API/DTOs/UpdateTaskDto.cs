@@ -10,7 +10,7 @@ public class UpdateTaskDto
     public TaskFlow.API.Models.TaskStatus Status { get; set; }
     public TaskPriority Priority { get; set; }
     public DateTime? DueDate { get; set; }
-    public TaskCategory Category { get; set; }
+    public int CategoryId { get; set; }
     public int? AssignedUserId { get; set; }
     public List<int>? AssigneeIds { get; set; }
 }

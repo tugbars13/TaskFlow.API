@@ -32,16 +32,17 @@ namespace TaskFlow.API.Utils
 
             // Category Analysis
             var categoryPerformances = new List<CategoryPerformanceDto>();
-            var groupedByCategory = tasks.GroupBy(t => t.Category);
+            var groupedByCategory = tasks.GroupBy(t => new { t.CategoryId, Name = t.Category != null ? t.Category.Name : "Bilinmeyen" });
 
             foreach (var group in groupedByCategory)
             {
                 var catCompleted = group.Where(t => t.IsCompleted && t.CompletedDate.HasValue).ToList();
-                var catDays = catCompleted.Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays).ToList();
+                var catDays = catCompleted.Where(t => t.CompletedDate.HasValue).Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays).ToList();
                 
                 var catDto = new CategoryPerformanceDto
                 {
-                    CategoryName = group.Key.ToString(),
+                    CategoryName = group.Key.Name,
+                    CategoryId = group.Key.CategoryId,
                     TotalTasks = group.Count(),
                     CompletedTasks = catCompleted.Count,
                     AverageCompletionDays = catDays.Any() ? catDays.Average() : null,

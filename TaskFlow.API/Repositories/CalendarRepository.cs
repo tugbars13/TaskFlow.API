@@ -26,7 +26,7 @@ public class CalendarRepository : ICalendarRepository
             Title = t.Title,
             StartDate = t.DueDate ?? t.CreatedDate,
             EndDate = (t.DueDate ?? t.CreatedDate).AddHours(1),
-            Category = t.Category.ToString(),
+            Category = t.Category != null ? t.Category.Name : "",
             Color = t.Priority == Models.TaskPriority.High
                 ? "bg-rose-50/80 text-rose-700 font-semibold"
                 : t.Priority == Models.TaskPriority.Medium

@@ -1,4 +1,4 @@
-﻿using TaskFlow.API.DTOs;
+using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
 
@@ -92,7 +92,7 @@ public class TaskService : ITaskService
             Description = _descriptionSanitizer.Sanitize(dto.Description),
             Priority = dto.Priority,
             DueDate = dto.DueDate,
-            Category = dto.Category,
+            CategoryId = dto.CategoryId,
 
             TeamId = dto.TeamId,
             UserId = userId,
@@ -105,10 +105,10 @@ public class TaskService : ITaskService
         return await CreateAsync(task);
     }
 
-    public async Task<bool> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin)
+    public async Task<TaskItem?> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin)
     {
         var task = await _repository.GetByIdTrackingAsync(id);
-        if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin)) return false;
+        if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin)) return null;
 
         List<TaskAssignee>? newAssignees = null;
         var effectiveUpdateAssignees = dto.AssigneeIds;
@@ -145,8 +145,8 @@ public class TaskService : ITaskService
 
         task.Priority = dto.Priority;
         task.DueDate = dto.DueDate;
-        task.Category = dto.Category;
-
+        task.CategoryId = dto.CategoryId;
+        Console.WriteLine($"TASK CategoryId AFTER ASSIGN: {task.CategoryId}");
 
         if (newAssignees != null)
         {
@@ -159,8 +159,9 @@ public class TaskService : ITaskService
         {
             await _activityLogService.LogAsync(userId, "Update Task", $"'{task.Title}' isimli görev güncellendi.");
             await InvalidateProfileAsync(userId);
+            return await _repository.GetByIdAsync(id);
         }
-        return result;
+        return null;
     }
 
             public async Task<bool?> ToggleTaskAsync(int id, int userId, bool isAdmin)
@@ -224,7 +225,7 @@ public class TaskService : ITaskService
         int userId,
         TaskItem updatedTask)
     {
-        Console.WriteLine($"[TRACE] TaskService.UpdateAsync entered. id={id}, userId={userId}");
+        
         var task = await _repository.GetByIdAsync(id);
 
         if (task == null)

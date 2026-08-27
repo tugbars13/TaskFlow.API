@@ -1,4 +1,4 @@
-﻿//using : ASP.NET Corun sontroller sÄ±nÄ±flarÄ±nÄ± kullanabilmek iÃ§in yazarÄ±z
+//using : ASP.NET Corun sontroller sÄ±nÄ±flarÄ±nÄ± kullanabilmek iÃ§in yazarÄ±z
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,7 +40,8 @@ namespace TaskFlow.API.Controllers
                 CreatedDate = task.CreatedDate,
                 Priority = task.Priority,
                 DueDate = task.DueDate,
-                Category = task.Category,
+                CategoryId = task.CategoryId,
+                Category = task.Category != null ? task.Category.Name : "",
                 Progress = task.IsCompleted ? 100 : (task.Status == TaskStatus.InProgress ? 75 : task.Status == TaskStatus.ToDo ? 25 : 0),
                 CommentsCount = 2,
                 AttachmentsCount = 1,
@@ -150,11 +151,13 @@ namespace TaskFlow.API.Controllers
             var userId = GetCurrentUserId();
             var isAdmin = User.IsInRole("Admin");
 
+            Console.WriteLine("CREATE TASK DTO CategoryId: " + dto.CategoryId);
             var task = await _taskService.CreateTaskAsync(userId, dto, isAdmin);
+            Console.WriteLine("CREATE TASK TaskItem CategoryId: " + task.CategoryId);
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, new ApiResponse<TaskDto>
             {
                 Success = true,
-                Message = "Görev başarıyla oluşturuldu.",
+                Message = "Gï¿½rev baï¿½arï¿½yla oluï¿½turuldu.",
                 Data = MapToDto(task)
             });
         }
@@ -213,7 +216,7 @@ namespace TaskFlow.API.Controllers
                     
                     if (profile.CategoryBehaviors != null)
                     {
-                        var catPerf = profile.CategoryBehaviors.FirstOrDefault(c => c.Category == realTask.Category);
+                        var catPerf = profile.CategoryBehaviors.FirstOrDefault(c => c.CategoryId == realTask.CategoryId);
                         if (catPerf != null && (catPerf.LateTasks > 0 || catPerf.ProcrastinatedTasks > 0))
                         {
                              drop -= 2; // User risk category
@@ -241,7 +244,7 @@ namespace TaskFlow.API.Controllers
                         Priority = realTask.Priority.ToString(),
                         DueDate = realTask.DueDate?.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                         Status = realTask.Status.ToString(),
-                        Category = realTask.Category.ToString(),
+                        Category = realTask.Category != null ? realTask.Category.Name : "",
                         Rank = aiItem.Rank,
                         Score = currentScore,
                         Reasoning = aiItem.Reasoning
@@ -268,7 +271,7 @@ namespace TaskFlow.API.Controllers
                             Priority = missingTask.Priority.ToString(),
                             DueDate = missingTask.DueDate?.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                             Status = missingTask.Status.ToString(),
-                            Category = missingTask.Category.ToString(),
+                            Category = missingTask.Category != null ? missingTask.Category.Name : "",
                             Rank = nextRank++,
                             Score = currentScore,
                             Reasoning = "AI deÄŸerlendirmesine girmediÄŸi iÃ§in standart Ã¶nceliÄŸe gÃ¶re sÄ±ralandÄ±."
@@ -299,7 +302,7 @@ namespace TaskFlow.API.Controllers
                 return NotFound(new ApiResponse<TaskBreakdownResultDto>
                 {
                     Success = false,
-                    Message = "Görev bulunamadı veya yetkiniz yok."
+                    Message = "Gï¿½rev bulunamadï¿½ veya yetkiniz yok."
                 });
             }
 
@@ -313,7 +316,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<TaskBreakdownResultDto>
             {
                 Success = true,
-                Message = "Alt görev önerileri başarıyla oluşturuldu.",
+                Message = "Alt gï¿½rev ï¿½nerileri baï¿½arï¿½yla oluï¿½turuldu.",
                 Data = result
             });
         }
@@ -325,8 +328,8 @@ namespace TaskFlow.API.Controllers
             var isAdmin = User.IsInRole("Admin");
 
             var updated = await _taskService.UpdateTaskAsync(id, userId, dto, isAdmin);
-            if (!updated) return NotFound();
-            return NoContent();
+            if (updated == null) return NotFound();
+            return Ok(new ApiResponse<TaskDto> { Success = true, Message = "Görev güncellendi.", Data = MapToDto(updated) });
         }
         // PUT: api/tasks/5/toggle
         [HttpPut("{id}/toggle")]
@@ -341,7 +344,7 @@ namespace TaskFlow.API.Controllers
             return Ok(new ApiResponse<bool>
             {
                 Success = true,
-                Message = "Görev tamamlanma durumu güncellendi.",
+                Message = "Gï¿½rev tamamlanma durumu gï¿½ncellendi.",
                 Data = newStatus.Value
             });
         }
@@ -440,4 +443,6 @@ namespace TaskFlow.API.Controllers
         }
     }
 }
+
+
 

@@ -1,4 +1,4 @@
-﻿using TaskFlow.API.Models;
+using TaskFlow.API.Models;
 
 public class TaskItem
 {
@@ -6,7 +6,8 @@ public class TaskItem
 
     public string Title { get; set; } = string.Empty;
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;
-    public TaskCategory Category { get; set; }
+    public int CategoryId { get; set; }
+    public CustomCategory Category { get; set; } = null!;
     public TaskFlow.API.Models.TaskStatus Status { get; set; }
     = TaskFlow.API.Models.TaskStatus.Backlog;
 

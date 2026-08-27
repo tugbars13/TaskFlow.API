@@ -1,4 +1,4 @@
-﻿using TaskFlow.API.DTOs;
+using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Services;
@@ -17,7 +17,7 @@ public interface ITaskService
     Task<TaskItem> CreateAsync(TaskItem task);
 
     Task<bool?> ToggleTaskAsync(int id, int userId, bool isAdmin);
-    Task<bool> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin);
+    Task<TaskItem?> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin);
     Task<bool> DeleteTaskAsync(int id, int userId, bool isAdmin);
     Task<bool> UpdateAsync(
         int id,

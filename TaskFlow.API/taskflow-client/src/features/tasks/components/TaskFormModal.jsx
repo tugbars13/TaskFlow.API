@@ -1,29 +1,253 @@
-﻿import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+﻿import { useState, useEffect, useRef, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 import useTeam from "@/features/teams/hooks/useTeam";
+import { getCategories, createCategory } from "@/features/tasks/api/categoryService";
 
 const DEFAULT_FORM_VALUES = Object.freeze({
   title: "",
   description: "",
   priority: "Medium",
-  category: "General",
+  categoryId: null,
   dueDate: "",
   assigneeIds: [],
 });
 
-const DEFAULT_CATEGORIES = [
-  "General",
-  "Design System",
-  "Backend",
-  "Frontend",
-  "Marketing",
-  "QA",
-  "Team Sync",
-];
+
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Custom Category Combobox Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// searchQuery (arama) ve value (seÃƒÂ§im) tamamen ayrÃ„Â± state'ler.
+function CategoryCombobox({ value, onChange, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const containerRef = useRef(null);
+  const searchRef = useRef(null);
+  const [categories, setCategories] = useState([]);
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      }
+    };
+    fetchCats();
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchQuery("");
+      setTimeout(() => searchRef.current?.focus(), 30);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const trimmed = searchQuery.trim().toLowerCase();
+
+  const filtered = trimmed
+    ? categories.filter((cat) => cat.name.toLowerCase().includes(trimmed))
+    : categories;
+
+  const exactMatch = categories.some(
+    (cat) => cat.name.toLowerCase() === trimmed
+  );
+  const showCreateOption = trimmed.length > 0 && !exactMatch;
+
+  const handleSelect = (cat) => {
+    onChange(cat.id);
+    setIsOpen(false);
+  };
+
+  const handleCreateNew = async () => {
+    const newCat = searchQuery.trim();
+    if (newCat) {
+      setIsCreating(true);
+      try {
+        const created = await createCategory(newCat);
+        setCategories((prev) => [...prev, created]);
+        onChange(created.id);
+        setIsOpen(false);
+      } catch (err) {
+        console.error("Failed to create category", err);
+      } finally {
+        setIsCreating(false);
+      }
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Escape") {
+      setIsOpen(false);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filtered.length === 1) {
+        handleSelect(filtered[0]);
+      } else if (showCreateOption && filtered.length === 0) {
+        handleCreateNew();
+      }
+    }
+  };
+
+  const selectedCategory = categories.find(c => c.id === value);
+  const displayValue = selectedCategory ? selectedCategory.name : "";
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled || isCreating}
+        onClick={() => setIsOpen((o) => !o)}
+        className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50 flex items-center justify-between text-left gap-2"
+      >
+        <span className={displayValue ? "text-on-surface truncate" : "text-outline/60"}>
+          {displayValue || "Kategori seÃ§..."}
+        </span>
+        <span
+          className={`material-symbols-outlined text-[20px] shrink-0 transition-transform duration-150 ${
+            isOpen ? "text-primary rotate-180" : "text-outline/50"
+          }`}
+        >
+          {isCreating ? "hourglass_empty" : "expand_more"}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute z-50 left-0 right-0 mt-1.5 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          style={{
+            background: "var(--color-surface, #fff)",
+            border: "1px solid color-mix(in srgb, currentColor 10%, transparent)",
+            maxHeight: "300px",
+          }}
+        >
+          <div className="px-2 pt-2 pb-1.5 shrink-0">
+            <div className="relative">
+              <span
+                className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 select-none pointer-events-none text-outline/40"
+                style={{ fontSize: "15px", fontVariationSettings: "'FILL' 0, 'wght' 300" }}
+              >
+                search
+              </span>
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Ara..."
+                className="w-full rounded-xl py-1.5 pl-8 pr-3 text-on-surface placeholder:text-outline/40 border-none outline-none"
+                style={{
+                  fontSize: "13px",
+                  background: "color-mix(in srgb, currentColor 5%, transparent)",
+                }}
+              />
+            </div>
+          </div>
+
+          <div
+            className="shrink-0 mx-2"
+            style={{ height: "1px", background: "color-mix(in srgb, currentColor 8%, transparent)" }}
+          />
+
+          {filtered.length > 0 && (
+            <div
+              className="overflow-y-auto py-1"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor:
+                  "color-mix(in srgb, currentColor 20%, transparent) transparent",
+              }}
+            >
+              {filtered.map((cat) => {
+                const isSelected = value === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelect(cat)}
+                    className="w-full text-left flex items-center gap-2 transition-colors duration-100"
+                    style={{
+                      padding: "6px 14px",
+                      fontSize: "13px",
+                      fontWeight: isSelected ? 500 : 400,
+                      color: isSelected
+                        ? "var(--color-primary, #6750A4)"
+                        : "var(--color-on-surface, #1C1B1F)",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "color-mix(in srgb, currentColor 5%, transparent)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <span
+                      className="material-symbols-outlined shrink-0"
+                      style={{
+                        fontSize: "15px",
+                        fontVariationSettings: "'FILL' 1, 'wght' 600",
+                        opacity: isSelected ? 1 : 0,
+                        color: "var(--color-primary, #6750A4)",
+                        width: "15px",
+                      }}
+                    >
+                      check
+                    </span>
+                    <span className="truncate">{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {showCreateOption && (
+            <div className="shrink-0 p-1.5 bg-surface-container-low border-t border-outline/10">
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                onMouseDown={(e) => e.preventDefault()}
+                disabled={isCreating}
+                className="w-full flex items-center gap-2 py-2 px-3 rounded-xl text-left transition-colors duration-100 text-primary hover:bg-primary/10"
+                style={{ fontSize: "13px", fontWeight: 500 }}
+              >
+                <span
+                  className="material-symbols-outlined shrink-0"
+                  style={{ fontSize: "16px" }}
+                >
+                  {isCreating ? "hourglass_empty" : "add_circle"}
+                </span>
+                <span className="truncate text-on-surface">
+                  <strong className="text-primary font-semibold">
+                    "{searchQuery.trim()}"
+                  </strong>{" "}
+                  kategorisini oluÅŸtur
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TaskFormModal({
   isOpen,
@@ -80,7 +304,7 @@ export default function TaskFormModal({
         title: initialData?.title || "",
         description: initialData?.description || "",
         priority: initialData?.priority || "Medium",
-        category: initialData?.category || "General",
+        categoryId: initialData?.categoryId || null,
         dueDate: initialData?.dueDate ? initialData.dueDate.slice(0, 10) : "",
         assigneeIds: initialAssigneeIds,
       });
@@ -96,7 +320,7 @@ export default function TaskFormModal({
   }
 
   if (!formData.priority) errors.priority = "Priority is required.";
-  if (!formData.category) errors.category = "Category is required.";
+  if (!formData.categoryId) errors.categoryId = "Category is required.";
   if (!formData.dueDate) errors.dueDate = "Due date is required.";
 
   const isFormValid = Object.keys(errors).length === 0;
@@ -109,7 +333,7 @@ export default function TaskFormModal({
     e.preventDefault();
     if (submitting) return;
 
-    setTouched({ title: true, priority: true, category: true, dueDate: true });
+    setTouched({ title: true, priority: true, categoryId: true, dueDate: true });
 
     if (!isFormValid) return;
 
@@ -118,15 +342,16 @@ export default function TaskFormModal({
 
     try {
       const payload = {
-        title: formData.title.trim(),
+          title: formData.title.trim(),
         description: formData.description.trim(),
         priority: formData.priority,
-        category: formData.category,
+        categoryId: formData.categoryId,
         dueDate: formData.dueDate,
         assigneeIds: formData.assigneeIds.map(Number),
       };
 
-      await onSubmit(payload);
+      console.log("CREATE TASK PAYLOAD:", JSON.stringify(payload, null, 2));
+        await onSubmit(payload);
       onClose();
     } catch (err) {
       console.error("Task submission failed:", err);
@@ -202,7 +427,7 @@ export default function TaskFormModal({
             >
               <option value="High">ğŸ”´ High Priority</option>
               <option value="Medium">ğŸŸ¡ Medium Priority</option>
-              <option value="Low">ğŸ”µ Low Priority</option>
+              <option value="Low">ğŸŸ¢ Low Priority</option>
             </select>
           </div>
 
@@ -211,19 +436,16 @@ export default function TaskFormModal({
             <label className="block font-label-md text-label-md font-semibold text-on-surface">
               Category *
             </label>
-            <select
-              value={formData.category}
-              onChange={(e) => handleFieldChange("category", e.target.value)}
-              onBlur={() => handleBlur("category")}
+            <CategoryCombobox
+              value={formData.categoryId}
+              onChange={(val) => handleFieldChange("categoryId", val)}
               disabled={submitting}
-              className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
-            >
-              {DEFAULT_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            />
+            {touched.categoryId && errors.categoryId && (
+              <p className="text-xs text-error font-medium pl-sm">
+                {errors.categoryId}
+              </p>
+            )}
           </div>
 
           {/* Deadline / Due Date */}
@@ -272,11 +494,10 @@ export default function TaskFormModal({
                         return (
                           <label
                             key={member.id}
-                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                              isSelected
+                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${isSelected
                                 ? "bg-primary/10 text-primary"
                                 : "hover:bg-surface-container-high text-on-surface"
-                            }`}
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -304,10 +525,10 @@ export default function TaskFormModal({
                         a.findIndex((t) => t.userId === v.userId) === i &&
                         (v.status === "Active" || v.status === "Accepted" || v.status === 1)
                     ).length === 0 && !loadingMembers && (
-                      <div className="text-center text-body-sm text-outline p-4">
-                        No accepted team members available.
-                      </div>
-                    )}
+                        <div className="text-center text-body-sm text-outline p-4">
+                          No accepted team members available.
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
@@ -347,4 +568,6 @@ export default function TaskFormModal({
     </Modal>
   );
 }
+
+
 

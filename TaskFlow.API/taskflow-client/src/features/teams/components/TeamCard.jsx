@@ -37,10 +37,10 @@ export default function TeamCard({
   onOpenDeleteTeam,
   onOpenAnalytics,
 }) {
+  const [activeMenuMemberId, setActiveMenuMemberId] = useState(null);
   if (!team) return null;
 
   const { id, name, memberCount, userRole, members = [], icon = "groups" } = team;
-  const [activeMenuMemberId, setActiveMenuMemberId] = useState(null);
 
   // â”€â”€ Permission flags for the current user â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Normalize to lowercase. If userRole is empty the user has no team role — treat as Member.

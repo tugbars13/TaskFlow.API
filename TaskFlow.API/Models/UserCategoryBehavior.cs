@@ -1,4 +1,4 @@
-Ôªøusing System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TaskFlow.API.Models;
@@ -14,7 +14,7 @@ namespace TaskFlow.API.Models
         [ForeignKey("UserId")]
         public UserBehaviorProfile Profile { get; set; } = null!;
 
-        public TaskCategory Category { get; set; }
+        public int CategoryId { get; set; }
         
         public int TotalTasks { get; set; }
         public int CompletedTasks { get; set; }
@@ -22,7 +22,7 @@ namespace TaskFlow.API.Models
         public int ProcrastinatedTasks { get; set; }
         public double OnTimeCompletionRate { get; set; }
         
-        public string RiskLevel { get; set; } = "D√ú≈û√úK"; // Y√úKSEK, ORTA, D√ú≈û√úK
+        public string RiskLevel { get; set; } = "D‹ﬁ‹K"; // Y‹KSEK, ORTA, D‹ﬁ‹K
 
         public DateTime LastCalculatedAt { get; set; }
     }

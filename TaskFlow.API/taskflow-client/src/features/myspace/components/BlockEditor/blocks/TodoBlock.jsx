@@ -1,8 +1,18 @@
 import React from "react";
 import { ContentEditable } from "./ContentEditable";
-export default function TodoBlock({ block, updateBlock, onKeyDown }) {
+import BlockMenu from "./BlockMenu";
+
+export default function TodoBlock({ block, updateBlock, onKeyDown, removeBlock, duplicateBlock, isMenuVisible, setMenuOpen, onChangeType, currentType }) {
   return (
-    <div className="flex items-start gap-2 w-full my-1 group">
+    <div className="flex items-start gap-2 w-full my-1 group relative">
+      <BlockMenu 
+        onRemove={() => removeBlock(block.id)} 
+        onDuplicate={() => duplicateBlock(block.id)} 
+        visible={isMenuVisible} 
+        onOpenChange={setMenuOpen} 
+        onChangeType={onChangeType}
+        currentType={currentType || block.type}
+      />
       <input 
         type="checkbox" 
         checked={block.checked || false}
@@ -15,6 +25,7 @@ export default function TodoBlock({ block, updateBlock, onKeyDown }) {
         onChange={(val) => updateBlock(block.id, { content: val })}
         onKeyDown={(e) => onKeyDown(e, block.id)}
         dataBlockId={block.id}
+        isRichText={true}
       />
     </div>
   );

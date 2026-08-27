@@ -33,12 +33,26 @@ export default function TaskDetailsModal({
   const handleAddSubtasks = async (subtasks) => {
     if (!addTask) return;
 
+    console.log("RUNTIME PARENT TASK:", task);
+    console.log("RUNTIME CATEGORY ID:", task?.categoryId);
+    console.log("RUNTIME CATEGORY:", task?.category);
+
     // Create each subtask
     for (const st of subtasks) {
+      console.log("RUNTIME SUBTASK DATA:", {
+        title: st.title,
+        description: st.description,
+        categoryId: task?.categoryId,
+        priority: task?.priority,
+        dueDate: null,
+        parentTaskId: task?.id,
+        teamId: null
+      });
+
       await addTask({
         title: st.title,
         description: st.description,
-        category: task.category,
+        categoryId: task.categoryId,
         priority: task.priority,
         dueDate: null,
         parentTaskId: task.id,

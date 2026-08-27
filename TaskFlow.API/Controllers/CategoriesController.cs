@@ -34,7 +34,7 @@ public class CategoriesController : ControllerBase
 
         var categories = await _categoryService.GetCustomCategoriesAsync(userId.Value);
 
-        return Ok(new ApiResponse<IEnumerable<string>>
+        return Ok(new ApiResponse<IEnumerable<CategoryDto>>
         {
             Success = true,
             Message = "Kategoriler getirildi.",
@@ -49,11 +49,11 @@ public class CategoriesController : ControllerBase
         if (userId == null) return Unauthorized();
 
         var category = await _categoryService.AddCategoryAsync(userId.Value, dto.Name);
-            return Ok(new ApiResponse<string>
+            return Ok(new ApiResponse<CategoryDto>
             {
                 Success = true,
                 Message = "Kategori başarıyla eklendi.",
-                Data = category!.Name
+                Data = new CategoryDto { Id = category!.Id, Name = category.Name }
             });
     }
 
@@ -77,6 +77,3 @@ public class CategoriesController : ControllerBase
         });
     }
 }
-
-
-

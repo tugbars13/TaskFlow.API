@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
@@ -39,8 +39,8 @@ public class TaskRepository : ITaskRepository
         if (filter.Priority.HasValue)
             query = query.Where(x => x.Priority == filter.Priority.Value);
 
-        if (filter.Category.HasValue)
-            query = query.Where(x => x.Category == filter.Category.Value);
+        if (filter.CategoryId.HasValue)
+            query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
 
         if (filter.IsCompleted.HasValue)
             query = query.Where(x => x.IsCompleted == filter.IsCompleted.Value);
@@ -144,12 +144,26 @@ public class TaskRepository : ITaskRepository
 
     public async Task<TaskItem> CreateAsync(TaskItem task)
     {
+        Console.WriteLine("===== CREATE DEBUG =====");
+        Console.WriteLine($"Task.Id: {task.Id}");
+        Console.WriteLine($"Task.Title: {task.Title}");
+        Console.WriteLine($"Task.CategoryId: {task.CategoryId}");
+        Console.WriteLine($"Task.Category: {(task.Category == null ? "NULL" : task.Category.Name)}");
+        
+        var categoryExists = await _context.CustomCategories
+            .AnyAsync(c => c.Id == task.CategoryId);
+        
+        Console.WriteLine($"CategoryId {task.CategoryId} exists in DB: {categoryExists}");
+        Console.WriteLine("========================");
+
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        // Kaydedilen gÃ¶revi, AssignedUser bilgisiyle birlikte tek sorguda tekrar Ã§ek
+        // Kaydedilen görevi, AssignedUser bilgisiyle birlikte tek sorguda tekrar çek
         return await _context.Tasks
+            .AsNoTracking()
             .Include(t => t.Assignees).ThenInclude(a => a.User)
+            .Include(t => t.Category)
             .FirstAsync(t => t.Id == task.Id);
     }
 
@@ -197,7 +211,7 @@ public class TaskRepository : ITaskRepository
         task.Description = updatedTask.Description;
         task.Priority = updatedTask.Priority;
         task.DueDate = updatedTask.DueDate;
-        task.Category = updatedTask.Category;
+        task.CategoryId = updatedTask.CategoryId;
         // Sadece Assignees listesi aÃ§Ä±kÃ§a gÃ¶nderilmiÅŸse gÃ¼ncelle (null deÄŸilse)
         if (updatedTask.Assignees != null)
         {
@@ -247,9 +261,9 @@ public class TaskRepository : ITaskRepository
             query = query.Where(x => x.Priority == filter.Priority.Value);
         }
 
-        if (filter.Category.HasValue)
+        if (filter.CategoryId.HasValue)
         {
-            query = query.Where(x => x.Category == filter.Category.Value);
+            query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
         }
 
         if (filter.IsCompleted.HasValue)
@@ -280,7 +294,8 @@ public class TaskRepository : ITaskRepository
                 IsCompleted = t.IsCompleted,
                 CompletedText = t.IsCompleted ? $"Completed at {t.CompletedDate?.ToString("HH:mm") ?? "10:00"}" : null,
                 Progress = t.IsCompleted ? 100 : 0,
-                Category = t.Category.ToString(),
+                Category = t.Category != null ? t.Category.Name : null,
+                CategoryId = t.CategoryId,
                 DueDate = t.DueDate
             })
             .ToList();
@@ -322,7 +337,8 @@ public class TaskRepository : ITaskRepository
                 DueDate = t.DueDate,
                 Priority = t.Priority.ToString(),
                 AssignedUser = t.Assignees.Any() ? (t.Assignees.First().User != null ? t.Assignees.First().User.FullName : "Alex M.") : "Alex M.",
-                Category = t.Category.ToString()
+                Category = t.Category != null ? t.Category.Name : null,
+                CategoryId = t.CategoryId
             })
             .ToList();
 
@@ -380,4 +396,5 @@ public class TaskRepository : ITaskRepository
         .ToListAsync();
     }
 }
+
 

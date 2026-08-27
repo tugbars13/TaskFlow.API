@@ -25,6 +25,5 @@ export const SLASH_COMMANDS = [
   // GELİŞMİŞ
   { label: "Toggle", type: BLOCK_TYPES.TOGGLE, icon: "arrow_drop_down_circle", keywords: ["toggle", "açılır", "kapanır", "gizli"], description: "İç içe açılıp kapanan liste.", category: "Gelişmiş" },
   { label: "Table", type: BLOCK_TYPES.TABLE, icon: "table", keywords: ["table", "tablo", "grid", "excel"], description: "Basit tablo oluştur.", category: "Gelişmiş" },
-  { label: "Columns", type: BLOCK_TYPES.COLUMNS, icon: "view_column", keywords: ["columns", "kolon", "sütun", "yan yana"], description: "Yan yana kolonlar.", category: "Gelişmiş" },
-  { label: "Database", type: BLOCK_TYPES.DATABASE, icon: "database", keywords: ["database", "veritabanı", "taskflow", "tablo"], description: "TaskFlow veri tablosu.", category: "Gelişmiş" }
+  { label: "Canvas", type: BLOCK_TYPES.CANVAS, icon: "gesture", keywords: ["canvas", "çizim", "tahta", "board", "miro"], description: "Serbest sürükle-bırak çalışma alanı.", category: "Gelişmiş" }
 ];

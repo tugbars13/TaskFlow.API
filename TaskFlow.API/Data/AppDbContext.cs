@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Data;
@@ -48,6 +48,29 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);// User silinirse Task'larÄ± da silinir.
 
         
+
+        // TaskItem -> CustomCategory relation
+        modelBuilder.Entity<TaskItem>()
+            .HasOne(t => t.Category)
+            .WithMany(c => c.Tasks)
+            .HasForeignKey(t => t.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Seed default CustomCategories
+        modelBuilder.Entity<CustomCategory>().HasData(
+            new CustomCategory { Id = 1001, Name = "Personal", UserId = null },
+            new CustomCategory { Id = 1002, Name = "Work", UserId = null },
+            new CustomCategory { Id = 1003, Name = "Study", UserId = null },
+            new CustomCategory { Id = 1004, Name = "Shopping", UserId = null },
+            new CustomCategory { Id = 1005, Name = "Health", UserId = null },
+            new CustomCategory { Id = 1006, Name = "General", UserId = null },
+            new CustomCategory { Id = 1007, Name = "Design System", UserId = null },
+            new CustomCategory { Id = 1008, Name = "Backend", UserId = null },
+            new CustomCategory { Id = 1009, Name = "Frontend", UserId = null },
+            new CustomCategory { Id = 1010, Name = "Marketing", UserId = null },
+            new CustomCategory { Id = 1011, Name = "QA", UserId = null },
+            new CustomCategory { Id = 1012, Name = "Team Sync", UserId = null }
+        );
 
         // TaskItem self-referencing: Parent-Child (AI Task Breakdown)
         modelBuilder.Entity<TaskItem>()
