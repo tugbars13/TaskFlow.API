@@ -1,4 +1,14 @@
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using TaskFlow.API.DTOs.Category;
 using TaskFlow.API.Models;
-using TaskFlow.API.Repositories;
+
 namespace TaskFlow.API.Services;
-public interface ICategoryService { Task<List<TaskFlow.API.DTOs.Category.CategoryDto>> GetCustomCategoriesAsync(int userId); Task<CustomCategory?> AddCategoryAsync(int userId, string name); Task<bool> DeleteCategoryAsync(int userId, string name); }
+
+public interface ICategoryService
+{
+    Task<List<CategoryDto>> GetCustomCategoriesAsync(int userId, CancellationToken cancellationToken = default);
+    Task<CustomCategory> AddCategoryAsync(int userId, string name, CancellationToken cancellationToken = default);
+    Task<bool> DeleteCategoryAsync(int userId, string name, CancellationToken cancellationToken = default);
+}

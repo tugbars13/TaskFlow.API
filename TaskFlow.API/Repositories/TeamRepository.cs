@@ -1,7 +1,8 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
-
 namespace TaskFlow.API.Repositories
 {
     public class TeamRepository : ITeamRepository
@@ -13,81 +14,110 @@ namespace TaskFlow.API.Repositories
             _context = context;
         }
 
-        public async Task<List<TeamMember>> GetAllAsync()
+        public async Task<List<TeamMember>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.TeamMembers
+                .AsNoTracking()
                 .Include(tm => tm.User)
                 .Include(tm => tm.Team)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<TeamMember>> GetMembersByTeamIdAsync(int teamId)
+        public async Task<List<TeamMember>> GetMembersByTeamIdAsync(int teamId, int pageNumber = 1, int pageSize = 50, CancellationToken cancellationToken = default)
         {
             return await _context.TeamMembers
+                .AsNoTracking()
                 .Include(tm => tm.User)
                 .Include(tm => tm.Team)
                 .Where(tm => tm.TeamId == teamId)
-                .ToListAsync();
+                .OrderBy(tm => tm.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<TeamMember?> GetByIdAsync(int id)
+        public async Task<List<TeamMember>> GetMembersByTeamIdsAsync(IEnumerable<int> teamIds, CancellationToken cancellationToken = default)
+        {
+            return await _context.TeamMembers
+                .AsNoTracking()
+                .Include(tm => tm.User)
+                .Include(tm => tm.Team)
+                .Where(tm => teamIds.Contains(tm.TeamId))
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<TeamMember?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.TeamMembers
                 .Include(tm => tm.User)
                 .Include(tm => tm.Team)
-                .FirstOrDefaultAsync(tm => tm.Id == id);
+                .FirstOrDefaultAsync(tm => tm.Id == id, cancellationToken);
         }
 
-        public async Task<TeamMember> AddAsync(TeamMember member)
+        public async Task<TeamMember> AddAsync(TeamMember member, CancellationToken cancellationToken = default)
         {
             _context.TeamMembers.Add(member);
-            await _context.SaveChangesAsync();
+
             return member;
         }
 
-        public async Task UpdateAsync(TeamMember member)
+        public async Task UpdateAsync(TeamMember member, CancellationToken cancellationToken = default)
         {
             _context.TeamMembers.Update(member);
-            await _context.SaveChangesAsync();
+
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var member = await _context.TeamMembers.FindAsync(id);
+            var member = await _context.TeamMembers.FindAsync(new object[] { id }, cancellationToken);
 
             if (member == null)
                 return;
 
             _context.TeamMembers.Remove(member);
-            await _context.SaveChangesAsync();
+
         }
 
-        public async Task<List<Team>> GetTeamsAsync()
+        public async Task<List<Team>> GetTeamsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Teams
+                .AsNoTracking()
+                .Include(t => t.Members)
+                    .ThenInclude(m => m.User)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Team>> GetTeamsByUserIdAsync(int userId, int pageNumber = 1, int pageSize = 50, CancellationToken cancellationToken = default)
+        {
+            return await _context.Teams
+                .AsNoTracking()
+                .Include(t => t.Members)
+                    .ThenInclude(m => m.User)
+                .Where(t => t.Members.Any(m => m.UserId == userId && m.Status == TeamMemberStatus.Accepted) || t.CreatedByUserId == userId)
+                .OrderBy(t => t.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<Team?> GetTeamAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Teams
                 .Include(t => t.Members)
                     .ThenInclude(m => m.User)
-                .ToListAsync();
+                .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
         }
 
-        public async Task<Team?> GetTeamAsync(int id)
-        {
-            return await _context.Teams
-                .Include(t => t.Members)
-                    .ThenInclude(m => m.User)
-                .FirstOrDefaultAsync(t => t.Id == id);
-        }
-
-        public async Task<Team> CreateTeamAsync(Team team)
+        public async Task<Team> CreateTeamAsync(Team team, CancellationToken cancellationToken = default)
         {
             _context.Teams.Add(team);
-            await _context.SaveChangesAsync();
+
             return team;
         }
 
-        public async Task<bool> UpdateTeamAsync(Team team)
+        public async Task<bool> UpdateTeamAsync(Team team, CancellationToken cancellationToken = default)
         {
-            var existingTeam = await _context.Teams.FindAsync(team.Id);
+            var existingTeam = await _context.Teams.FindAsync(new object[] { team.Id }, cancellationToken);
 
             if (existingTeam == null)
                 return false;
@@ -95,56 +125,47 @@ namespace TaskFlow.API.Repositories
             existingTeam.Name = team.Name;
             existingTeam.Description = team.Description;
 
-            await _context.SaveChangesAsync();
+
 
             return true;
         }
 
-        public async Task<bool> DeleteTeamAsync(int id)
+        public async Task<bool> DeleteTeamAsync(int id, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var team = await _context.Teams.FindAsync(id);
+            var team = await _context.Teams.FindAsync(new object[] { id }, cancellationToken);
 
-                if (team == null)
-                    return false;
+            if (team == null)
+                return false;
 
-                // Safely delete all tasks associated with this team
-                var tasks = await _context.Tasks.Where(t => t.TeamId == id).ToListAsync();
-                if (tasks.Any())
-                {
-                    _context.Tasks.RemoveRange(tasks);
-                }
+            _context.Teams.Remove(team);
 
-                // Clean up related team invitations so they don't get stuck in UI forever
-                var relatedNotifications = await _context.Notifications
-                    .Where(n => n.RelatedId == id && n.Type == "TeamInvitation")
-                    .ToListAsync();
-                
-                if (relatedNotifications.Any())
-                {
-                    _context.Notifications.RemoveRange(relatedNotifications);
-                }
-
-                _context.Teams.Remove(team);
-                await _context.SaveChangesAsync();
-                
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            return true;
         }
 
-        public async Task<TeamMember?> GetMemberByTeamAndUserAsync(int teamId, int userId)
+        public async Task<TeamMember?> GetMemberByTeamAndUserAsync(int teamId, int userId, CancellationToken cancellationToken = default)
         {
             return await _context.TeamMembers
                 .Include(tm => tm.User)
-                .FirstOrDefaultAsync(tm => tm.TeamId == teamId && tm.UserId == userId);
+                .FirstOrDefaultAsync(tm => tm.TeamId == teamId && tm.UserId == userId, cancellationToken);
+        }
+
+
+        public async Task<bool> IsTeamMemberOrCreatorAsync(int teamId, int userId, CancellationToken cancellationToken = default)
+        {
+            var isMember = await _context.TeamMembers
+                .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted, cancellationToken);
+            var isCreator = await _context.Teams
+                .AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId, cancellationToken);
+
+            return isMember || isCreator;
+        }
+
+        public async Task<TeamRole?> GetMemberRoleAsync(int teamId, int userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.TeamMembers
+                .Where(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted)
+                .Select(tm => (TeamRole?)tm.Role)
+                .FirstOrDefaultAsync(cancellationToken);
         }
     }
 }

@@ -68,6 +68,8 @@ namespace TaskFlow.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("CustomCategories");
 
                     b.HasData(
@@ -151,7 +153,12 @@ namespace TaskFlow.API.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("MySpaceFolders");
                 });
@@ -185,6 +192,9 @@ namespace TaskFlow.API.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -242,7 +252,7 @@ namespace TaskFlow.API.Migrations
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -250,7 +260,8 @@ namespace TaskFlow.API.Migrations
                     b.HasIndex("UserId");
 
                     b.HasIndex("TaskId", "UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("TaskAssignees");
                 });
@@ -402,7 +413,7 @@ namespace TaskFlow.API.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -417,6 +428,9 @@ namespace TaskFlow.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -506,7 +520,7 @@ namespace TaskFlow.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("CompletedDate")
@@ -573,12 +587,29 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TaskFlow.API.Models.CustomCategory", b =>
+                {
+                    b.HasOne("TaskFlow.API.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("TaskFlow.API.Models.MySpaceFolder", b =>
+                {
+                    b.HasOne("TaskFlow.API.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TaskFlow.API.Models.MySpacePage", b =>
                 {
                     b.HasOne("TaskFlow.API.Models.MySpaceFolder", "Folder")
                         .WithMany("Pages")
                         .HasForeignKey("FolderId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Folder");
                 });
@@ -605,8 +636,7 @@ namespace TaskFlow.API.Migrations
                     b.HasOne("TaskFlow.API.Models.User", "User")
                         .WithMany("TaskAssignees")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Task");
 
@@ -670,17 +700,17 @@ namespace TaskFlow.API.Migrations
                     b.HasOne("TaskFlow.API.Models.CustomCategory", "Category")
                         .WithMany("Tasks")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TaskItem", "ParentTask")
                         .WithMany("SubTasks")
                         .HasForeignKey("ParentTaskId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TaskFlow.API.Models.Team", "Team")
                         .WithMany()
-                        .HasForeignKey("TeamId");
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TaskFlow.API.Models.User", "User")
                         .WithMany("Tasks")

@@ -1,15 +1,20 @@
-﻿using TaskFlow.API.Models;
+using System.Threading;
+using System.Threading.Tasks;
+using TaskFlow.API.Repositories;
+using TaskFlow.API.Models;
 
 public class ActivityLogService : IActivityLogService
 {
     private readonly IActivityLogRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ActivityLogService(IActivityLogRepository repository)
+    public ActivityLogService(IActivityLogRepository repository, IUnitOfWork unitOfWork)
     {
         _repository = repository;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task LogAsync(int userId, string action, string description)
+    public async Task LogAsync(int userId, string action, string description, CancellationToken cancellationToken = default)
     {
         var log = new ActivityLog
         {
@@ -19,6 +24,7 @@ public class ActivityLogService : IActivityLogService
             CreatedDate = DateTime.UtcNow
         };
 
-        await _repository.AddAsync(log);
+        await _repository.AddAsync(log, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

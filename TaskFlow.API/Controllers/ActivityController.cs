@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using TaskFlow.API.Data;
 using TaskFlow.API.Services;
 
 namespace TaskFlow.API.Controllers;
@@ -20,12 +18,12 @@ public class ActivityController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetLogs()
+    public async Task<IActionResult> GetLogs(CancellationToken cancellationToken)
     {
         var userId = int.Parse(
             User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        var logs = await _activityService.GetLogsByUserIdAsync(userId);
+        var logs = await _activityService.GetLogsByUserIdAsync(userId, cancellationToken);
 
         return Ok(logs);
     }

@@ -1,25 +1,23 @@
-﻿// Services/ActivityService.cs
-using Microsoft.EntityFrameworkCore;
-using TaskFlow.API.Data;
+// Services/ActivityService.cs
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using TaskFlow.API.Models;
+using TaskFlow.API.Repositories;
 
 namespace TaskFlow.API.Services;
 
 public class ActivityService : IActivityService
 {
-    private readonly AppDbContext _context;
+    private readonly IActivityLogRepository _repository;
 
-    public ActivityService(AppDbContext context)
+    public ActivityService(IActivityLogRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
-    public async Task<List<ActivityLog>> GetLogsByUserIdAsync(int userId)
+    public async Task<List<ActivityLog>> GetLogsByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
-        return await _context.ActivityLogs
-            .AsNoTracking()
-            .Where(x => x.UserId == userId)
-            .OrderByDescending(x => x.CreatedDate)
-            .ToListAsync();
+        return await _repository.GetLogsByUserIdAsync(userId, cancellationToken);
     }
 }

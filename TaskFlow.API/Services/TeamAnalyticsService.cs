@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,14 +16,21 @@ public class TeamAnalyticsService : ITeamAnalyticsService
     private readonly ITaskRepository _taskRepository;
     private readonly ITeamRepository _teamRepository;
     private readonly IAiService _aiService;
-    private readonly AppDbContext _dbContext;
+    private readonly ITeamAnalyticsSnapshotRepository _snapshotRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public TeamAnalyticsService(ITaskRepository taskRepository, ITeamRepository teamRepository, IAiService aiService, AppDbContext dbContext)
+    public TeamAnalyticsService(
+        ITaskRepository taskRepository,
+        ITeamRepository teamRepository,
+        IAiService aiService,
+        ITeamAnalyticsSnapshotRepository snapshotRepository,
+        IUnitOfWork unitOfWork)
     {
         _taskRepository = taskRepository;
         _teamRepository = teamRepository;
         _aiService = aiService;
-        _dbContext = dbContext;
+        _snapshotRepository = snapshotRepository;
+        _unitOfWork = unitOfWork;
     }
 
     private bool IsTaskActiveInPeriod(TaskItem t, DateTime start, DateTime end)
@@ -37,9 +45,9 @@ public class TeamAnalyticsService : ITeamAnalyticsService
         return t.IsCompleted && t.CompletedDate.HasValue && t.CompletedDate.Value >= start && t.CompletedDate.Value <= end;
     }
 
-    public async Task<TeamAnalyticsDto> GetTeamAnalyticsAsync(int teamId, string period, int currentUserId, DateTime? targetDate = null)
+    public async Task<TeamAnalyticsDto> GetTeamAnalyticsAsync(int teamId, string period, int currentUserId, DateTime? targetDate = null, CancellationToken cancellationToken = default)
     {
-        var team = await _teamRepository.GetTeamAsync(teamId);
+        var team = await _teamRepository.GetTeamAsync(teamId, cancellationToken);
         if (team == null) throw new Exception("Team not found");
 
         var now = targetDate ?? DateTime.UtcNow;
@@ -74,12 +82,8 @@ public class TeamAnalyticsService : ITeamAnalyticsService
         }
 
         // --- SNAPSHOT CHECK ---
-        var existingSnapshot = _dbContext.TeamAnalyticsSnapshots
-            .FirstOrDefault(s => s.TeamId == teamId 
-                                 && s.PeriodType == pType 
-                                 && s.StartDate == startDate 
-                                 && s.EndDate == endDate);
-        
+        var existingSnapshot = await _snapshotRepository.GetSnapshotAsync(teamId, pType, startDate, endDate, cancellationToken);
+
         if (existingSnapshot != null)
         {
             return new TeamAnalyticsDto
@@ -100,21 +104,33 @@ public class TeamAnalyticsService : ITeamAnalyticsService
             };
         }
 
-        var members = await _teamRepository.GetMembersByTeamIdAsync(teamId);
-        var tasks = await _taskRepository.GetByTeamIdAsync(teamId);
-        tasks = tasks.Where(t => !t.IsDeleted).ToList();
+        var members = await _teamRepository.GetMembersByTeamIdAsync(teamId, 1, int.MaxValue, cancellationToken);
 
-        var currentActive = tasks.Where(t => IsTaskActiveInPeriod(t, startDate, endDate)).ToList();
-        var prevActive = tasks.Where(t => IsTaskActiveInPeriod(t, prevStartDate, prevEndDate)).ToList();
+        var metrics = await _taskRepository.GetTeamAnalyticsMetricsAsync(teamId, startDate, endDate, prevStartDate, prevEndDate, now, cancellationToken);
+        var activeMembersResult = await _taskRepository.GetTeamActiveMembersAnalyticsAsync(teamId, startDate, endDate, 5, cancellationToken);
+        var overdueTasksListResult = await _taskRepository.GetTeamOverdueTasksAsync(teamId, now, 5, cancellationToken);
 
-        int completedTasks = currentActive.Count(t => IsTaskCompletedInPeriod(t, startDate, endDate));
-        int inProgressTasks = currentActive.Count(t => !t.IsCompleted || (t.IsCompleted && t.CompletedDate > endDate));
-        var overdueTasks = currentActive.Where(t => !t.IsCompleted && t.DueDate.HasValue && (t.DueDate ?? now) < now).ToList();
+        var activeMembers = activeMembersResult.Select(m => new ActiveMemberDto
+        {
+            UserId = m.UserId,
+            FullName = m.FullName,
+            TotalTasks = m.TotalTasks,
+            CompletedTasks = m.CompletedTasks,
+            InProgressTasks = m.InProgressTasks
+        }).ToList();
 
-        int completionRate = currentActive.Count > 0 ? (int)Math.Round((double)completedTasks / currentActive.Count * 100) : 0;
+        var overdueTasksList = overdueTasksListResult.Select(t => new OverdueTaskDto
+        {
+            TaskId = t.TaskId,
+            Title = t.Title,
+            OverdueDays = t.DueDate.HasValue ? (int)(now - t.DueDate.Value).TotalDays : 0,
+            AssigneeName = t.Assignees.Any() ? string.Join(", ", t.Assignees) : "Atanmamış"
+        }).ToList();
 
-        int prevCompletedTasks = prevActive.Count(t => IsTaskCompletedInPeriod(t, prevStartDate, prevEndDate));
-        int prevCompletionRate = prevActive.Count > 0 ? (int)Math.Round((double)prevCompletedTasks / prevActive.Count * 100) : 0;
+        var currentActive = await _taskRepository.GetActiveTasksForAnalyticsAsync(teamId, startDate, endDate, cancellationToken);
+
+        int completionRate = metrics.CurrentTotal > 0 ? (int)Math.Round((double)metrics.CompletedTasks / metrics.CurrentTotal * 100) : 0;
+        int prevCompletionRate = metrics.PrevTotal > 0 ? (int)Math.Round((double)metrics.PrevCompletedTasks / metrics.PrevTotal * 100) : 0;
 
         // Trend calculation
         var trend = new List<ProgressTrendDto>();
@@ -132,11 +148,12 @@ public class TeamAnalyticsService : ITeamAnalyticsService
             {
                 var intervalStart = startDate.AddHours(startHour);
                 var intervalEnd = startDate.AddHours(endHour).AddTicks(-1);
-                var intervalActive = currentActive.Where(t => IsTaskActiveInPeriod(t, intervalStart, intervalEnd)).ToList();
-                var intervalCompleted = intervalActive.Count(t => IsTaskCompletedInPeriod(t, intervalStart, intervalEnd));
+                var intervalActive = currentActive.Where(t => t.CreatedDate <= intervalEnd && (!t.IsCompleted || t.CompletedDate >= intervalStart)).ToList();
+                var intervalCompleted = intervalActive.Count(t => t.IsCompleted && t.CompletedDate >= intervalStart && t.CompletedDate <= intervalEnd);
                 var rate = intervalActive.Count > 0 ? (int)Math.Round((double)intervalCompleted / intervalActive.Count * 100) : 0;
-                
-                trend.Add(new ProgressTrendDto {
+
+                trend.Add(new ProgressTrendDto
+                {
                     Label = label,
                     CompletionRate = rate
                 });
@@ -148,7 +165,7 @@ public class TeamAnalyticsService : ITeamAnalyticsService
             var w1End = startDate.AddDays(7).AddTicks(-1);
             var w2End = startDate.AddDays(14).AddTicks(-1);
             var w3End = startDate.AddDays(21).AddTicks(-1);
-            
+
             var intervals = new[] {
                 (startDate, w1End, "Hafta 1"),
                 (w1End.AddTicks(1), w2End, "Hafta 2"),
@@ -158,8 +175,8 @@ public class TeamAnalyticsService : ITeamAnalyticsService
 
             foreach (var (iStart, iEnd, label) in intervals)
             {
-                var intervalActive = currentActive.Where(t => IsTaskActiveInPeriod(t, iStart, iEnd)).ToList();
-                var intervalCompleted = intervalActive.Count(t => IsTaskCompletedInPeriod(t, iStart, iEnd));
+                var intervalActive = currentActive.Where(t => t.CreatedDate <= iEnd && (!t.IsCompleted || t.CompletedDate >= iStart)).ToList();
+                var intervalCompleted = intervalActive.Count(t => t.IsCompleted && t.CompletedDate >= iStart && t.CompletedDate <= iEnd);
                 var rate = intervalActive.Count > 0 ? (int)Math.Round((double)intervalCompleted / intervalActive.Count * 100) : 0;
                 trend.Add(new ProgressTrendDto { Label = label, CompletionRate = rate });
             }
@@ -170,53 +187,25 @@ public class TeamAnalyticsService : ITeamAnalyticsService
             {
                 var dayStart = startDate.AddDays(i);
                 var dayEnd = dayStart.AddDays(1).AddTicks(-1);
-                var dayActive = currentActive.Where(t => IsTaskActiveInPeriod(t, dayStart, dayEnd)).ToList();
-                var dayCompleted = dayActive.Count(t => IsTaskCompletedInPeriod(t, dayStart, dayEnd));
+                var dayActive = currentActive.Where(t => t.CreatedDate <= dayEnd && (!t.IsCompleted || t.CompletedDate >= dayStart)).ToList();
+                var dayCompleted = dayActive.Count(t => t.IsCompleted && t.CompletedDate >= dayStart && t.CompletedDate <= dayEnd);
                 var rate = dayActive.Count > 0 ? (int)Math.Round((double)dayCompleted / dayActive.Count * 100) : 0;
-                
-                var label = i switch { 0 => "Pzt", 1 => "Sal", 2 => "Ãƒâ€¡ar", 3 => "Per", 4 => "Cum", 5 => "Cmt", 6 => "Paz", _ => "" };
+
+                var label = i switch { 0 => "Pzt", 1 => "Sal", 2 => "Çar", 3 => "Per", 4 => "Cum", 5 => "Cmt", 6 => "Paz", _ => "" };
                 trend.Add(new ProgressTrendDto { Label = label, CompletionRate = rate });
             }
         }
 
-        // Active members
-        var activeMembers = members.Select(m => {
-            var mTasks = currentActive.Where(t => t.Assignees.Any(a => a.UserId == m.UserId)).ToList();
-            return new ActiveMemberDto
-            {
-                UserId = m.UserId,
-                FullName = m.User?.FullName ?? "Bilinmiyor",
-                TotalTasks = mTasks.Count,
-                CompletedTasks = mTasks.Count(t => IsTaskCompletedInPeriod(t, startDate, endDate)),
-                InProgressTasks = mTasks.Count(t => !t.IsCompleted || (t.IsCompleted && t.CompletedDate > endDate))
-            };
-        })
-        .Where(m => m.TotalTasks > 0)
-        .OrderByDescending(m => m.TotalTasks)
-        .Take(5)
-        .ToList();
 
-        var overdueTasksList = overdueTasks
-            .OrderByDescending(t => (now - (t.DueDate ?? now)).TotalDays)
-            .Take(5)
-            .Select(t => new OverdueTaskDto
-            {
-                TaskId = t.Id,
-                Title = t.Title,
-                OverdueDays = (int)(now - (t.DueDate ?? now)).TotalDays,
-                AssigneeName = (t.Assignees != null && t.Assignees.Any()) 
-                    ? string.Join(", ", t.Assignees.Where(a => a.User != null).Select(a => a.User.FullName))
-                    : ((t.Assignees != null ? t.Assignees.FirstOrDefault() : null)?.User?.FullName ?? "Atanmamış")
-            }).ToList();
 
         var dto = new TeamAnalyticsDto
         {
             TeamId = team.Id,
             TeamName = team.Name,
             MemberCount = members.Count,
-            CompletedTasks = completedTasks,
-            InProgressTasks = inProgressTasks,
-            OverdueTasks = overdueTasks.Count,
+            CompletedTasks = metrics.CompletedTasks,
+            InProgressTasks = metrics.InProgressTasks,
+            OverdueTasks = metrics.OverdueTasks,
             CompletionRate = completionRate,
             PreviousPeriodCompletionRate = prevCompletionRate,
             ProgressTrend = trend,
@@ -225,10 +214,13 @@ public class TeamAnalyticsService : ITeamAnalyticsService
             OverdueTasksList = overdueTasksList
         };
 
-        try {
-            dto.AiSummary = await _aiService.GenerateTeamInsightAsync(dto);
-        } catch (Exception) {
-            dto.AiSummary = "TakÄ±m verileri hesaplandÄ±. LÃ¼tfen geciken gÃ¶revlere Ã¶ncelik verin.";
+        try
+        {
+            dto.AiSummary = await _aiService.GenerateTeamInsightAsync(dto, cancellationToken);
+        }
+        catch (Exception)
+        {
+            dto.AiSummary = "Takım verileri hesaplandı. Lütfen geciken görevlere öncelik verin.";
         }
 
         var newSnapshot = new TeamAnalyticsSnapshot
@@ -249,12 +241,9 @@ public class TeamAnalyticsService : ITeamAnalyticsService
             AiSummary = dto.AiSummary,
             CreatedAt = DateTime.UtcNow
         };
-        _dbContext.TeamAnalyticsSnapshots.Add(newSnapshot);
-        await _dbContext.SaveChangesAsync();
+        await _snapshotRepository.AddSnapshotAsync(newSnapshot, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return dto;
     }
 }
-
-
-

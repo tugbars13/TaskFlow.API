@@ -1,62 +1,63 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
 using TaskFlow.API.Utils;
+using TaskFlow.API.Repositories;
 
 namespace TaskFlow.API.Services
 {
     public interface IUserBehaviorProfileService
     {
-        Task<UserBehaviorProfile> GetOrCalculateProfileAsync(int userId);
-        Task InvalidateProfileAsync(int userId);
+        Task<UserBehaviorProfile> GetOrCalculateProfileAsync(int userId, CancellationToken cancellationToken = default);
+        Task InvalidateProfileAsync(int userId, CancellationToken cancellationToken = default);
     }
 
     public class UserBehaviorProfileService : IUserBehaviorProfileService
     {
-        private readonly AppDbContext _context;
+        private readonly IUserBehaviorProfileRepository _profileRepository;
+        private readonly ITaskRepository _taskRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UserBehaviorProfileService(AppDbContext context)
+        public UserBehaviorProfileService(
+            IUserBehaviorProfileRepository profileRepository,
+            ITaskRepository taskRepository,
+            IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _profileRepository = profileRepository;
+            _taskRepository = taskRepository;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<UserBehaviorProfile> GetOrCalculateProfileAsync(int userId)
+        public async Task<UserBehaviorProfile> GetOrCalculateProfileAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var profile = await _context.UserBehaviorProfiles
-                .Include(p => p.CategoryBehaviors)
-                .FirstOrDefaultAsync(p => p.UserId == userId);
+            var profile = await _profileRepository.GetProfileAsync(userId, cancellationToken);
 
             if (profile == null || profile.LastCalculatedAt < DateTime.UtcNow.AddHours(-24))
             {
-                return await CalculateAndSaveProfileAsync(userId, profile);
+                return await CalculateAndSaveProfileAsync(userId, profile, cancellationToken);
             }
 
             return profile;
         }
 
-        public async Task InvalidateProfileAsync(int userId)
+        public async Task InvalidateProfileAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var profile = await _context.UserBehaviorProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+            var profile = await _profileRepository.GetProfileAsync(userId, cancellationToken);
             if (profile != null)
             {
                 profile.LastCalculatedAt = DateTime.UtcNow.AddDays(-10); // Force recalculation next time
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
 
-        private async Task<UserBehaviorProfile> CalculateAndSaveProfileAsync(int userId, UserBehaviorProfile? existingProfile)
+        private async Task<UserBehaviorProfile> CalculateAndSaveProfileAsync(int userId, UserBehaviorProfile? existingProfile, CancellationToken cancellationToken)
         {
-            var tasks = await _context.Tasks
-                .AsNoTracking()
-                .Include(t => t.Assignees)
-                .Include(t => t.Team)
-                .Where(t =>
-                    !t.IsDeleted &&
-                    (
-                        (t.TeamId == null && t.UserId == userId) ||
-                        t.Assignees.Any(a => a.UserId == userId)
-                    ))
-                .ToListAsync();
+            var tasks = await _taskRepository.GetTasksForUserBehaviorProfileAsync(userId, cancellationToken);
 
             var metrics = AnalyticsCalculator.CalculateAdvancedMetrics(tasks);
 
@@ -75,11 +76,21 @@ namespace TaskFlow.API.Services
             {
                 foreach (var catPerf in metrics.CategoryPerformances)
                 {
+                    if (!catPerf.CategoryId.HasValue)
+                        continue;
 
-                    var catBehavior = profile.CategoryBehaviors.FirstOrDefault(c => c.CategoryId == catPerf.CategoryId);
+                    var categoryId = catPerf.CategoryId.Value;
+
+                    var catBehavior = profile.CategoryBehaviors
+                        .FirstOrDefault(c => c.CategoryId == categoryId);
+
                     if (catBehavior == null)
                     {
-                        catBehavior = new UserCategoryBehavior { CategoryId = catPerf.CategoryId };
+                        catBehavior = new UserCategoryBehavior
+                        {
+                            CategoryId = categoryId
+                        };
+
                         profile.CategoryBehaviors.Add(catBehavior);
                     }
 
@@ -87,7 +98,7 @@ namespace TaskFlow.API.Services
                     catBehavior.CompletedTasks = catPerf.CompletedTasks;
                     catBehavior.LateTasks = catPerf.LateTasks;
                     catBehavior.ProcrastinatedTasks = catPerf.ProcrastinatedTasks;
-                    
+
                     if (catPerf.CompletedTasks > 0)
                     {
                         var onTime = catPerf.CompletedTasks - catPerf.LateTasks;
@@ -102,11 +113,11 @@ namespace TaskFlow.API.Services
                     var procRate = catPerf.TotalTasks > 0 ? (double)catPerf.ProcrastinatedTasks / catPerf.TotalTasks : 0;
 
                     if (lateRate > 0.3 || procRate > 0.3 || catPerf.LateTasks > 1 || catPerf.ProcrastinatedTasks > 1)
-                        catBehavior.RiskLevel = "Y�KSEK";
+                        catBehavior.RiskLevel = "YÜKSEK";
                     else if (lateRate > 0.1 || procRate > 0.1 || catPerf.LateTasks > 0 || catPerf.ProcrastinatedTasks > 0)
                         catBehavior.RiskLevel = "ORTA";
                     else
-                        catBehavior.RiskLevel = "D���K";
+                        catBehavior.RiskLevel = "DÜŞÜK";
 
                     catBehavior.LastCalculatedAt = DateTime.UtcNow;
                 }
@@ -114,17 +125,16 @@ namespace TaskFlow.API.Services
 
             if (existingProfile == null)
             {
-                _context.UserBehaviorProfiles.Add(profile);
+                await _profileRepository.AddProfileAsync(profile, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
             else
             {
-                _context.UserBehaviorProfiles.Update(profile);
+                await _profileRepository.UpdateProfileAsync(profile, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
-
-            await _context.SaveChangesAsync();
 
             return profile;
         }
     }
 }
-

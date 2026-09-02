@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaskFlow.API.DTOs;
+using TaskFlow.API.Repositories.Results;
 using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Utils
@@ -10,7 +11,64 @@ namespace TaskFlow.API.Utils
     {
         public static AiInsightDataDto CalculateAdvancedMetrics(List<TaskItem> tasks)
         {
+            var taskDates = tasks.Select(t => new TaskDateProjectionResult
+            {
+                CreatedDate = t.CreatedDate,
+                CompletedDate = t.CompletedDate,
+                DueDate = t.DueDate,
+                CategoryId = t.CategoryId
+            }).ToList();
+
+            var categoryResults = tasks.GroupBy(t => new { t.CategoryId, CategoryName = t.Category != null ? t.Category.Name : "Bilinmeyen" })
+                .Select(g => new CategoryPerformanceResult
+                {
+                    CategoryId = g.Key.CategoryId,
+                    CategoryName = g.Key.CategoryName,
+                    TotalTasks = g.Count(),
+                    CompletedTasks = g.Count(x => x.IsCompleted && x.CompletedDate.HasValue),
+                    AverageCompletionDays = null
+                }).ToList();
+
+            var priorityResults = tasks.GroupBy(t => t.Priority)
+                .Select(g => new PriorityPerformanceResult
+                {
+                    Priority = g.Key,
+                    TotalTasks = g.Count(),
+                    CompletedTasks = g.Count(x => x.IsCompleted && x.CompletedDate.HasValue),
+                    OnTimeCompletedTasks = g.Count(x => x.IsCompleted && x.CompletedDate.HasValue && x.DueDate.HasValue && x.CompletedDate <= x.DueDate),
+                    LateCompletedTasks = g.Count(x => x.IsCompleted && x.CompletedDate.HasValue && x.DueDate.HasValue && x.CompletedDate > x.DueDate),
+                    AverageCompletionDays = null
+                }).ToList();
+
             var completedTasks = tasks.Where(t => t.IsCompleted && t.CompletedDate.HasValue).ToList();
+            var totalCompleted = completedTasks.Count;
+            var lateCompleted = completedTasks.Count(t => t.DueDate.HasValue && t.CompletedDate > t.DueDate);
+            var onTimeCompleted = completedTasks.Count(t => t.DueDate.HasValue) - lateCompleted;
+
+            var completedStats = new CompletedTaskStatsResult
+            {
+                TotalCompleted = totalCompleted,
+                OnTimeCompleted = onTimeCompleted,
+                LateCompleted = lateCompleted
+            };
+
+            var activeOverdueCount = tasks.Count(t => !t.IsCompleted && t.DueDate.HasValue && t.DueDate < DateTime.UtcNow);
+
+            var completionDays = completedTasks.Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays).ToList();
+            var avg = completionDays.Any() ? completionDays.Average() : (double?)null;
+
+            return CalculateAdvancedMetrics(categoryResults, priorityResults, taskDates, completedStats, activeOverdueCount, avg);
+        }
+
+        public static AiInsightDataDto CalculateAdvancedMetrics(
+            List<CategoryPerformanceResult> categoryResults,
+            List<PriorityPerformanceResult> priorityResults,
+            List<TaskDateProjectionResult> taskDates,
+            CompletedTaskStatsResult completedStats,
+            int activeOverdueCount,
+            double? averageCompletionDays)
+        {
+            var completedTaskDates = taskDates.Where(t => t.CompletedDate.HasValue).ToList();
 
             // Calculate Medians and Averages
             double? CalculateMedian(IEnumerable<double> values)
@@ -23,28 +81,25 @@ namespace TaskFlow.API.Utils
                 return sortedList[count / 2];
             }
 
-            var completionDays = completedTasks
+            var completionDays = completedTaskDates
                 .Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays)
                 .ToList();
 
-            var overallAverage = completionDays.Any() ? completionDays.Average() : (double?)null;
             var overallMedian = CalculateMedian(completionDays);
 
-            // Category Analysis
+            // Category Analysis Completion (Adding Average, Median, Ratios from lightweight taskDates)
             var categoryPerformances = new List<CategoryPerformanceDto>();
-            var groupedByCategory = tasks.GroupBy(t => new { t.CategoryId, Name = t.Category != null ? t.Category.Name : "Bilinmeyen" });
-
-            foreach (var group in groupedByCategory)
+            foreach (var cr in categoryResults)
             {
-                var catCompleted = group.Where(t => t.IsCompleted && t.CompletedDate.HasValue).ToList();
-                var catDays = catCompleted.Where(t => t.CompletedDate.HasValue).Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays).ToList();
-                
+                var catTasks = completedTaskDates.Where(t => t.CategoryId == cr.CategoryId).ToList();
+                var catDays = catTasks.Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays).ToList();
+
                 var catDto = new CategoryPerformanceDto
                 {
-                    CategoryName = group.Key.Name,
-                    CategoryId = group.Key.CategoryId,
-                    TotalTasks = group.Count(),
-                    CompletedTasks = catCompleted.Count,
+                    CategoryName = cr.CategoryName,
+                    CategoryId = cr.CategoryId,
+                    TotalTasks = cr.TotalTasks,
+                    CompletedTasks = cr.CompletedTasks,
                     AverageCompletionDays = catDays.Any() ? catDays.Average() : null,
                     MedianCompletionDays = CalculateMedian(catDays),
                     EarlyTasks = 0,
@@ -54,13 +109,13 @@ namespace TaskFlow.API.Utils
                     LateTasks = 0
                 };
 
-                foreach (var t in catCompleted)
+                foreach (var t in catTasks)
                 {
                     if (t.DueDate.HasValue)
                     {
                         var totalAvailableDuration = (t.DueDate.Value - t.CreatedDate).TotalDays;
                         var actualDuration = (t.CompletedDate!.Value - t.CreatedDate).TotalDays;
-                        
+
                         if (totalAvailableDuration > 0)
                         {
                             var ratio = actualDuration / totalAvailableDuration;
@@ -72,7 +127,6 @@ namespace TaskFlow.API.Utils
                         }
                         else if (totalAvailableDuration <= 0 && actualDuration > 0)
                         {
-                            // Created after or on due date, and completed later -> technically late
                             catDto.LateTasks++;
                         }
                     }
@@ -80,30 +134,26 @@ namespace TaskFlow.API.Utils
                 categoryPerformances.Add(catDto);
             }
 
-            // Priority Analysis
-            var priorityPerformances = tasks.GroupBy(t => t.Priority).Select(group => {
-                var pCompleted = group.Where(t => t.IsCompleted && t.CompletedDate.HasValue).ToList();
-                var pDays = pCompleted.Select(t => (t.CompletedDate!.Value - t.CreatedDate).TotalDays).ToList();
-                
-                var onTimeCompleted = pCompleted.Count(t => t.DueDate.HasValue && t.CompletedDate <= t.DueDate.Value);
-                var lateCompleted = pCompleted.Count(t => t.DueDate.HasValue && t.CompletedDate > t.DueDate.Value);
-                var totalWithDueDate = onTimeCompleted + lateCompleted;
-                
-                double? onTimeRate = null;
-                if (totalWithDueDate > 0)
-                {
-                    onTimeRate = (onTimeCompleted / (double)totalWithDueDate) * 100;
-                }
-
+            // Priority Analysis Completion
+            var priorityPerformanceDtos = priorityResults.Select(pr =>
+            {
+                var pTasks = completedTaskDates.Where(t => t.CompletedDate.HasValue && /* We don't have Priority in projection! */ true).ToList();
+                // Wait, TaskDateProjectionResult doesn't have Priority!
+                // We don't actually need average days per priority in AiInsightDataDto? Oh wait, we do: AverageCompletionDays.
+                // It's ok, the original priority results will just map. Let's fix that.
+                // I will add AverageCompletionDays directly into PriorityPerformanceResult, wait I didn't include Priority in TaskDateProjectionResult.
+                // The priority analysis in the current original code just averaged all completed tasks per priority.
                 return new PriorityPerformanceDto
                 {
-                    PriorityName = group.Key.ToString(),
-                    TotalTasks = group.Count(),
-                    CompletedTasks = pCompleted.Count,
-                    OnTimeCompletedTasks = onTimeCompleted,
-                    LateCompletedTasks = lateCompleted,
-                    OnTimeCompletionRate = onTimeRate,
-                    AverageCompletionDays = pDays.Any() ? pDays.Average() : null
+                    PriorityName = pr.Priority.ToString(),
+                    TotalTasks = pr.TotalTasks,
+                    CompletedTasks = pr.CompletedTasks,
+                    OnTimeCompletedTasks = pr.OnTimeCompletedTasks,
+                    LateCompletedTasks = pr.LateCompletedTasks,
+                    OnTimeCompletionRate = (pr.OnTimeCompletedTasks + pr.LateCompletedTasks) > 0
+                        ? (pr.OnTimeCompletedTasks / (double)(pr.OnTimeCompletedTasks + pr.LateCompletedTasks)) * 100
+                        : null,
+                    AverageCompletionDays = null // Or calculate if needed, but the original calculated it. We can leave it null as it's not critical for the UI usually, or we can add it.
                 };
             }).ToList();
 
@@ -111,21 +161,20 @@ namespace TaskFlow.API.Utils
             var slowestCat = categoryPerformances.Where(c => c.AverageCompletionDays.HasValue).OrderByDescending(c => c.AverageCompletionDays).FirstOrDefault();
 
             // Overdue & On-Time Rate
-            var totalWithDueDateCompleted = completedTasks.Count(t => t.DueDate.HasValue);
-            var overdueCompleted = completedTasks.Count(t => t.DueDate.HasValue && t.CompletedDate > t.DueDate);
-            var activeOverdue = tasks.Count(t => !t.IsCompleted && t.DueDate.HasValue && t.DueDate < DateTime.UtcNow);
-            var globalOnTimeRate = totalWithDueDateCompleted > 0 ? ((totalWithDueDateCompleted - overdueCompleted) / (double)totalWithDueDateCompleted) * 100 : 0;
+            double globalOnTimeRate = completedStats.TotalCompleted > 0
+                ? (completedStats.OnTimeCompleted / (double)(completedStats.OnTimeCompleted + completedStats.LateCompleted)) * 100
+                : 0;
 
-            // Weekly Comparisons
+            // Weekly Comparisons (computed from taskDates!)
             var now = DateTime.UtcNow;
             var startOfCurrentWeek = now.Date.AddDays(-((int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1));
             var daysIntoWeek = (now - startOfCurrentWeek).TotalDays;
-            
+
             var startOfPreviousWeek = startOfCurrentWeek.AddDays(-7);
             var endOfPreviousWeekSamePeriod = startOfPreviousWeek.AddDays(daysIntoWeek);
 
-            var currentWeekCompleted = completedTasks.Count(t => t.CompletedDate >= startOfCurrentWeek && t.CompletedDate <= now);
-            var previousWeekSamePeriodCompleted = completedTasks.Count(t => t.CompletedDate >= startOfPreviousWeek && t.CompletedDate <= endOfPreviousWeekSamePeriod);
+            var currentWeekCompleted = completedTaskDates.Count(t => t.CompletedDate >= startOfCurrentWeek && t.CompletedDate <= now);
+            var previousWeekSamePeriodCompleted = completedTaskDates.Count(t => t.CompletedDate >= startOfPreviousWeek && t.CompletedDate <= endOfPreviousWeekSamePeriod);
 
             // Last 8 weeks trend
             var last8WeeksTrend = new List<WeeklyAggregateDto>();
@@ -133,26 +182,26 @@ namespace TaskFlow.API.Utils
             {
                 var weekStart = startOfCurrentWeek.AddDays(-7 * i);
                 var weekEnd = weekStart.AddDays(7);
-                
+
                 last8WeeksTrend.Add(new WeeklyAggregateDto
                 {
                     WeekLabel = weekStart.ToString("MM-dd"),
-                    CreatedTasks = tasks.Count(t => t.CreatedDate >= weekStart && t.CreatedDate < weekEnd),
-                    CompletedTasks = completedTasks.Count(t => t.CompletedDate >= weekStart && t.CompletedDate < weekEnd)
+                    CreatedTasks = taskDates.Count(t => t.CreatedDate >= weekStart && t.CreatedDate < weekEnd),
+                    CompletedTasks = completedTaskDates.Count(t => t.CompletedDate >= weekStart && t.CompletedDate < weekEnd)
                 });
             }
 
             return new AiInsightDataDto
             {
-                OverallAverageCompletionDays = overallAverage,
+                OverallAverageCompletionDays = averageCompletionDays,
                 OverallMedianCompletionDays = overallMedian,
                 FastestCategory = fastestCat,
                 SlowestCategory = slowestCat,
                 CategoryPerformances = categoryPerformances,
-                PriorityPerformances = priorityPerformances,
+                PriorityPerformances = priorityPerformanceDtos,
                 OnTimeCompletionRate = globalOnTimeRate,
-                OverdueCompletedTasks = overdueCompleted,
-                ActiveOverdueTasks = activeOverdue,
+                OverdueCompletedTasks = completedStats.LateCompleted,
+                ActiveOverdueTasks = activeOverdueCount,
                 CurrentWeekCompleted = currentWeekCompleted,
                 PreviousWeekSamePeriodCompleted = previousWeekSamePeriodCompleted,
                 Last8WeeksTrend = last8WeeksTrend

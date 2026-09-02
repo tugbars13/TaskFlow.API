@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
 
@@ -13,36 +17,37 @@ namespace TaskFlow.API.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<MySpaceFolder>> GetAllAsync()
+        public async Task<IEnumerable<MySpaceFolder>> GetAllByUserIdAsync(int userId, CancellationToken cancellationToken = default)
         {
             return await _context.MySpaceFolders
+                .AsNoTracking()
+                .Where(f => f.UserId == userId)
                 .OrderByDescending(f => f.CreatedAt)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<MySpaceFolder?> GetByIdAsync(int id)
+        public async Task<MySpaceFolder?> GetByIdAsync(int id, int userId, CancellationToken cancellationToken = default)
         {
-            return await _context.MySpaceFolders.FindAsync(id);
+            return await _context.MySpaceFolders
+                .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId, cancellationToken);
         }
 
-        public async Task<MySpaceFolder> CreateAsync(MySpaceFolder folder)
+        public async Task<MySpaceFolder> CreateAsync(MySpaceFolder folder, CancellationToken cancellationToken = default)
         {
-            _context.MySpaceFolders.Add(folder);
-            await _context.SaveChangesAsync();
+            await _context.MySpaceFolders.AddAsync(folder, cancellationToken);
             return folder;
         }
 
-        public async Task<MySpaceFolder> UpdateAsync(MySpaceFolder folder)
+        public async Task<MySpaceFolder> UpdateAsync(MySpaceFolder folder, CancellationToken cancellationToken = default)
         {
             _context.MySpaceFolders.Update(folder);
-            await _context.SaveChangesAsync();
-            return folder;
+            return await Task.FromResult(folder);
         }
 
-        public async Task DeleteAsync(MySpaceFolder folder)
+        public async Task DeleteAsync(MySpaceFolder folder, CancellationToken cancellationToken = default)
         {
             _context.MySpaceFolders.Remove(folder);
-            await _context.SaveChangesAsync();
+            await Task.CompletedTask;
         }
     }
 }

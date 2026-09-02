@@ -8,5 +8,5 @@ public class UpcomingDeadlineDto
     public string Priority { get; set; } = "Medium";
     public string AssignedUser { get; set; } = "Alex M.";
     public string Category { get; set; } = "General";
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
 }

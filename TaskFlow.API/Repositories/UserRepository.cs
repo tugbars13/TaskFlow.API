@@ -1,4 +1,7 @@
-﻿// Repositories/UserRepository.cs
+// Repositories/UserRepository.cs
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
@@ -14,78 +17,47 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+    }
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+    {
+        await _context.Users.AddAsync(user, cancellationToken);
+    }
+
+    public async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users.AnyAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<List<User>> GetAllAsync(int pageNumber = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
         return await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == email);
+            .AsNoTracking()
+            .OrderBy(u => u.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(User user)
+    public async Task<List<User>> GetInvitableUsersForTeamAsync(int teamId, int currentUserId, CancellationToken cancellationToken = default)
     {
-        await _context.Users.AddAsync(user);
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Id != currentUserId && !_context.TeamMembers.Any(tm => tm.TeamId == teamId && tm.UserId == u.Id))
+            .Take(20)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task SaveChangesAsync()
+    public async Task DeleteUserWithRelationsAsync(int userId, CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync();
-    }
-    public async Task<User?> GetByIdAsync(int id)
-    {
-        return await _context.Users.FindAsync(id);
-    }
-    public async Task<List<User>> GetAllAsync() // BU METOT EKLENDÄ°
-    {
-        return await _context.Users.AsNoTracking().ToListAsync();
-    }
-
-    public async Task DeleteUserWithRelationsAsync(int userId)
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                return;
-            }
-
-            // 1. TaskItem (AssignedUserId) - Restrict
-            var assignedTasks = await _context.Tasks.Where(t => t.Assignees.Any(a => a.UserId == userId)).ToListAsync();
-            foreach (var task in assignedTasks)
-            {
-                task.Assignees.Clear();
-            }
-
-            // 2. TaskAssignee - Restrict
-            var taskAssignees = await _context.TaskAssignees.Where(ta => ta.UserId == userId).ToListAsync();
-            _context.TaskAssignees.RemoveRange(taskAssignees);
-
-            // 3. ActivityLog - Explicit cleanup to avoid cascade path issues
-            var activityLogs = await _context.ActivityLogs.Where(a => a.UserId == userId).ToListAsync();
-            _context.ActivityLogs.RemoveRange(activityLogs);
-
-            // 4. Notification - Explicit cleanup
-            var notifications = await _context.Notifications.Where(n => n.UserId == userId).ToListAsync();
-            _context.Notifications.RemoveRange(notifications);
-
-            // 5. TeamMember - Explicit cleanup
-            var teamMembers = await _context.TeamMembers.Where(tm => tm.UserId == userId).ToListAsync();
-            _context.TeamMembers.RemoveRange(teamMembers);
-
-            // 6. TaskItem (Owned) - Explicit cleanup
-            var ownedTasks = await _context.Tasks.Where(t => t.UserId == userId).ToListAsync();
-            _context.Tasks.RemoveRange(ownedTasks);
-
-            // Finally remove the user
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-            
-            await transaction.CommitAsync();
-        }
-        catch (Exception)
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+        await _context.Users.Where(u => u.Id == userId).ExecuteDeleteAsync(cancellationToken);
     }
 }

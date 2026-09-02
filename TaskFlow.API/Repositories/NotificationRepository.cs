@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.Models;
@@ -13,28 +16,52 @@ public class NotificationRepository : INotificationRepository
         _context = context;
     }
 
-    public async Task<Notification> AddAsync(Notification notification)
+    public async Task<Notification> AddAsync(Notification notification, CancellationToken cancellationToken = default)
     {
-        await _context.Notifications.AddAsync(notification);
+        await _context.Notifications.AddAsync(notification, cancellationToken);
         return notification;
     }
 
-    public async Task<List<Notification>> GetByUserIdAsync(int userId)
+    public async Task<List<Notification>> GetByUserIdAsync(
+        int userId,
+        bool unreadOnly = false, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Notifications
+            .AsNoTracking()
+            .Where(n => n.UserId == userId);
+
+        if (unreadOnly)
+        {
+            query = query.Where(n => !n.IsRead);
+        }
+
+        return await query
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Notification?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _context.Notifications
-            .Where(n => n.UserId == userId)
-            .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync();
+            .FirstOrDefaultAsync(n => n.Id == id, cancellationToken);
     }
 
-    public async Task<Notification?> GetByIdAsync(int id)
+    public async Task<List<Notification>> GetUnreadTeamInvitationsAsync(int userId, int teamId, CancellationToken cancellationToken = default)
     {
-        return await _context.Notifications.FindAsync(id);
+        return await _context.Notifications
+            .Where(n => n.UserId == userId && n.Type == "TeamInvitation" && n.RelatedId == teamId && !n.IsRead)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Notification notification)
+    public async Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         _context.Notifications.Update(notification);
-        await Task.CompletedTask; // just to keep interface signature happy if needed, though EF Update is sync
+        await Task.CompletedTask;
+    }
+    public async Task DeleteTeamInvitationsAsync(int teamId, CancellationToken cancellationToken = default)
+    {
+        await _context.Notifications
+            .Where(n => n.RelatedId == teamId && n.Type == "TeamInvitation")
+            .ExecuteDeleteAsync(cancellationToken);
     }
 }

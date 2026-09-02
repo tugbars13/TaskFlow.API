@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 
@@ -5,49 +8,49 @@ namespace TaskFlow.API.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskItem>> GetAllByUserIdAsync(int userId, TaskFilterDto? filter = null);
+    Task<List<TaskDto>> GetAllByUserIdAsync(int userId, TaskFilterDto? filter = null, CancellationToken cancellationToken = default);
 
-    Task<List<TaskItem>> GetAllTasksForAdminAsync();
+    Task<List<TaskDto>> GetAllTasksForAdminAsync(CancellationToken cancellationToken = default);
 
-    Task<List<TaskItem>> GetByTeamIdAsync(int teamId, TaskFilterDto? filter = null, int? currentUserId = null);
+    Task<List<TaskDto>> GetByTeamIdAsync(int teamId, TaskFilterDto? filter = null, int? currentUserId = null, CancellationToken cancellationToken = default);
 
-    Task<TaskItem?> GetByIdAsync(int id);
+    Task<TaskDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<TaskItem?> GetEntityByIdAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<TaskItem> CreateTaskAsync(int userId, TaskFlow.API.DTOs.CreateTaskDto dto, bool isAdmin);
-    Task<TaskItem> CreateAsync(TaskItem task);
+    Task<TaskDto> CreateTaskAsync(int userId, TaskFlow.API.DTOs.CreateTaskDto dto, bool isAdmin, CancellationToken cancellationToken = default);
+    Task<TaskDto> CreateAsync(TaskItem task, CancellationToken cancellationToken = default);
 
-    Task<bool?> ToggleTaskAsync(int id, int userId, bool isAdmin);
-    Task<TaskItem?> UpdateTaskAsync(int id, int userId, TaskFlow.API.DTOs.UpdateTaskDto dto, bool isAdmin);
-    Task<bool> DeleteTaskAsync(int id, int userId, bool isAdmin);
-    Task<bool> UpdateAsync(
-        int id,
+    Task<bool?> ToggleTaskAsync(int id, int userId, bool isAdmin, CancellationToken cancellationToken = default);
+    Task<TaskDto?> UpdateTaskAsync(
+    int id,
+    int userId,
+    TaskFlow.API.DTOs.UpdateTaskDto dto,
+    bool isAdmin, CancellationToken cancellationToken = default);
+    Task<bool> DeleteTaskAsync(
+    int id,
+    int userId,
+    bool isAdmin, CancellationToken cancellationToken = default);
+    Task<List<AiTaskOrderDto>> GenerateTaskOrderAsync(int userId, CancellationToken cancellationToken = default);
+    Task<List<TaskDto>> FilterAsync(
         int userId,
-        TaskItem updatedTask);
+        TaskFilterDto filter, CancellationToken cancellationToken = default);
 
-    Task<bool> DeleteAsync(
-        int id,
-        int userId);
-
-    Task<List<TaskItem>> FilterAsync(
+    Task<List<TaskDto>> SearchAsync(
         int userId,
-        TaskFilterDto filter);
+        string keyword, CancellationToken cancellationToken = default);
 
-    Task<List<TaskItem>> SearchAsync(
+    Task<List<TaskDto>> GetPagedAsync(
         int userId,
-        string keyword);
+        PaginationDto pagination, CancellationToken cancellationToken = default);
 
-    Task<List<TaskItem>> GetPagedAsync(
-        int userId,
-        PaginationDto pagination);
-
-    Task<int> GetSubtaskCountAsync(int parentTaskId);
+    Task<int> GetSubtaskCountAsync(int parentTaskId, CancellationToken cancellationToken = default);
 
     Task<DashboardDto> GetDashboardAsync(
-        int userId);
+        int userId, CancellationToken cancellationToken = default);
 
-    Task<List<TaskItem>> SortAsync(
+    Task<List<TaskDto>> SortAsync(
         int userId,
-        TaskSortDto sort);
+        TaskSortDto sort, CancellationToken cancellationToken = default);
 
 }
 

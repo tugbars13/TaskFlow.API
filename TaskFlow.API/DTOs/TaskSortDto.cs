@@ -1,6 +1,6 @@
-﻿namespace TaskFlow.API.DTOs;
+namespace TaskFlow.API.DTOs;
 
-public class TaskSortDto
+public class TaskSortDto : PaginationDto
 {
     // title, createdDate, dueDate, priority
     public string SortBy { get; set; } = "createdDate";

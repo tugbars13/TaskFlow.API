@@ -1,50 +1,44 @@
-﻿// Services/TeamAuthorizationService.cs
-using Microsoft.EntityFrameworkCore;
-using TaskFlow.API.Data;
+// Services/TeamAuthorizationService.cs
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
 using TaskFlow.API.Models;
+using TaskFlow.API.Repositories;
 
 namespace TaskFlow.API.Services;
 
 public class TeamAuthorizationService : ITeamAuthorizationService
 {
-    private readonly AppDbContext _context;
+    private readonly ITeamRepository _teamRepository;
 
-    public TeamAuthorizationService(AppDbContext context)
+    public TeamAuthorizationService(ITeamRepository teamRepository)
     {
-        _context = context;
+        _teamRepository = teamRepository;
     }
 
-    public async Task<bool> IsTeamMemberOrCreatorAsync(int teamId, int userId)
+    public async Task<bool> IsTeamMemberOrCreatorAsync(int teamId, int userId, CancellationToken cancellationToken = default)
     {
-        var isMember = await _context.TeamMembers
-            .AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted);
-        var isCreator = await _context.Teams
-            .AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId);
-
-        return isMember || isCreator;
+        return await _teamRepository.IsTeamMemberOrCreatorAsync(teamId, userId, cancellationToken);
     }
 
-    public async Task<bool> CanCreateTaskForTeamAsync(int teamId, int userId)
+    public async Task<bool> CanCreateTaskForTeamAsync(int teamId, int userId, CancellationToken cancellationToken = default)
     {
-        return await IsTeamMemberOrCreatorAsync(teamId, userId);
+        return await IsTeamMemberOrCreatorAsync(teamId, userId, cancellationToken);
     }
 
-    public async Task<bool> CanInviteMemberAsync(int teamId, int userId)
+    public async Task<bool> CanInviteMemberAsync(int teamId, int userId, CancellationToken cancellationToken = default)
     {
-        var role = await _context.TeamMembers
-            .Where(tm => tm.TeamId == teamId && tm.UserId == userId && tm.Status == TeamMemberStatus.Accepted)
-            .Select(tm => (TeamRole?)tm.Role)
-            .FirstOrDefaultAsync();
+        var role = await _teamRepository.GetMemberRoleAsync(teamId, userId, cancellationToken);
 
-        var isCreator = await _context.Teams
-            .AnyAsync(t => t.Id == teamId && t.CreatedByUserId == userId);
+        var team = await _teamRepository.GetTeamAsync(teamId, cancellationToken);
+        var isCreator = team != null && team.CreatedByUserId == userId;
 
         return role == TeamRole.Owner || role == TeamRole.Admin || isCreator;
     }
 
-    public async Task<bool> CanManageTaskAsync(TaskItem task, int userId, bool isAdmin)
+    public async Task<bool> CanManageTaskAsync(TaskItem task, int userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
-        if (isAdmin) 
+        if (isAdmin)
             return true;
 
         if (!task.TeamId.HasValue)
@@ -54,6 +48,6 @@ public class TeamAuthorizationService : ITeamAuthorizationService
         }
 
         // Team task: Admin (above), Team Creator, or Team Member can manage
-        return await IsTeamMemberOrCreatorAsync(task.TeamId.Value, userId);
+        return await IsTeamMemberOrCreatorAsync(task.TeamId.Value, userId, cancellationToken);
     }
 }

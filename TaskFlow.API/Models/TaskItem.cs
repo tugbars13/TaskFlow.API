@@ -6,8 +6,8 @@ public class TaskItem
 
     public string Title { get; set; } = string.Empty;
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;
-    public int CategoryId { get; set; }
-    public CustomCategory Category { get; set; } = null!;
+    public int? CategoryId { get; set; }
+    public CustomCategory? Category { get; set; }
     public TaskFlow.API.Models.TaskStatus Status { get; set; }
     = TaskFlow.API.Models.TaskStatus.Backlog;
 

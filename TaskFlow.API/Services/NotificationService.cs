@@ -1,23 +1,33 @@
-using TaskFlow.API.Data;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace TaskFlow.API.Services;
 
 public class NotificationService : INotificationService
 {
     private readonly INotificationRepository _repository;
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public NotificationService(INotificationRepository repository, AppDbContext context)
+    public NotificationService(INotificationRepository repository, IUnitOfWork unitOfWork)
     {
         _repository = repository;
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task SendNotificationAsync(int userId, string title, string message, string? type = null, int? relatedId = null)
+    public async Task SendNotificationAsync(
+        int userId,
+        string title,
+        string message,
+        string? type = null,
+        int? relatedId = null,
+        bool saveChanges = true,
+        CancellationToken cancellationToken = default)
     {
         var notification = new Notification
         {
@@ -30,16 +40,20 @@ public class NotificationService : INotificationService
             IsRead = false
         };
 
-        await _repository.AddAsync(notification);
+        await _repository.AddAsync(notification, cancellationToken);
+        if (saveChanges)
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    public async Task<List<NotificationDto>> GetUserNotificationsAsync(int userId, bool unreadOnly = false)
+    public async Task<List<NotificationDto>> GetUserNotificationsAsync(
+        int userId,
+        bool unreadOnly = false, CancellationToken cancellationToken = default)
     {
-        var query = _context.Notifications.Where(n => n.UserId == userId);
-        if (unreadOnly)
-            query = query.Where(n => !n.IsRead);
-
-        var notifications = await query.OrderByDescending(n => n.CreatedAt).ToListAsync();
+        var notifications = await _repository.GetByUserIdAsync(
+            userId,
+            unreadOnly, cancellationToken);
 
         return notifications.Select(n => new NotificationDto
         {
@@ -53,18 +67,23 @@ public class NotificationService : INotificationService
         }).ToList();
     }
 
-    public async Task<(bool Success, string Message)> MarkAsReadAsync(int notificationId, int userId)
+    public async Task<(bool Success, string Message)> MarkAsReadAsync(
+        int notificationId,
+        int userId, CancellationToken cancellationToken = default)
     {
-        var notification = await _repository.GetByIdAsync(notificationId);
-        if (notification == null) return (false, "NotFound");
-        
-        if (notification.UserId != userId) return (false, "Forbidden");
+        var notification = await _repository.GetByIdAsync(notificationId, cancellationToken);
+
+        if (notification == null)
+            return (false, "NotFound");
+
+        if (notification.UserId != userId)
+            return (false, "Forbidden");
 
         if (!notification.IsRead)
         {
             notification.IsRead = true;
-            await _repository.UpdateAsync(notification);
-            await _context.SaveChangesAsync();
+            await _repository.UpdateAsync(notification, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         return (true, "Success");

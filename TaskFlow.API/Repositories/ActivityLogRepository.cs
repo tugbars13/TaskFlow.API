@@ -1,5 +1,8 @@
-﻿using TaskFlow.API.Data;
+using System.Threading;
+using System.Threading.Tasks;
+using TaskFlow.API.Data;
 using TaskFlow.API.Models;
+using Microsoft.EntityFrameworkCore;
 
 public class ActivityLogRepository : IActivityLogRepository
 {
@@ -10,9 +13,17 @@ public class ActivityLogRepository : IActivityLogRepository
         _context = context;
     }
 
-    public async Task AddAsync(ActivityLog log)
+    public async Task AddAsync(ActivityLog log, CancellationToken cancellationToken = default)
     {
         _context.ActivityLogs.Add(log);
-        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<ActivityLog>> GetLogsByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.ActivityLogs
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedDate)
+            .ToListAsync(cancellationToken);
     }
 }

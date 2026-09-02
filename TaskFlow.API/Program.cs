@@ -1,21 +1,23 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer; // JWT doÄŸrulama
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer; // JWT doğrulama
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens; // Token doÄŸrulama ayarlarÄ±
-using System.Text; // Secret Key'i byte dizisine Ã§evirmek iÃ§in
-using TaskFlow.API.Configurations; // JwtSettings sÄ±nÄ±fÄ±mÄ±z
+using Microsoft.IdentityModel.Tokens; // Token doğrulama ayarları
+using System.Text; // Secret Key'i byte dizisine çevirmek için
+using TaskFlow.API.Configurations; // JwtSettings sınıfımız
 using TaskFlow.API.Data;
 using TaskFlow.API.Middlewares;
 using TaskFlow.API.Repositories;
 using TaskFlow.API.Services;
 using TaskFlow.API.Validators;
-using Microsoft.OpenApi.Models; // Swagger JWT ayarlarÄ±
+using Microsoft.OpenApi.Models; // Swagger JWT ayarları
 using TaskFlow.API.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-//builder, uygulamanÄ±n "henÃ¼z inÅŸa edilmemiÅŸ" halini temsil eder â€” ona servisler ekleyip sonunda Build() diyerek gerÃ§ek uygulamayÄ± oluÅŸturacaÄŸÄ±z.
+//builder, uygulamanın "henüz inşa edilmemiş" halini temsil eder â€” ona servisler ekleyip sonunda Build() diyerek gerçek uygulamayı oluşturacağız.
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -23,18 +25,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen(options =>
 {
-    // Swagger'a Bearer Authentication tanÄ±mÄ± ekleniyor.
+    // Swagger'a Bearer Authentication tanımı ekleniyor.
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name = "Authorization", // Header adÄ±
+        Name = "Authorization", // Header adı
         Type = SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
 
-        });
+    });
 
-    // TÃ¼m endpointlerde bu gÃ¼venlik ÅŸemasÄ±nÄ± kullan.
+    // Tüm endpointlerde bu güvenlik şemasını kullan.
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -54,25 +56,39 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// builder.Services.AddControllers(); satÄ±rÄ±nÄ±n yakÄ±nÄ±na ekle
+// ...
+
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:5174",
-            "http://localhost:5173",
-            "http://localhost:5175",
-            "http://localhost:5176"
-        )
+        policy.WithOrigins(allowedOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials();
     });
 });
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(1)
+            }));
+    options.RejectionStatusCode = 429;
+});
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IDescriptionSanitizerService, DescriptionSanitizerService>();
-// Auth iÅŸlemlerini yÃ¶neten servisi Dependency Injection container'Ä±na ekler.
+// Auth işlemlerini yöneten servisi Dependency Injection container'ına ekler.
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 // FluentValidation servislerini ekler.
@@ -94,17 +110,21 @@ builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserBehaviorProfileRepository, UserBehaviorProfileRepository>();
+builder.Services.AddScoped<ITeamAnalyticsSnapshotRepository, TeamAnalyticsSnapshotRepository>();
 builder.Services.AddScoped<ITeamAuthorizationService, TeamAuthorizationService>();
-// Validators klasÃ¶rÃ¼ndeki tÃ¼m validator'larÄ± otomatik bulur.
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Validators klasöründeki tüm validator'ları otomatik bulur.
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskDtoValidator>();
-// appsettings.json iÃ§indeki JwtSettings bÃ¶lÃ¼mÃ¼nÃ¼ JwtSettings sÄ±nÄ±fÄ±na baÄŸlar.
+// appsettings.json içindeki JwtSettings bölümünü JwtSettings sınıfına bağlar.
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 
-// Token Ã¼retme servisini ekler.
+// Token üretme servisini ekler.
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
-//builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI container'a ekler.
+builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI container'a ekler.
 
 builder.Services.AddScoped<IMySpaceFolderRepository, MySpaceFolderRepository>();
 builder.Services.AddScoped<IMySpacePageRepository, MySpacePageRepository>();
@@ -164,24 +184,23 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// TÃ¼m beklenmeyen hatalarÄ± yakalar.
+// Tüm beklenmeyen hataları yakalar.
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 // CORS 
 app.UseCors("AllowReactApp");
+app.UseRateLimiter();
 
 
-// KullanÄ±cÄ±nÄ±n kimliÄŸini doÄŸrular.
+// Kullanıcının kimliğini doğrular.
 app.UseAuthentication();
 // Sonra yetkisi kontrol edilir.
 app.UseAuthorization();
-// En son endpointler Ã§alÄ±ÅŸÄ±r.
+// En son endpointler çalışır.
 app.MapControllers();
 
 
 app.MapHub<TaskHub>("/hubs/tasks");
 
 app.Run();
-
-

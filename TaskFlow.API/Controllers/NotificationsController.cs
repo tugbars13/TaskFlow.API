@@ -1,9 +1,9 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TaskFlow.API.Services;
+using System.Security.Claims;
+using TaskFlow.API.DTOs;
 using TaskFlow.API.Responses;
-
+using TaskFlow.API.Services;
 namespace TaskFlow.API.Controllers
 {
     [ApiController]
@@ -18,22 +18,25 @@ namespace TaskFlow.API.Controllers
             _notificationService = notificationService;
         }
 
-        private int? GetCurrentUserId()
+        private int GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out int userId))
-                return userId;
-            return null;
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId))
+                throw new UnauthorizedAccessException();
+
+            return userId;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetNotifications([FromQuery] bool unreadOnly = false)
+        public async Task<IActionResult> GetNotifications([FromQuery] bool unreadOnly, CancellationToken cancellationToken)
         {
             var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
 
-            var notifications = await _notificationService.GetUserNotificationsAsync(userId.Value, unreadOnly);
-            return Ok(new ApiResponse<IEnumerable<object>>
+            var notifications =
+                await _notificationService.GetUserNotificationsAsync(userId, unreadOnly, cancellationToken);
+
+            return Ok(new ApiResponse<List<NotificationDto>>
             {
                 Success = true,
                 Message = "Bildirimler getirildi.",
@@ -42,17 +45,20 @@ namespace TaskFlow.API.Controllers
         }
 
         [HttpPatch("{id}/read")]
-        public async Task<IActionResult> MarkAsRead(int id)
+        public async Task<IActionResult> MarkAsRead(int id, CancellationToken cancellationToken)
         {
             var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
 
-            var result = await _notificationService.MarkAsReadAsync(id, userId.Value);
-            
+            var result = await _notificationService.MarkAsReadAsync(id, userId, cancellationToken);
+
             if (!result.Success)
             {
-                if (result.Message == "NotFound") return NotFound(new { message = "Bildirim bulunamadı." });
-                if (result.Message == "Forbidden") return Forbid();
+                if (result.Message == "NotFound")
+                    return NotFound(new { message = "Bildirim bulunamadı." });
+
+                if (result.Message == "Forbidden")
+                    return Forbid();
+
                 return BadRequest(new { message = result.Message });
             }
 

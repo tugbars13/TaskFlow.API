@@ -26,10 +26,10 @@ public class AnalyticsController : ControllerBase
     }
 
     [HttpGet("metrics")]
-    public async Task<ActionResult<ApiResponse<AnalyticsDto>>> GetMetrics()
+    public async Task<ActionResult<ApiResponse<AnalyticsDto>>> GetMetrics(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var metrics = await _analyticsService.GetAnalyticsMetricsAsync(userId);
+        var metrics = await _analyticsService.GetAnalyticsMetricsAsync(userId, cancellationToken);
 
         return Ok(new ApiResponse<AnalyticsDto>
         {

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.API.Services;
+using TaskFlow.API.DTOs;
 namespace TaskFlow.API.Controllers;
 
 [ApiController]
@@ -17,9 +18,10 @@ public class UsersController : ControllerBase
 
     // GET: api/Users
     [HttpGet]
-    public async Task<IActionResult> GetAllUsers()
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllUsers([FromQuery] PaginationDto pagination, CancellationToken cancellationToken)
     {
-        var users = await _userService.GetAllUsersAsync();
+        var users = await _userService.GetAllUsersAsync(pagination, cancellationToken);
         return Ok(users);
     }
 }

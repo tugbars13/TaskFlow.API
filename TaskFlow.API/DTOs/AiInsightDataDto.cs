@@ -2,7 +2,7 @@ namespace TaskFlow.API.DTOs;
 
 public class CategoryPerformanceDto
 {
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public int TotalTasks { get; set; }
     public int CompletedTasks { get; set; }
@@ -41,14 +41,14 @@ public class AiInsightDataDto
     public CategoryPerformanceDto? SlowestCategory { get; set; }
     public List<CategoryPerformanceDto> CategoryPerformances { get; set; } = new();
     public List<PriorityPerformanceDto> PriorityPerformances { get; set; } = new();
-    
+
     public double OnTimeCompletionRate { get; set; }
     public int OverdueCompletedTasks { get; set; }
     public int ActiveOverdueTasks { get; set; }
-    
+
     public int CurrentWeekCompleted { get; set; }
     public int PreviousWeekSamePeriodCompleted { get; set; }
     public double? WeekOverWeekChangeRatio { get; set; }
-    
+
     public List<WeeklyAggregateDto> Last8WeeksTrend { get; set; } = new();
 }

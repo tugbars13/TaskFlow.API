@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TaskFlow.API.DTOs.Category;
@@ -22,17 +22,21 @@ public class CategoriesController : ControllerBase
     private int? GetCurrentUserId()
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (int.TryParse(userIdStr, out var id)) return id;
-        return null;
+
+        return int.TryParse(userIdStr, out var userId)
+            ? userId
+            : null;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCustomCategories()
+    public async Task<IActionResult> GetCustomCategories(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
 
-        var categories = await _categoryService.GetCustomCategoriesAsync(userId.Value);
+        if (userId == null)
+            return Unauthorized();
+
+        var categories = await _categoryService.GetCustomCategoriesAsync(userId.Value, cancellationToken);
 
         return Ok(new ApiResponse<IEnumerable<CategoryDto>>
         {
@@ -43,30 +47,49 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddCustomCategory([FromBody] CreateCategoryDto dto)
+    public async Task<IActionResult> AddCustomCategory(
+        [FromBody] CreateCategoryDto dto, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
 
-        var category = await _categoryService.AddCategoryAsync(userId.Value, dto.Name);
-            return Ok(new ApiResponse<CategoryDto>
+        if (userId == null)
+            return Unauthorized();
+
+        var category = await _categoryService.AddCategoryAsync(
+            userId.Value,
+            dto.Name, cancellationToken);
+
+        return Ok(new ApiResponse<CategoryDto>
+        {
+            Success = true,
+            Message = "Kategori başarıyla eklendi.",
+            Data = new CategoryDto
             {
-                Success = true,
-                Message = "Kategori başarıyla eklendi.",
-                Data = new CategoryDto { Id = category!.Id, Name = category.Name }
-            });
+                Id = category.Id,
+                Name = category.Name
+            }
+        });
     }
 
     [HttpDelete("{name}")]
-    public async Task<IActionResult> DeleteCustomCategory(string name)
+    public async Task<IActionResult> DeleteCustomCategory(string name, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
 
-        var success = await _categoryService.DeleteCategoryAsync(userId.Value, name);
+        if (userId == null)
+            return Unauthorized();
+
+        var success = await _categoryService.DeleteCategoryAsync(
+            userId.Value,
+            name, cancellationToken);
+
         if (!success)
         {
-            return NotFound(new ApiResponse<string> { Success = false, Message = "Kategori bulunamadı." });
+            return NotFound(new ApiResponse<string>
+            {
+                Success = false,
+                Message = "Kategori bulunamadı."
+            });
         }
 
         return Ok(new ApiResponse<string>

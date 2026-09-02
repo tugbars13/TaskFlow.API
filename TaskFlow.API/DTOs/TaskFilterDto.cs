@@ -2,7 +2,7 @@ using TaskFlow.API.Models;
 
 namespace TaskFlow.API.DTOs;
 
-public class TaskFilterDto
+public class TaskFilterDto : PaginationDto
 {
     public string? Keyword { get; set; }
     public TaskPriority? Priority { get; set; }

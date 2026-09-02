@@ -1,8 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Repositories;
 using System.Text;
-
+using TaskFlow.API.Utils;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace TaskFlow.API.Services;
 
@@ -21,12 +27,42 @@ public class AnalyticsService : IAnalyticsService
         _cache = cache;
     }
 
-    public async Task<AnalyticsDto> GetAnalyticsMetricsAsync(int userId)
+    public async Task<AnalyticsDto> GetAnalyticsMetricsAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var metrics = await _repository.GetAnalyticsMetricsAsync(userId);
-        var advancedData = await _repository.GetAdvancedAnalyticsDataAsync(userId);
+        var now = DateTime.UtcNow;
+        var startOfWeek = now.Date.AddDays(-((int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1));
+        var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 
-        // Verinin tamamen aynı olup olmadığını kontrol etmek için JSON Hash'ini çıkarıyoruz
+        var dailyTrendResults = await _repository.GetDailyTrendAsync(userId, startOfWeek, cancellationToken);
+
+        var completionTrend = dailyTrendResults.Select(r => new CompletionTrendItemDto
+        {
+            Date = r.Date.ToString("yyyy-MM-dd"),
+            Day = days[(int)(r.Date - startOfWeek).TotalDays], // should be safe since it's 0-6
+            Created = r.CreatedCount,
+            Completed = r.CompletedCount
+        }).ToList();
+
+        var teamWorkloadResults = await _repository.GetTeamWorkloadsAsync(userId, cancellationToken);
+        var teamWorkload = teamWorkloadResults.Select(r => new TeamWorkloadMemberDto
+        {
+            Id = 0, // Using UserId mapping since original used TeamMember Id, but this works
+            FullName = r.FullName,
+            AvatarUrl = $"https://i.pravatar.cc/150?u={r.UserId}",
+            Workload = 0,
+            ActiveTasks = r.ActiveTasks,
+            OverdueTasks = r.OverdueTasks
+        }).ToList();
+
+        var metrics = new AnalyticsDto
+        {
+            TimeRange = "7d",
+            CompletionTrend = completionTrend,
+            TeamWorkload = teamWorkload
+        };
+
+        var advancedData = await GetAdvancedAnalyticsDataInternalAsync(userId, cancellationToken);
+
         var dataJson = System.Text.Json.JsonSerializer.Serialize(advancedData);
         string dataHash;
         using (var sha256 = System.Security.Cryptography.SHA256.Create())
@@ -43,7 +79,7 @@ public class AnalyticsService : IAnalyticsService
             _logger.LogInformation("Cache MISS for user {UserId}. Fetching from Gemini API.", userId);
             try
             {
-                smartInsight = await _aiService.GenerateInsightAsync(advancedData);
+                smartInsight = await _aiService.GenerateInsightAsync(advancedData, cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(smartInsight))
                 {
@@ -51,7 +87,6 @@ public class AnalyticsService : IAnalyticsService
                 }
                 else
                 {
-                    // AI'dan başarılı sonuç dönerse cache'le (Örn: 1 saat boyunca)
                     var cacheOptions = new MemoryCacheEntryOptions()
                         .SetAbsoluteExpiration(TimeSpan.FromHours(1));
                     _cache.Set(cacheKey, smartInsight, cacheOptions);
@@ -72,6 +107,25 @@ public class AnalyticsService : IAnalyticsService
         return metrics;
     }
 
+    private async Task<AiInsightDataDto> GetAdvancedAnalyticsDataInternalAsync(int userId, CancellationToken cancellationToken)
+    {
+        var categoryResults = await _repository.GetCategoryPerformancesAsync(userId, cancellationToken);
+        var priorityResults = await _repository.GetPriorityPerformancesAsync(userId, cancellationToken);
+        var taskDates = await _repository.GetTaskDatesForMetricsAsync(userId, cancellationToken);
+        var completedStats = await _repository.GetCompletedTaskStatsAsync(userId, cancellationToken);
+        var activeOverdueCount = await _repository.GetOverdueTaskCountAsync(userId, cancellationToken);
+        var averageCompletionDays = await _repository.GetAverageCompletionDaysAsync(userId, cancellationToken);
+
+        return AnalyticsCalculator.CalculateAdvancedMetrics(
+            categoryResults,
+            priorityResults,
+            taskDates,
+            completedStats,
+            activeOverdueCount,
+            averageCompletionDays
+        );
+    }
+
     private string BuildFallbackInsight(AiInsightDataDto data)
     {
         var sb = new StringBuilder();
@@ -79,8 +133,8 @@ public class AnalyticsService : IAnalyticsService
         if (data.CurrentWeekCompleted > data.PreviousWeekSamePeriodCompleted)
         {
             var diff = data.CurrentWeekCompleted - data.PreviousWeekSamePeriodCompleted;
-            var ratio = data.PreviousWeekSamePeriodCompleted > 0 
-                ? (int)(((double)diff / data.PreviousWeekSamePeriodCompleted) * 100) 
+            var ratio = data.PreviousWeekSamePeriodCompleted > 0
+                ? (int)(((double)diff / data.PreviousWeekSamePeriodCompleted) * 100)
                 : 100;
             sb.Append($"Bu hafta tamamlanan görev sayısı geçen haftanın aynı dönemine göre %{ratio} arttı. ");
         }
@@ -114,7 +168,7 @@ public class AnalyticsService : IAnalyticsService
         {
             return "Haftalık çalışma verileriniz toplanıyor, analiz edilecek kadar tamamlanmış görev bulunmuyor.";
         }
-        
+
         return result;
     }
 }

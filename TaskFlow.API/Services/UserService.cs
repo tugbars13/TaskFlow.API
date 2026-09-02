@@ -1,4 +1,9 @@
 // Services/UserService.cs
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
@@ -14,9 +19,17 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
-    public async Task<List<UserDto>> GetAllUsersAsync()
+    public async Task<List<UserDto>> GetAllUsersAsync(PaginationDto pagination, CancellationToken cancellationToken = default)
     {
-        var users = await _userRepository.GetAllAsync();
+        int pageNumber = pagination?.PageNumber > 0 ? pagination.PageNumber : 1;
+        int pageSize = pagination?.PageSize > 0 ? pagination.PageSize : 50;
+
+        if (pageSize > 100)
+        {
+            pageSize = 100;
+        }
+
+        var users = await _userRepository.GetAllAsync(pageNumber, pageSize, cancellationToken);
 
         return users.Select(MapToUserDto).ToList();
     }

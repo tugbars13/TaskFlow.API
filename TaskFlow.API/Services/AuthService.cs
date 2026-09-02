@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
@@ -9,18 +11,24 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
+    private readonly ITaskRepository _taskRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     public AuthService(
         IUserRepository userRepository,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        ITaskRepository taskRepository,
+        IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
+        _taskRepository = taskRepository;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task<LoginResponseDto?> RegisterAsync(RegisterDto dto)
+    public async Task<LoginResponseDto?> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
     {
-        var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+        var existingUser = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
 
         if (existingUser != null)
         {
@@ -37,8 +45,8 @@ public class AuthService : IAuthService
             CreatedDate = DateTime.UtcNow
         };
 
-        await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _userRepository.AddAsync(user, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var token = _tokenService.CreateToken(user);
 
@@ -49,9 +57,9 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<LoginResponseDto?> LoginAsync(LoginDto dto)
+    public async Task<LoginResponseDto?> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
     {
-        var user = await _userRepository.GetByEmailAsync(dto.Email);
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
 
         if (user == null)
             return null;
@@ -72,9 +80,9 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<UserDto?> GetCurrentUserAsync(int userId)
+    public async Task<UserDto?> GetCurrentUserAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
 
         if (user == null)
             return null;
@@ -82,9 +90,9 @@ public class AuthService : IAuthService
         return MapToUserDto(user);
     }
 
-    public async Task<UserDto?> UpdateProfileAsync(int userId, UpdateProfileDto dto)
+    public async Task<UserDto?> UpdateProfileAsync(int userId, UpdateProfileDto dto, CancellationToken cancellationToken = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
         if (user == null)
             return null;
 
@@ -92,19 +100,38 @@ public class AuthService : IAuthService
         user.DisplayName = dto.DisplayName;
         user.Bio = dto.Bio;
 
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return MapToUserDto(user);
     }
 
-    public async Task<bool> DeleteAccountAsync(int userId)
+    public async Task<bool> DeleteAccountAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
-        if (user == null)
-            return false;
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (user == null)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return false;
+            }
 
-        await _userRepository.DeleteUserWithRelationsAsync(userId);
-        return true;
+            // Orchestration: Delete task assignees to satisfy DB Restrict behavior
+            await _taskRepository.DeleteTaskAssigneesByUserIdAsync(userId, cancellationToken);
+
+            await _userRepository.DeleteUserWithRelationsAsync(userId, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            return true;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
     }
 
     // BU METOT EKSİKSE, EN ALTA EKLE

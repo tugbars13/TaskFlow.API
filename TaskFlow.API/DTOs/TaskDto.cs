@@ -11,7 +11,7 @@ public class TaskDto
     public DateTime CreatedDate { get; set; }
     public TaskPriority Priority { get; set; }
     public DateTime? DueDate { get; set; }
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
     public string Category { get; set; } = string.Empty;
     public int Progress { get; set; }
     public int CommentsCount { get; set; }

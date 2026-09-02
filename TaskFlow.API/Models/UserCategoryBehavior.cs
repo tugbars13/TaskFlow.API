@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TaskFlow.API.Models;
@@ -15,14 +15,14 @@ namespace TaskFlow.API.Models
         public UserBehaviorProfile Profile { get; set; } = null!;
 
         public int CategoryId { get; set; }
-        
+
         public int TotalTasks { get; set; }
         public int CompletedTasks { get; set; }
         public int LateTasks { get; set; }
         public int ProcrastinatedTasks { get; set; }
         public double OnTimeCompletionRate { get; set; }
-        
-        public string RiskLevel { get; set; } = "DÜÞÜK"; // YÜKSEK, ORTA, DÜÞÜK
+
+        public string RiskLevel { get; set; } = "DÃ¼ÅŸÃ¼K"; // YÃ¼KSEK, ORTA, DÃ¼ÅŸÃ¼kK
 
         public DateTime LastCalculatedAt { get; set; }
     }

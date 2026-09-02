@@ -11,7 +11,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
 
     public string? DisplayName { get; set; }
-    
+
     public string? Bio { get; set; }
 
     public string? AvatarUrl { get; set; }

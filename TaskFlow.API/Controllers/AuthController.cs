@@ -18,9 +18,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterDto dto)
+    public async Task<IActionResult> Register(RegisterDto dto, CancellationToken cancellationToken)
     {
-        var result = await _authService.RegisterAsync(dto);
+        var result = await _authService.RegisterAsync(dto, cancellationToken);
         if (result == null)
             return BadRequest("Bu email zaten kayıtlı.");
 
@@ -28,9 +28,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDto dto)
+    public async Task<IActionResult> Login(LoginDto dto, CancellationToken cancellationToken)
     {
-        var result = await _authService.LoginAsync(dto);
+        var result = await _authService.LoginAsync(dto, cancellationToken);
         if (result == null)
             return Unauthorized("Email veya şifre yanlış.");
 
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public async Task<IActionResult> GetCurrentUser()
+    public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(userIdStr, out var userId))
@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var user = await _authService.GetCurrentUserAsync(userId);
+        var user = await _authService.GetCurrentUserAsync(userId, cancellationToken);
         if (user == null)
         {
             return NotFound();
@@ -58,7 +58,7 @@ public class AuthController : ControllerBase
 
     [HttpPut("profile")]
     [Authorize]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken cancellationToken)
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(userIdStr, out var userId))
@@ -66,7 +66,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var updatedUser = await _authService.UpdateProfileAsync(userId, dto);
+        var updatedUser = await _authService.UpdateProfileAsync(userId, dto, cancellationToken);
         if (updatedUser == null)
         {
             return NotFound("User not found.");
@@ -77,7 +77,7 @@ public class AuthController : ControllerBase
 
     [HttpDelete("me")]
     [Authorize]
-    public async Task<IActionResult> DeleteAccount()
+    public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(userIdStr, out var userId))
@@ -85,7 +85,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var result = await _authService.DeleteAccountAsync(userId);
+        var result = await _authService.DeleteAccountAsync(userId, cancellationToken);
         if (!result)
         {
             return NotFound("User not found.");

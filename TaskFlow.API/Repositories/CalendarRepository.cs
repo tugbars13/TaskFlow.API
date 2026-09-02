@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.API.Data;
 using TaskFlow.API.DTOs;
@@ -13,26 +15,12 @@ public class CalendarRepository : ICalendarRepository
         _context = context;
     }
 
-    public async Task<List<CalendarEventDto>> GetCalendarEventsAsync(int userId)
+    public async Task<List<TaskItem>> GetTasksForCalendarAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var tasks = await _context.Tasks
+        return await _context.Tasks
             .AsNoTracking()
+            .Include(t => t.Category)
             .Where(t => t.UserId == userId && !t.IsDeleted)
-            .ToListAsync();
-
-        return tasks.Select(t => new CalendarEventDto
-        {
-            Id = t.Id,
-            Title = t.Title,
-            StartDate = t.DueDate ?? t.CreatedDate,
-            EndDate = (t.DueDate ?? t.CreatedDate).AddHours(1),
-            Category = t.Category != null ? t.Category.Name : "",
-            Color = t.Priority == Models.TaskPriority.High
-                ? "bg-rose-50/80 text-rose-700 font-semibold"
-                : t.Priority == Models.TaskPriority.Medium
-                    ? "bg-indigo-50/80 text-indigo-700"
-                    : "bg-sky-50/80 text-sky-700",
-            IsAllDay = !t.DueDate.HasValue
-        }).ToList();
+            .ToListAsync(cancellationToken);
     }
 }

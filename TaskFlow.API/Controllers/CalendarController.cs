@@ -26,10 +26,10 @@ public class CalendarController : ControllerBase
     }
 
     [HttpGet("events")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<CalendarEventDto>>>> GetEvents()
+    public async Task<ActionResult<ApiResponse<IEnumerable<CalendarEventDto>>>> GetEvents(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        var events = await _calendarService.GetCalendarEventsAsync(userId);
+        var events = await _calendarService.GetCalendarEventsAsync(userId, cancellationToken);
 
         return Ok(new ApiResponse<IEnumerable<CalendarEventDto>>
         {
