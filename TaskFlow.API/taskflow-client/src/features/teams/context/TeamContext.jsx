@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
 import {
   getTeams,
   getTeamMembers,
@@ -27,12 +22,18 @@ export default function TeamProvider({ children }) {
     if (!background) {
       setLoading(true);
     }
+
     setError(null);
+
     try {
-      const [teamsData, membersData] = await Promise.all([
-        getTeams().catch(() => []),
-        getTeamMembers().catch(() => []),
-      ]);
+      const teamsData = await getTeams().catch(() => []);
+
+      const membersPromises = teamsData.map((team) =>
+        getTeamMembers(team.id).catch(() => []),
+      );
+
+      const membersArrays = await Promise.all(membersPromises);
+      const membersData = membersArrays.flat();
 
       setTeams(Array.isArray(teamsData) ? teamsData : []);
       setMembers(Array.isArray(membersData) ? membersData : []);
@@ -40,12 +41,7 @@ export default function TeamProvider({ children }) {
       console.error("Failed to load teams workspace from database API:", err);
       setError(err.message || "Failed to load teams workspace.");
     } finally {
-      if (!background) {
-        setLoading(false);
-      } else {
-        // Also ensure loading is false if background succeeds when already loading, just in case
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }, []);
 
@@ -59,12 +55,12 @@ export default function TeamProvider({ children }) {
 
     fetchData();
 
-    // Custom event listener for external triggers (like accepting an invite)
     const handleRefresh = () => {
       fetchData();
     };
 
     window.addEventListener("teamRefreshRequired", handleRefresh);
+
     return () => {
       window.removeEventListener("teamRefreshRequired", handleRefresh);
     };
@@ -72,33 +68,56 @@ export default function TeamProvider({ children }) {
 
   const inviteMember = useCallback(async (teamId, userId) => {
     await inviteTeamMember(teamId, userId);
-    // Note: Since this is an invite, the user is pending and shouldn't appear instantly as an active member.
     return true;
   }, []);
 
-  const updateMember = useCallback(async (id, updatedFields) => {
-    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...updatedFields } : m)));
+  const updateMember = useCallback(
+    async (id, updatedFields) => {
+      const targetMember = members.find((m) => m.id === id);
 
-    try {
-      await updateTeamMember(id, updatedFields);
-      return true;
-    } catch (err) {
-      fetchData();
-      throw err;
-    }
-  }, [fetchData]);
+      if (!targetMember) {
+        throw new Error("Member not found");
+      }
 
-  const deleteMember = useCallback(async (id) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
+      const teamId = targetMember.teamId;
 
-    try {
-      await deleteTeamMember(id);
-      return true;
-    } catch (err) {
-      fetchData();
-      throw err;
-    }
-  }, [fetchData]);
+      setMembers((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, ...updatedFields } : m)),
+      );
+
+      try {
+        await updateTeamMember(teamId, id, updatedFields);
+        return true;
+      } catch (err) {
+        fetchData();
+        throw err;
+      }
+    },
+    [members, fetchData],
+  );
+
+  const deleteMember = useCallback(
+    async (id) => {
+      const targetMember = members.find((m) => m.id === id);
+
+      if (!targetMember) {
+        throw new Error("Member not found");
+      }
+
+      const teamId = targetMember.teamId;
+
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+
+      try {
+        await deleteTeamMember(teamId, id);
+        return true;
+      } catch (err) {
+        fetchData();
+        throw err;
+      }
+    },
+    [members, fetchData],
+  );
 
   const contextValue = {
     teams,

@@ -2,7 +2,10 @@ export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
   REGISTER: "/register",
+  FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
   DASHBOARD: "/dashboard",
+  OVERVIEW: "/dashboard/overview",
   TASKS: "/tasks",
   CALENDAR: "/calendar",
   ANALYTICS: "/analytics",
@@ -14,4 +17,3 @@ export const ROUTES = {
 
   teamTasks: (teamId) => `/teams/${teamId}/tasks`,
 };
-

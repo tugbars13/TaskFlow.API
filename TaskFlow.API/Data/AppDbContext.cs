@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<TeamAnalyticsSnapshot> TeamAnalyticsSnapshots { get; set; }
     public DbSet<MySpaceFolder> MySpaceFolders { get; set; }
     public DbSet<MySpacePage> MySpacePages { get; set; }
+    public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -216,5 +217,19 @@ public class AppDbContext : DbContext
             .WithMany(f => f.Pages)
             .HasForeignKey(p => p.FolderId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // ============================================================
+        // NOTIFICATION PREFERENCE -> USER
+        // ============================================================
+
+        modelBuilder.Entity<NotificationPreference>()
+            .HasOne(np => np.User)
+            .WithOne(u => u.NotificationPreference)
+            .HasForeignKey<NotificationPreference>(np => np.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<NotificationPreference>()
+            .HasIndex(np => np.UserId)
+            .IsUnique();
     }
 }

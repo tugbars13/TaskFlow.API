@@ -99,7 +99,17 @@ export const deleteTask = async (id) => {
   return true;
 };
 
+export const toggleTask = async (id) => {
+  const response = await api.put(`/tasks/${id}/toggle`);
+  return response.data?.data ?? response.data;
+};
+
 export const generateTaskBreakdown = async (taskId) => {
   const response = await api.post(`/tasks/${taskId}/breakdown`);
   return response.data?.data || response.data;
+};
+
+export const getAiTaskOrder = async () => {
+  const response = await api.get("/tasks/ai-order");
+  return response.data;
 };

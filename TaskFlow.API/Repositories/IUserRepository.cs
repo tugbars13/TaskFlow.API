@@ -14,4 +14,5 @@ public interface IUserRepository
     Task<List<User>> GetInvitableUsersForTeamAsync(int teamId, int currentUserId, CancellationToken cancellationToken = default);
     Task AddAsync(User user, CancellationToken cancellationToken = default);
     Task DeleteUserWithRelationsAsync(int userId, CancellationToken cancellationToken = default);
+    Task<User?> GetByResetPasswordTokenAsync(string tokenHash, CancellationToken cancellationToken = default);
 }

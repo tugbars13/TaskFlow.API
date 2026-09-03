@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import { ROUTES } from "../constants/routesConstants";
@@ -8,10 +8,13 @@ import { Spinner } from "@/components/ui";
 // Lazy Loaded Pages
 const LoginPage = lazy(() => import("../pages/Auth/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/Auth/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("../pages/Auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("../pages/Auth/ResetPasswordPage"));
 const DashboardPage = lazy(() => import("../pages/Dashboard/DashboardPage"));
+const OverviewPage = lazy(() => import("../pages/Dashboard/OverviewPage"));
 const TasksPage = lazy(() => import("../pages/Tasks/TasksPage"));
 const CalendarPage = lazy(() => import("../pages/Calendar/CalendarPage"));
-const Analytics = lazy(() => import("../pages/Analytics/AnalyticspPage"));
+const Analytics = lazy(() => import("../pages/Analytics/AnalyticsPage"));
 const TeamPage = lazy(() => import("../pages/Team/TeamPage"));
 const SettingsPage = lazy(() => import("../pages/Settings/SettingsPage"));
 const MySpacePage = lazy(() => import("../features/myspace/pages/MySpacePage"));
@@ -31,11 +34,14 @@ export default function AppRoutes() {
         <Route path={ROUTES.HOME} element={<LoginPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+        <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+            <Route path={ROUTES.OVERVIEW} element={<OverviewPage />} />
             <Route path={ROUTES.TASKS} element={<TasksPage />} />
             <Route path={ROUTES.TEAM_TASKS} element={<TasksPage />} />
             <Route path={ROUTES.CALENDAR} element={<CalendarPage />} />
@@ -52,5 +58,3 @@ export default function AppRoutes() {
     </Suspense>
   );
 }
-
-

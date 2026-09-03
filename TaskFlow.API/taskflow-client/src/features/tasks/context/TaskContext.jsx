@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useState,
   useEffect,
@@ -24,11 +24,19 @@ export default function TaskProvider({ children }) {
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const { loadTasks } = useTaskLoader({
+  const { loadTasks: originalLoadTasks } = useTaskLoader({
     setTasks,
     setLoading,
     setError,
   });
+
+  const loadTasks = useCallback(
+    (teamId = null, filters = {}) => {
+      // Protect the global state: ALWAYS load workspace tasks (teamId = null)
+      return originalLoadTasks(null, filters);
+    },
+    [originalLoadTasks]
+  );
 
   const { addTask, editTask, removeTask, toggleTaskStatus, moveTaskColumn } =
     useTaskActions({

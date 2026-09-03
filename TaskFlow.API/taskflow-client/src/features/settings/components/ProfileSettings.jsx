@@ -11,6 +11,8 @@ export default function ProfileSettings({ profile, onSaveProfile }) {
 
   const handleFormSave = useCallback(
     (formData) => {
+      console.log("=== [2] PROFILE SETTINGS SAVE ===");
+      console.log("avatarUrl:", avatarUrl);
       onSaveProfile?.({
         ...formData,
         avatarUrl,

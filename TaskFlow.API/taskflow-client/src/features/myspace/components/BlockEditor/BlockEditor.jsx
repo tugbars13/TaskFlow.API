@@ -3,7 +3,7 @@ import { BLOCK_TYPES } from "./blockTypes";
 import SlashMenu from "./SlashMenu";
 import LinkPopover from "./LinkPopover";
 import FloatingToolbar from "./FloatingToolbar";
-import { sanitizeHtml, stripHtml } from "./sanitizeHtml";
+import { sanitizeHtml, stripHtml } from "../../utils/sanitizeHtml";
 
 const RICH_TEXT_BLOCK_TYPES = [
   BLOCK_TYPES.TEXT,

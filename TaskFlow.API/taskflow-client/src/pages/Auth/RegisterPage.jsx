@@ -6,9 +6,7 @@ import useAuth from "@/features/auth/hooks/useAuth";
 import { validateEmail } from "@/features/auth/utils/validators";
 import {
   AuthHeader,
-  AuthDivider,
   AuthFooter,
-  SocialLoginButtons,
   RegisterForm,
   AuthMobileLogo,
 } from "@/features/auth/components";
@@ -41,13 +39,7 @@ export default function RegisterPage() {
           subtitle="Join TaskFlow Pro and start managing your projects with ease."
       />
 
-      {/* Social Buttons */}
-      <SocialLoginButtons />
 
-      {/* Divider */}
-      <AuthDivider
-          text="Or sign up with email"
-      />
 
       {/* Form Fields */}
       <RegisterForm

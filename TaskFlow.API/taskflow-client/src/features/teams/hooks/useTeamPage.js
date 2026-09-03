@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import useAuth from "@/features/auth/hooks/useAuth";
 import useTasks from "@/features/tasks/hooks/useTasks";
-import useSignalR from "@/features/realtime/useSignalR";
+import useSignalR from "@/features/realtime/hooks/useSignalR";
 import useTeam from "./useTeam";
 import { createTeam, deleteTeam } from "../api/teamService.js";
 
@@ -56,7 +56,7 @@ export default function useTeamPage() {
     };
   }, []);
 
-  // Database-driven team list from GET /api/teams & GET /api/Team
+  // Database-driven team list from GET /api/teams
   const teamsList = useMemo(() => {
     if (!teams || teams.length === 0) return [];
 
@@ -68,7 +68,7 @@ export default function useTeamPage() {
     }, {});
 
     return teams.map((team) => {
-      // Group members strictly by TeamId from GET /api/Team response
+      // Group members strictly by TeamId from the team members API response
       const teamMembers = membersByTeam[Number(team.id)] || [];
 
       // Sort: Owner first → Admins → Members
@@ -180,14 +180,14 @@ export default function useTeamPage() {
     [activeAddMemberTeam, inviteMember, showToast],
   );
 
-  // Change Role via PUT /api/Team/{id}
+  // Change Role via PUT /api/teams/{teamId}/members/{memberId}
   const handleChangeRole = useCallback(
     async (memberId, newRole) => {
       try {
         await updateMember(memberId, { role: newRole });
         showToast("success", "Member role updated successfully!");
       } catch (err) {
-        console.error("PUT /api/Team error:", err);
+        console.error("PUT /api/teams/{teamId}/members/{memberId} error:", err);
         if (err?.response?.status === 403) {
           showToast("error", "Only the team Owner can change member roles.");
         } else {
@@ -198,7 +198,7 @@ export default function useTeamPage() {
     [updateMember, showToast],
   );
 
-  // Remove Member via DELETE /api/Team/{id}
+  // Remove Member via DELETE /api/teams/{teamId}/members/{memberId}
   const handleRemoveMember = useCallback(
     async (memberId) => {
       try {
@@ -217,7 +217,10 @@ export default function useTeamPage() {
 
         setActiveRemoveMember(null);
       } catch (err) {
-        console.error("DELETE /api/Team error:", err);
+        console.error(
+          "DELETE /api/teams/{teamId}/members/{memberId} error:",
+          err,
+        );
         if (err?.response?.status === 403) {
           showToast("error", "Only the team Owner can remove members.");
         } else {

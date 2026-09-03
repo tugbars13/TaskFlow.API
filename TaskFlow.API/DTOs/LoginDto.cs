@@ -1,4 +1,4 @@
-﻿namespace TaskFlow.API.DTOs;
+namespace TaskFlow.API.DTOs;
 
 // Kullanıcı giriş yaparken gelecek bilgiler.
 public class LoginDto
@@ -6,4 +6,6 @@ public class LoginDto
     public string Email { get; set; } = string.Empty; // Email
 
     public string Password { get; set; } = string.Empty; // Şifre
+
+    public bool RememberMe { get; set; } // Beni hatırla
 }

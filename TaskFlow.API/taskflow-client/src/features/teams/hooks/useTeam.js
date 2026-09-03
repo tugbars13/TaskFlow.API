@@ -19,10 +19,11 @@ export default function useTeam() {
     setLoading(true);
     setError(null);
     try {
-      const [teamsData, membersData] = await Promise.all([
-        getTeams().catch(() => []),
-        getTeamMembers().catch(() => []),
-      ]);
+      const teamsData = await getTeams().catch(() => []);
+
+      const membersPromises = teamsData.map(team => getTeamMembers(team.id).catch(() => []));
+      const membersArrays = await Promise.all(membersPromises);
+      const membersData = membersArrays.flat();
 
       setTeams(Array.isArray(teamsData) ? teamsData : []);
       setMembers(Array.isArray(membersData) ? membersData : []);
@@ -36,12 +37,12 @@ export default function useTeam() {
 
   useEffect(() => {
     fetchData();
-    
+
     // Custom event listener for external triggers (like accepting an invite)
     const handleRefresh = () => {
       fetchData();
     };
-    
+
     window.addEventListener("teamRefreshRequired", handleRefresh);
     return () => {
       window.removeEventListener("teamRefreshRequired", handleRefresh);
@@ -84,36 +85,41 @@ export default function useTeam() {
   }, [members]);
 
   const inviteMember = useCallback(async (teamId, userId) => {
-    const created = await inviteTeamMember(teamId, userId);
-    // Note: Since this is an invite, the user is pending and shouldn't appear instantly as an active member.
-    // We can just rely on the next refresh or omit them from the 'active' list for now.
-    // If you want to show pending members, you can add them to state here.
+    await inviteTeamMember(teamId, userId);
     return true;
   }, []);
 
   const updateMember = useCallback(async (id, updatedFields) => {
+    const targetMember = members.find((m) => m.id === id);
+    if (!targetMember) throw new Error("Member not found");
+    const teamId = targetMember.teamId;
+
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...updatedFields } : m)));
 
     try {
-      await updateTeamMember(id, updatedFields);
+      await updateTeamMember(teamId, id, updatedFields);
       return true;
     } catch (err) {
       fetchData();
       throw err;
     }
-  }, [fetchData]);
+  }, [members, fetchData]);
 
   const deleteMember = useCallback(async (id) => {
+    const targetMember = members.find((m) => m.id === id);
+    if (!targetMember) throw new Error("Member not found");
+    const teamId = targetMember.teamId;
+
     setMembers((prev) => prev.filter((m) => m.id !== id));
 
     try {
-      await deleteTeamMember(id);
+      await deleteTeamMember(teamId, id);
       return true;
     } catch (err) {
       fetchData();
       throw err;
     }
-  }, [fetchData]);
+  }, [members, fetchData]);
 
   return {
     teams,

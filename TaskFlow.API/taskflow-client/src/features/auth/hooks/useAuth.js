@@ -25,12 +25,12 @@ export default function useAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loginUser = async ({ email, password }) => {
+  const loginUser = async ({ email, password, remember }) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await loginRequest({ email, password });
+      const response = await loginRequest({ email, password, rememberMe: remember });
 
       await setAuthContext(response.token || response.accessToken, response.user);
       return true;

@@ -173,7 +173,7 @@ export default function TasksHeader({
             </Button>
           )}
 
-          {isTeamBoard && (
+          {isTeamBoard && currentTeam && ['owner', 'admin'].includes((currentTeam.userRole || '').toLowerCase()) && (
             <Button
               variant="outline"
               onClick={() => navigate('/team', { state: { analyticsTeamId: teamId } })}

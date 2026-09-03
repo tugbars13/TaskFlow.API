@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
-import api from "@/api/client/axios";
-
 import { createPortal } from "react-dom";
+import { getAiTaskOrder } from "../api/taskService";
 
 export default function AITaskOrderDrawer({ isOpen, onClose }) {
   const [orderedTasks, setOrderedTasks] = useState([]);
@@ -21,9 +20,9 @@ export default function AITaskOrderDrawer({ isOpen, onClose }) {
       setLoading(true);
       setError(null);
       // Calls the new TasksController endpoint
-      const response = await api.get("/tasks/ai-order");
-      if (response.data?.success) {
-        setOrderedTasks(response.data.data);
+      const data = await getAiTaskOrder();
+      if (data?.success) {
+        setOrderedTasks(data.data);
       } else {
         setError("Failed to fetch AI task order.");
       }

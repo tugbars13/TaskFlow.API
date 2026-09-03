@@ -241,6 +241,43 @@ namespace TaskFlow.API.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("TaskFlow.API.Models.NotificationPreference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DueDateReminders")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EmailEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PushEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SystemUpdates")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TaskAssignments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationPreferences");
+                });
+
             modelBuilder.Entity("TaskFlow.API.Models.TaskAssignee", b =>
                 {
                     b.Property<int>("Id")
@@ -422,6 +459,12 @@ namespace TaskFlow.API.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResetPasswordToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -625,6 +668,17 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TaskFlow.API.Models.NotificationPreference", b =>
+                {
+                    b.HasOne("TaskFlow.API.Models.User", "User")
+                        .WithOne("NotificationPreference")
+                        .HasForeignKey("TaskFlow.API.Models.NotificationPreference", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TaskFlow.API.Models.TaskAssignee", b =>
                 {
                     b.HasOne("TaskItem", "Task")
@@ -744,6 +798,8 @@ namespace TaskFlow.API.Migrations
 
             modelBuilder.Entity("TaskFlow.API.Models.User", b =>
                 {
+                    b.Navigation("NotificationPreference");
+
                     b.Navigation("TaskAssignees");
 
                     b.Navigation("Tasks");

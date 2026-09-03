@@ -13,4 +13,7 @@ public interface INotificationRepository
     Task<List<Notification>> GetUnreadTeamInvitationsAsync(int userId, int teamId, CancellationToken cancellationToken = default);
     Task DeleteTeamInvitationsAsync(int teamId, CancellationToken cancellationToken = default);
     Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default);
+    Task<NotificationPreference?> GetPreferenceByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+    Task AddPreferenceAsync(NotificationPreference preference, CancellationToken cancellationToken = default);
+    Task UpdatePreferenceAsync(NotificationPreference preference, CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,7 @@
 import Card from "@/components/ui/Card";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { cn } from "@/utils/cn";
-import { getWorkloadLevel } from "@/features/analytics/utils/workload.utils";
+import { getWorkloadLevel } from "@/features/analytics/utils/workloadUtils";
 export default function WorkloadDistribution({ teamWorkload = [] }) {
   const members = teamWorkload;
 

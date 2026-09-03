@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMySpace } from "../context/MySpaceContext";
-import BlockEditor from "../components/BlockEditor/BlockEditor";
+import BlockEditor from "../components/blockEditor/BlockEditor";
 
 export default function PageView() {
   const { id } = useParams();

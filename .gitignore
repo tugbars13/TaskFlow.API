@@ -480,3 +480,22 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# User uploaded files
+wwwroot/uploads/
+
+# Temporary development scripts
+script.py
+fix.ps1
+update_task.ps1
+
+# User uploaded files
+wwwroot/uploads/
+App_Data/Uploads/
+
+# User uploaded files
+TaskFlow.API/App_Data/Uploads/
+
+TaskFlow.API/wwwroot/uploads/TaskFlow.API/wwwroot/uploads/
+**/wwwroot/uploads/**
+**/App_Data/Uploads/**

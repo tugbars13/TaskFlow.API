@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -19,7 +19,7 @@ public class TokenService : ITokenService
         _jwtSettings = jwtOptions.Value; // appsettings.json'dan okur.
     }
 
-    public string CreateToken(User user)
+    public string CreateToken(User user, bool rememberMe = false)
     {
         // Token içine eklenecek kullanıcı bilgileri.
         var claims = new List<Claim>
@@ -45,12 +45,14 @@ public class TokenService : ITokenService
             SecurityAlgorithms.HmacSha256
         );
 
+        var expirationMinutes = rememberMe ? (30 * 24 * 60) : _jwtSettings.ExpirationMinutes;
+
         // JWT nesnesini oluştur.
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
+            expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
             signingCredentials: credentials
         );
 

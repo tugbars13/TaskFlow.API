@@ -1,6 +1,5 @@
-﻿import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '@/api/client/axios';
-
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import * as mySpaceService from '@/features/myspace/api/mySpaceService';
 const MySpaceContext = createContext();
 
 export function MySpaceProvider({ children }) {
@@ -13,8 +12,8 @@ export function MySpaceProvider({ children }) {
     setIsLoading(true);
     try {
       const [foldersRes, pagesRes] = await Promise.all([
-        api.get("/myspace/folders"),
-        api.get("/myspace/pages")
+        mySpaceService.getFolders(),
+        mySpaceService.getPages()
       ]);
       
       if (foldersRes.data?.success) setFolders(foldersRes.data.data);
@@ -34,7 +33,7 @@ export function MySpaceProvider({ children }) {
 
   const addFolder = async () => {
     try {
-      const response = await api.post("/myspace/folders", {
+      const response = await mySpaceService.createFolder({
         name: "Yeni Klasör"
       });
       if (response.data?.success) {
@@ -49,7 +48,7 @@ export function MySpaceProvider({ children }) {
 
   const updateFolder = async (id, name) => {
     try {
-      const response = await api.put("/myspace/folders/" + id, { name });
+      const response = await mySpaceService.updateFolder(id, { name });
       if (response.data?.success) {
         setFolders(prev => prev.map(f => f.id === id ? { ...f, name } : f));
       }
@@ -60,7 +59,7 @@ export function MySpaceProvider({ children }) {
 
   const deleteFolder = async (id) => {
     try {
-      const response = await api.delete("/myspace/folders/" + id);
+      const response = await mySpaceService.deleteFolder(id);
       if (response.data?.success) {
         setFolders(prev => prev.filter(f => f.id !== id));
         setPages(prev => prev.filter(p => p.folderId !== id)); // also clean up pages locally
@@ -72,9 +71,9 @@ export function MySpaceProvider({ children }) {
 
   const addPage = async (folderId = null) => {
     try {
-      const response = await api.post("/myspace/pages", {
+      const response = await mySpaceService.createPage({
         folderId,
-        title: "",
+        title: "İsimsiz Sayfa",
         content: ""
       });
       if (response.data?.success) {
@@ -90,7 +89,7 @@ export function MySpaceProvider({ children }) {
     const duplicatePage = async (pageToDuplicate) => {
     try {
       const title = pageToDuplicate.title ? pageToDuplicate.title + " (Kopya)" : "İsimsiz Sayfa";
-      const response = await api.post("/myspace/pages", {
+      const response = await mySpaceService.createPage({
         folderId: pageToDuplicate.folderId,
         title: title,
         icon: pageToDuplicate.icon,
@@ -119,7 +118,7 @@ export function MySpaceProvider({ children }) {
         content: data.content !== undefined ? data.content : pageToUpdate.content
       };
       
-      const response = await api.put("/myspace/pages/" + id, payload);
+      const response = await mySpaceService.updatePage(id, payload);
       if (response.data?.success) {
         setPages(prev => prev.map(p => p.id === id ? response.data.data : p));
       }
@@ -130,7 +129,7 @@ export function MySpaceProvider({ children }) {
 
   const deletePage = async (id) => {
     try {
-      const response = await api.delete("/myspace/pages/" + id);
+      const response = await mySpaceService.deletePage(id);
       if (response.data?.success) {
         setPages(prev => prev.filter(p => p.id !== id));
       }

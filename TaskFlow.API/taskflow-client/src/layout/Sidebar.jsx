@@ -1,19 +1,152 @@
-import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/constants/routesConstants";
 import { cn } from "@/utils/cn";
 
-const NAV_ITEMS = [
-  { path: ROUTES.DASHBOARD, label: "Dashboard", icon: "dashboard" },
+const WORKSPACE_CHILDREN = [
+  { path: ROUTES.OVERVIEW, label: "Overview", icon: "space_dashboard" },
   { path: ROUTES.TASKS, label: "Tasks", icon: "task_alt" },
   { path: ROUTES.CALENDAR, label: "Calendar", icon: "calendar_today" },
   { path: ROUTES.ANALYTICS, label: "Analytics", icon: "analytics" },
   { path: ROUTES.TEAM, label: "Team", icon: "group" },
-  { path: ROUTES.MY_SPACE, label: "My Space", icon: "space_dashboard" },
+];
+
+// exact: true → only active when path matches exactly
+// startsWith: override prefix for active detection (Klasörler is active on /myspace/folder/:id too)
+const MY_SPACE_NAV_ITEMS = [
+  { path: ROUTES.MY_SPACE, label: "Home", icon: "home", exact: true },
+  {
+    path: ROUTES.MY_SPACE + "/folders",
+    label: "Klasörler",
+    icon: "folder_open",
+    startsWith: ROUTES.MY_SPACE + "/folder",
+  },
+  {
+    path: ROUTES.MY_SPACE + "/pages",
+    label: "Sayfalar",
+    icon: "description",
+    startsWith: ROUTES.MY_SPACE + "/page/",
+  },
+];
+
+const TOP_ITEMS = [
+  { path: ROUTES.DASHBOARD, label: "Dashboard", icon: "dashboard" },
   { path: ROUTES.SETTINGS, label: "Settings", icon: "settings" },
 ];
 
 export default function Sidebar({ isCollapsed, onToggle }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const isWorkspaceChildActive = WORKSPACE_CHILDREN.some(
+    (item) =>
+      location.pathname === item.path ||
+      location.pathname.startsWith(`${item.path}/`),
+  );
+  const isMySpaceChildActive = location.pathname.startsWith(ROUTES.MY_SPACE);
+
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(
+    isWorkspaceChildActive,
+  );
+  const [isMySpaceOpen, setIsMySpaceOpen] = useState(isMySpaceChildActive);
+
+  const isSimpleActive = (path) => {
+    if (path === ROUTES.DASHBOARD) {
+      return location.pathname === ROUTES.DASHBOARD;
+    }
+
+    return (
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+  };
+
+  // Per-item active logic for My Space sub-items
+  const isMySpaceItemActive = (item) => {
+    if (item.exact) return location.pathname === item.path;
+    if (item.startsWith)
+      return (
+        location.pathname === item.path ||
+        location.pathname.startsWith(item.startsWith)
+      );
+    return isSimpleActive(item.path);
+  };
+
+  // Navigate to /myspace/folders with state so FoldersView can trigger folder creation
+  const handleNewFolder = () => {
+    navigate(ROUTES.MY_SPACE + "/folders", { state: { createFolder: true } });
+  };
+
+  const renderNavLink = (item, isChild = false, activeOverride = undefined) => {
+    const active =
+      activeOverride !== undefined ? activeOverride : isSimpleActive(item.path);
+    return (
+      <Link
+        key={item.path}
+        to={item.path}
+        title={isCollapsed ? item.label : undefined}
+        className={cn(
+          "flex items-center rounded-xl transition-all duration-200 h-[46px]",
+          isCollapsed
+            ? "justify-center w-full"
+            : cn(
+                "px-[14px] gap-[14px] text-[14px] font-semibold",
+                isChild && "pl-[42px]",
+              ),
+          active
+            ? "bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)] shadow-xs"
+            : "text-[var(--color-sidebar-text-variant)] hover:bg-[var(--color-sidebar-hover)] hover:text-primary",
+        )}
+      >
+        <span
+          className="material-symbols-outlined text-[22px] shrink-0"
+          style={{
+            fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0",
+          }}
+        >
+          {item.icon}
+        </span>
+        {!isCollapsed && (
+          <span className="whitespace-nowrap">{item.label}</span>
+        )}
+      </Link>
+    );
+  };
+
+  const renderAccordionHeader = (
+    label,
+    icon,
+    isActive,
+    isOpen,
+    onToggleOpen,
+  ) => (
+    <button
+      type="button"
+      onClick={onToggleOpen}
+      className={cn(
+        "flex items-center w-full rounded-xl transition-all duration-200 h-[46px]",
+        "px-[14px] gap-[14px] text-[14px] font-semibold",
+        isActive
+          ? "text-primary"
+          : "text-[var(--color-sidebar-text-variant)] hover:bg-[var(--color-sidebar-hover)] hover:text-primary",
+      )}
+    >
+      <span
+        className="material-symbols-outlined text-[22px] shrink-0"
+        style={{
+          fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+        }}
+      >
+        {icon}
+      </span>
+      <span className="whitespace-nowrap flex-1 text-left">{label}</span>
+      <span
+        className="material-symbols-outlined text-[18px] shrink-0 transition-transform duration-200"
+        style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+      >
+        expand_more
+      </span>
+    </button>
+  );
 
   return (
     <aside
@@ -86,41 +219,86 @@ export default function Sidebar({ isCollapsed, onToggle }) {
             isCollapsed ? "px-2 space-y-2 mt-4" : "px-[14px] space-y-1 mt-6",
           )}
         >
-          {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                title={isCollapsed ? item.label : undefined}
+          {/* Dashboard & Settings */}
+          {TOP_ITEMS.map((item) => renderNavLink(item))}
+
+          {/* ── My Workspace ── */}
+          {isCollapsed ? (
+            WORKSPACE_CHILDREN.map((item) => renderNavLink(item))
+          ) : (
+            <div>
+              {renderAccordionHeader(
+                "My Workspace",
+                "folder_open",
+                isWorkspaceChildActive,
+                isWorkspaceOpen,
+                () => setIsWorkspaceOpen((prev) => !prev),
+              )}
+              {isWorkspaceOpen && (
+                <div className="space-y-1 mt-1">
+                  {WORKSPACE_CHILDREN.map((item) => renderNavLink(item, true))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── My Space ── */}
+          {isCollapsed ? (
+            <>
+              {MY_SPACE_NAV_ITEMS.map((item) =>
+                renderNavLink(item, false, isMySpaceItemActive(item)),
+              )}
+              {/* Yeni Klasör — collapsed icon button */}
+              <button
+                type="button"
+                title="Yeni Klasör"
+                onClick={handleNewFolder}
                 className={cn(
                   "flex items-center rounded-xl transition-all duration-200 h-[46px]",
-                  isCollapsed
-                    ? "justify-center w-full"
-                    : "px-[14px] gap-[14px] text-[14px] font-semibold",
-                  isActive
-                    ? "bg-[var(--color-sidebar-active-bg)] text-[var(--color-sidebar-active-text)] shadow-xs"
-                    : "text-[var(--color-sidebar-text-variant)] hover:bg-[var(--color-sidebar-hover)] hover:text-primary",
+                  "justify-center w-full",
+                  "text-[var(--color-sidebar-text-variant)] hover:bg-[var(--color-sidebar-hover)] hover:text-primary",
                 )}
               >
-                <span
-                  className="material-symbols-outlined text-[22px] shrink-0"
-                  style={{
-                    fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
-                  }}
-                >
-                  {item.icon}
+                <span className="material-symbols-outlined text-[22px] shrink-0">
+                  create_new_folder
                 </span>
-                {!isCollapsed && (
-                  <span className="whitespace-nowrap">{item.label}</span>
-                )}
-              </Link>
-            );
-          })}
+              </button>
+            </>
+          ) : (
+            <div>
+              {renderAccordionHeader(
+                "My Space",
+                "space_dashboard",
+                isMySpaceChildActive,
+                isMySpaceOpen,
+                () => setIsMySpaceOpen((prev) => !prev),
+              )}
+              {isMySpaceOpen && (
+                <div className="space-y-1 mt-1">
+                  {MY_SPACE_NAV_ITEMS.map((item) =>
+                    renderNavLink(item, true, isMySpaceItemActive(item)),
+                  )}
+                  {/* Yeni Klasör — action button, not a route link */}
+                  <button
+                    type="button"
+                    onClick={handleNewFolder}
+                    className={cn(
+                      "flex items-center w-full rounded-xl transition-all duration-200 h-[46px]",
+                      "pl-[42px] px-[14px] gap-[14px] text-[14px] font-semibold",
+                      "text-[var(--color-sidebar-text-variant)] hover:bg-[var(--color-sidebar-hover)] hover:text-primary",
+                    )}
+                  >
+                    <span className="material-symbols-outlined text-[22px] shrink-0">
+                      create_new_folder
+                    </span>
+                    <span className="whitespace-nowrap">Yeni Klasör</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
-
       </div>
     </aside>
   );
 }
-

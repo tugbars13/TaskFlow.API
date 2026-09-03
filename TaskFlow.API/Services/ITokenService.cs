@@ -1,4 +1,4 @@
-﻿using TaskFlow.API.Models;
+using TaskFlow.API.Models;
 
 namespace TaskFlow.API.Services;
 
@@ -6,5 +6,5 @@ namespace TaskFlow.API.Services;
 public interface ITokenService
 {
     // Giriş yapan kullanıcı için JWT üretir.
-    string CreateToken(User user);
+    string CreateToken(User user, bool rememberMe = false);
 }

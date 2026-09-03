@@ -4,6 +4,7 @@ using TaskFlow.API.DTOs;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
 using BCrypt.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace TaskFlow.API.Services;
 
@@ -13,17 +14,23 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly ITaskRepository _taskRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
         ITokenService tokenService,
         ITaskRepository taskRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _taskRepository = taskRepository;
         _unitOfWork = unitOfWork;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<LoginResponseDto?> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
@@ -99,6 +106,7 @@ public class AuthService : IAuthService
         user.FullName = dto.FullName;
         user.DisplayName = dto.DisplayName;
         user.Bio = dto.Bio;
+        user.AvatarUrl = dto.AvatarUrl;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -134,7 +142,7 @@ public class AuthService : IAuthService
         }
     }
 
-    // BU METOT EKSİKSE, EN ALTA EKLE
+    // BU METOT EKSÃƒâ€Ã‚Â°KSE, EN ALTA EKLE
     private static UserDto MapToUserDto(User user)
     {
         var nameParts = (user.FullName ?? "")
@@ -155,5 +163,36 @@ public class AuthService : IAuthService
             Bio = user.Bio,
             AvatarUrl = user.AvatarUrl
         };
+    }
+
+    public async Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken);
+        if (user == null) return;
+
+        user.ResetPasswordToken = Guid.NewGuid().ToString();
+        user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(1);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var clientBaseUrl = _configuration["ClientBaseUrl"] ?? "http://localhost:5173";
+        var resetLink = $"{clientBaseUrl}/reset-password?token={user.ResetPasswordToken}";
+
+        await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
+    }
+
+    public async Task<bool> ResetPasswordAsync(ResetPasswordDto dto, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByResetPasswordTokenAsync(dto.Token, cancellationToken);
+        if (user == null || user.ResetPasswordTokenExpiry < DateTime.UtcNow)
+        {
+            return false;
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        user.ResetPasswordToken = null;
+        user.ResetPasswordTokenExpiry = null;
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

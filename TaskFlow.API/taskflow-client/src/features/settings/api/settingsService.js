@@ -27,11 +27,16 @@ export const getSettings = async () => {
 };
 
 export const updateProfile = async (profileData) => {
+  console.log("=== [5] SETTINGS SERVICE UPDATE PROFILE ===");
+  console.log("profileData:", profileData);
+  console.log("=== [6] BEFORE AXIOS PUT ===");
   const response = await api.put("/Auth/profile", {
     fullName: profileData.fullName,
     displayName: profileData.displayName,
     bio: profileData.bio,
+    avatarUrl: profileData.avatarUrl,
   });
+  console.log("=== [7] NETWORK REQUEST SUCCESS ===");
   return response.data;
 };
 

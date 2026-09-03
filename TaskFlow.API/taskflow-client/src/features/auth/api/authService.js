@@ -13,6 +13,16 @@ export const registerRequest = async (user) => {
   return response.data;
 };
 
+export const forgotPasswordRequest = async (email) => {
+  const response = await api.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
+  return response.data;
+};
+
+export const resetPasswordRequest = async (token, newPassword) => {
+  const response = await api.post(AUTH_ENDPOINTS.RESET_PASSWORD, { token, newPassword });
+  return response.data;
+};
+
 export const getCurrentUser = async () => {
   const response = await api.get(AUTH_ENDPOINTS.CURRENT_USER);
 

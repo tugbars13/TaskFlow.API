@@ -17,8 +17,8 @@ namespace TaskFlow.API.Migrations
                 table: "UserCategoryBehaviors",
                 newName: "CategoryId");
 
-            
-            
+
+
 
             migrationBuilder.RenameColumn(
                 name: "Category",
@@ -30,8 +30,8 @@ namespace TaskFlow.API.Migrations
             migrationBuilder.Sql("UPDATE UserCategoryBehaviors SET CategoryId = 6 WHERE CategoryId = 0;");
             migrationBuilder.Sql("UPDATE UserCategoryBehaviors SET CategoryId = CategoryId + 1000 WHERE CategoryId > 0 AND CategoryId <= 12;");
 
-            
-            
+
+
 
             migrationBuilder.AlterColumn<int>(
                 name: "UserId",

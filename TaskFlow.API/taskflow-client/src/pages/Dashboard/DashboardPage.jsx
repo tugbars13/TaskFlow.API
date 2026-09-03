@@ -1,53 +1,68 @@
 import { useNavigate } from "react-router-dom";
 import useDashboard from "@/features/dashboard/hooks/useDashboard";
 import { ROUTES } from "@/constants/routesConstants";
-import DashboardSkeleton from "@/features/dashboard/components/DashboardSkeleton";
-
-import GreetingSection from "@/features/dashboard/components/GreetingSection";
-import StatsOverview from "@/features/dashboard/components/StatsOverview";
-import TodayPriorities from "@/features/dashboard/components/TodayPriorities";
 import { PageContainer } from "@/layout";
 import { PageError } from "@/components/common";
+import useMySpaceRecent from "@/features/myspace/hooks/useMySpaceRecent";
+
+// Import our new extracted components
+import DashboardSkeleton from "@/features/dashboard/components/DashboardSkeleton";
+import DashboardStats from "@/features/dashboard/components/DashboardStats";
+import PriorityTasksList from "@/features/dashboard/components/PriorityTasksList";
+import DashboardMySpaceWidget from "@/features/dashboard/components/DashboardMySpaceWidget";
+import QuickActionsList from "@/features/dashboard/components/QuickActionsList";
+
+function getTurkishDate() {
+  return new Date().toLocaleDateString("tr-TR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const {
-    metrics,
-    recentTasks,
-    highPriorityTasks,
-    loading: dashboardLoading,
-    error,
-    refetch,
-    toggleDashboardTask,
-  } = useDashboard();
-  if (dashboardLoading) {
-    return <DashboardSkeleton />;
-  }
+  const { metrics, recentTasks, loading, error, refetch } = useDashboard();
+  const mySpace = useMySpaceRecent();
 
-  if (error) {
+  if (loading) return <DashboardSkeleton />;
+  if (error)
     return (
       <PageError
         icon="dashboard"
-        title="Dashboard could not be loaded"
+        title="Dashboard yüklenemedi"
         description={error}
         onRetry={refetch}
       />
     );
-  }
 
   return (
     <PageContainer>
-      <GreetingSection highPriorityTasks={highPriorityTasks} />
-      <StatsOverview metrics={metrics} />
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h1 className="text-2xl font-extrabold text-on-surface leading-none tracking-tight">
+            Dashboard
+          </h1>
+          <p className="text-[13px] text-on-surface-variant mt-1.5 font-medium">
+            Bugünün görevleri ve çalışma alanınız&nbsp;·&nbsp;
+            {getTurkishDate()}
+          </p>
+        </div>
+      </div>
 
-      <section className="w-full">
-        <TodayPriorities
-          tasks={recentTasks}
-          loading={dashboardLoading}
-          onToggle={toggleDashboardTask}
-          onViewAll={() => navigate(ROUTES.TASKS)}
-        />
-      </section>
+      {/* ── Stats strip ── */}
+      <DashboardStats metrics={metrics} mySpace={mySpace} />
+
+      {/* ── Main 2-column ── */}
+      <div className="grid grid-cols-5 gap-5 mb-5">
+        <PriorityTasksList recentTasks={recentTasks} navigate={navigate} />
+        <DashboardMySpaceWidget mySpace={mySpace} navigate={navigate} />
+      </div>
+
+      {/* ── Hızlı Erişim ── */}
+      <QuickActionsList metrics={metrics} navigate={navigate} />
     </PageContainer>
   );
 }

@@ -26,6 +26,7 @@ export default function ProfileForm({ initialValues, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("=== [1] PROFILE FORM SUBMIT ===");
     onSave?.(formData);
   };
 

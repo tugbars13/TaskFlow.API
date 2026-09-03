@@ -5,7 +5,7 @@ import Card from "@/components/ui/Card";
 import ProgressBar from "@/components/ui/ProgressBar";
 import Badge from "@/components/ui/Badge";
 import { CATEGORY_COLORS } from "@/features/analytics/constants/category.constants";
-import { getCategoryName } from "@/features/analytics/utils/category.utils";
+import { getCategoryName } from "@/features/analytics/utils/categoryUtils";
 export default function CategoryBreakdown() {
   const { tasks: contextTasks } = useTasks();
   const [localTasks, setLocalTasks] = useState([]);

@@ -4,6 +4,7 @@ import {
   updateProfile,
   updateWorkspace,
 } from "../api/settingsService";
+import { updateNotificationPreferences } from "../../notifications/api/notificationService";
 import useAuth from "@/features/auth/hooks/useAuth";
 
 const SAVE_STATUS_DURATION = 3000;
@@ -34,6 +35,8 @@ export default function useSettings() {
   }, []);
   const updateSettingsSection = useCallback(
     async (section, apiCall, data) => {
+      console.log("=== [4] UPDATE SETTINGS SECTION ===");
+      console.log("section:", section);
       setSaveStatus("saving");
 
       try {
@@ -68,6 +71,8 @@ export default function useSettings() {
 
   const handleProfileUpdate = useCallback(
     (profileData) => {
+      console.log("=== [3] USE SETTINGS UPDATE PROFILE ===");
+      console.log("profileData:", profileData);
       return updateSettingsSection("profile", updateProfile, profileData);
     },
     [updateSettingsSection],
@@ -80,6 +85,13 @@ export default function useSettings() {
     [updateSettingsSection],
   );
 
+  const handleNotificationsUpdate = useCallback(
+    (notificationsData) => {
+      return updateSettingsSection("notifications", updateNotificationPreferences, notificationsData);
+    },
+    [updateSettingsSection],
+  );
+
   return {
     settings,
     loading,
@@ -87,6 +99,7 @@ export default function useSettings() {
     saveStatus,
     updateProfile: handleProfileUpdate,
     updateWorkspace: handleWorkspaceUpdate,
+    updateNotifications: handleNotificationsUpdate,
     refetch: fetchSettings,
   };
 }

@@ -18,11 +18,20 @@ public class User
 
     public DateTime CreatedDate { get; set; }
 
-    // Kullanıcının sahip olduğu görevler.
-    // ICollection kullanıyoruz çünkü bir kullanıcı birden fazla göreve sahip olabilir.
+    // KullanÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â±nÃƒâ€Ã‚Â±n sahip olduÃƒâ€Ã…Â¸u gÃƒÆ’Ã‚Â¶revler.
+    // ICollection kullanÃƒâ€Ã‚Â±yoruz ÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â¼nkÃƒÆ’Ã‚Â¼ bir kullanÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± birden fazla gÃƒÆ’Ã‚Â¶reve sahip olabilir.
     public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
-    // Kullanıcının rolü (Admin veya User)
+
+    // KullanÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â±nÃƒâ€Ã‚Â±n rolÃƒÆ’Ã‚Â¼ (Admin veya User)
     public string Role { get; set; } = "User";
+
+    // Ãƒâ€¦Ã‚Âifre sÃƒâ€Ã‚Â±fÃƒâ€Ã‚Â±rlama iÃƒÆ’Ã‚Â§in gereken token ve geÃƒÆ’Ã‚Â§erlilik sÃƒÆ’Ã‚Â¼resi
+    public string? ResetPasswordToken { get; set; }
+
+    public DateTime? ResetPasswordTokenExpiry { get; set; }
+
     public ICollection<TeamMember> TeamMemberships { get; set; } = new List<TeamMember>();
     public ICollection<TaskAssignee> TaskAssignees { get; set; } = new List<TaskAssignee>();
+
+    public NotificationPreference? NotificationPreference { get; set; }
 }

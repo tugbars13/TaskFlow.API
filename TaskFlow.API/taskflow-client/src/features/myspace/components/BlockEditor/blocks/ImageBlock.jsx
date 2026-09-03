@@ -1,98 +1,31 @@
-import React, { useState, useRef, useEffect } from "react";
-import api from "@/api/client/axios";
+import React, { useState } from "react";
+import useUpload from "../../../hooks/useUpload";
 import { ContentEditable } from "./ContentEditable";
 import BlockMenu from "./BlockMenu";
 
 export default function ImageBlock({ block, updateBlock, onKeyDown, removeBlock, duplicateBlock, isMenuVisible, setMenuOpen }) {
   const [activeTab, setActiveTab] = useState("upload"); // "upload" or "url"
-  const [urlInput, setUrlInput] = useState("");
-  const [urlError, setUrlError] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
 
-  const checkUrlValidity = (url) => {
-    if (!url) return false;
-    const trimmed = url.trim();
-    if (!trimmed) return false;
-    
-    let testUrl = trimmed;
-    if (!/^(https?):/i.test(trimmed)) {
-      testUrl = `https://${trimmed}`;
-    }
-    
-    try {
-      const parsed = new URL(testUrl);
-      return parsed.protocol === "http:" || parsed.protocol === "https:";
-    } catch {
-      return false;
-    }
+  const handleUploadSuccess = (data) => {
+    updateBlock(block.id, { url: data.url, source: data.source });
   };
 
-  const handleUrlSubmit = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (checkUrlValidity(urlInput)) {
-      setUrlError("");
-      let finalUrl = urlInput.trim();
-      if (!/^(https?):/i.test(finalUrl)) {
-        finalUrl = `https://${finalUrl}`;
-      }
-      updateBlock(block.id, { url: finalUrl, source: "url" });
-    } else {
-      setUrlError("Geçerli bir görsel URL'si girin.");
-    }
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setUrlError("Lütfen geçerli bir görsel seçin.");
-      return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-      setUrlError("Görsel 5MB'dan küçük olmalıdır.");
-      return;
-    }
-
-    setUrlError("");
-    setIsUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Using the new UploadController we created
-      const response = await api.post("upload/image", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      if (response.data && response.data.url) {
-        updateBlock(block.id, { url: response.data.url, source: "upload" });
-      } else {
-        setUrlError("Yükleme başarısız oldu.");
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      setUrlError("Görsel yüklenirken bir hata oluştu.");
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
+  const {
+    urlInput,
+    setUrlInput,
+    urlError,
+    setUrlError,
+    isUploading,
+    fileInputRef,
+    handleUrlSubmit,
+    handleFileUpload,
+    resetUploadState
+  } = useUpload({ type: 'image', onUploadSuccess: handleUploadSuccess });
 
   const removeImage = (e) => {
     e.stopPropagation();
     updateBlock(block.id, { url: "", source: "" });
-    setUrlInput("");
-    setUrlError("");
+    resetUploadState();
   };
 
   // BlockEditor's global event interception

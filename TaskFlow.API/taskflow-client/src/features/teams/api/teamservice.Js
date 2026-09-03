@@ -1,4 +1,4 @@
-﻿import api from "@/api/client/axios";
+import api from "@/api/client/axios";
 
 const unwrapResponse = (response, fallback = null) => {
   return response.data?.data ?? response.data ?? fallback;
@@ -27,18 +27,13 @@ export const deleteTeam = async (teamId) => {
 
 // Database Team Members API Calls
 export const getTeamMembers = async (teamId) => {
-  const url = teamId ? `/Team/team/${teamId}` : "/Team";
-  const response = await api.get(url);
+  if (!teamId) throw new Error("teamId is required to fetch members.");
+  const response = await api.get(`/teams/${teamId}/members`);
   return unwrapResponse(response, []);
 };
 
-export const getTeamMemberById = async (id) => {
-  const response = await api.get(`/Team/${id}`);
-  return unwrapResponse(response);
-};
-
-export const addTeamMember = async (memberData) => {
-  const response = await api.post("/Team", memberData);
+export const addTeamMember = async (teamId, memberData) => {
+  const response = await api.post(`/teams/${teamId}/members`, memberData);
   return unwrapResponse(response);
 };
 
@@ -47,13 +42,13 @@ export const inviteTeamMember = async (teamId, userId) => {
   return unwrapResponse(response);
 };
 
-export const updateTeamMember = async (id, updatedFields) => {
-  const response = await api.put(`/Team/${id}`, updatedFields);
+export const updateTeamMember = async (teamId, memberId, updatedFields) => {
+  const response = await api.put(`/teams/${teamId}/members/${memberId}`, updatedFields);
   return unwrapResponse(response);
 };
 
-export const deleteTeamMember = async (id) => {
-  await api.delete(`/Team/${id}`);
+export const deleteTeamMember = async (teamId, memberId) => {
+  await api.delete(`/teams/${teamId}/members/${memberId}`);
   return true;
 };
 
@@ -76,4 +71,3 @@ export const getTeamAnalytics = async (teamId, period = "weekly") => {
   const response = await api.get(`/teams/${teamId}/analytics`, { params: { period } });
   return unwrapResponse(response);
 };
-

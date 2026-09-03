@@ -104,6 +104,7 @@ namespace TaskFlow.API.Controllers
         }
 
         [HttpGet("{fileName}")]
+        [AllowAnonymous]
         public IActionResult GetFile(string fileName)
         {
             if (string.IsNullOrEmpty(fileName) || fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\"))

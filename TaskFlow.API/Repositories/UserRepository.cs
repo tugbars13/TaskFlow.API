@@ -60,4 +60,9 @@ public class UserRepository : IUserRepository
     {
         await _context.Users.Where(u => u.Id == userId).ExecuteDeleteAsync(cancellationToken);
     }
+
+    public async Task<User?> GetByResetPasswordTokenAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.ResetPasswordToken == tokenHash, cancellationToken);
+    }
 }

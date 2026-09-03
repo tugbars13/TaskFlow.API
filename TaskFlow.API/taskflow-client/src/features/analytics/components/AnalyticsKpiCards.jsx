@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import useAnalyticsTasks from "@/features/analytics/hooks/useAnalyticsTasks";
-import { calculateTaskStatus } from "@/features/analytics/utils/taskStatus.utils";
+import { calculateTaskStatus } from "@/features/analytics/utils/taskStatusUtils";
 import { TASK_STATUS_VALUE } from "@/constants/taskStatusConstants";
 import Card from "@/components/ui/Card";
 

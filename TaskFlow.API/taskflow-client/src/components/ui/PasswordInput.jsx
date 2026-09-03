@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ROUTES } from "@/constants/routesConstants";
 
 export default function PasswordInput({
   value,
@@ -21,12 +23,12 @@ export default function PasswordInput({
           {label}
         </label>
         {showForgotLink && (
-          <a
-            href="#"
+          <Link
+            to={ROUTES.FORGOT_PASSWORD}
             className="text-primary font-label-sm text-label-sm leading-[16px] tracking-[0.05em] font-medium hover:underline"
           >
             Forgot password?
-          </a>
+          </Link>
         )}
       </div>
       <div className="relative">

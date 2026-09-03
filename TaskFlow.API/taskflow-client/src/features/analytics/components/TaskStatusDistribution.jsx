@@ -3,7 +3,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { TASK_STATUS_CONFIG } from "@/constants/taskStatusConstants";
 import useAnalyticsTasks from "@/features/analytics/hooks/useAnalyticsTasks";
-import { calculateTaskStatus } from "@/features/analytics/utils/taskStatus.utils";
+import { calculateTaskStatus } from "@/features/analytics/utils/taskStatusUtils";
 import { DONUT_CHART } from "@/features/analytics/constants/chart.constants";
 
 export default function TaskStatusDistribution() {

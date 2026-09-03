@@ -17,6 +17,8 @@ public class TaskService : ITaskService
     private readonly ITeamAuthorizationService _teamAuth;
     private readonly IDescriptionSanitizerService _descriptionSanitizer;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
     public TaskService(
     ITaskRepository repository,
@@ -25,6 +27,8 @@ public class TaskService : ITaskService
     IDescriptionSanitizerService descriptionSanitizer,
     IUserBehaviorProfileService profileService,
     IAiService aiService,
+    IUserRepository userRepository,
+    INotificationService notificationService,
     IUnitOfWork unitOfWork)
     {
         _repository = repository;
@@ -33,6 +37,8 @@ public class TaskService : ITaskService
         _descriptionSanitizer = descriptionSanitizer;
         _profileService = profileService;
         _aiService = aiService;
+        _userRepository = userRepository;
+        _notificationService = notificationService;
         _unitOfWork = unitOfWork;
     }
 
@@ -145,7 +151,7 @@ public class TaskService : ITaskService
         if (dto.TeamId.HasValue)
         {
             var canCreate = await _teamAuth.CanCreateTaskForTeamAsync(dto.TeamId.Value, userId, cancellationToken);
-            if (!canCreate) throw new UnauthorizedAccessException("Bu takıma görev ekleme yetkiniz yok.");
+            if (!canCreate) throw new UnauthorizedAccessException("Bu takÄ±ma gÃ¶rev ekleme yetkiniz yok.");
         }
 
         var assignees = new List<TaskAssignee>();
@@ -158,12 +164,12 @@ public class TaskService : ITaskService
         }
         if (effectiveAssignees.Any())
         {
-            if (!dto.TeamId.HasValue) throw new ArgumentException("Kullanıcı atamak için takım belirtmelisiniz.");
+            if (!dto.TeamId.HasValue) throw new ArgumentException("KullanÄ±cÄ± atamak iÃ§in takÄ±m belirtmelisiniz.");
             var distinctIds = effectiveAssignees.Distinct();
             foreach (var assigneeId in distinctIds)
             {
                 var isMember = await _teamAuth.IsTeamMemberOrCreatorAsync(dto.TeamId.Value, assigneeId, cancellationToken);
-                if (!isMember) throw new ArgumentException($"Geçersiz kullanıcı ataması: {assigneeId}");
+                if (!isMember) throw new ArgumentException($"GeÃ§ersiz kullanÄ±cÄ± atamasÄ±: {assigneeId}");
                 assignees.Add(new TaskAssignee { UserId = assigneeId });
             }
         }
@@ -172,7 +178,7 @@ public class TaskService : ITaskService
         {
             var parentTask = await GetEntityByIdAsync(dto.ParentTaskId.Value, cancellationToken);
             if (parentTask == null || !await _teamAuth.CanManageTaskAsync(parentTask, userId, isAdmin, cancellationToken))
-                throw new ArgumentException("Geçersiz veya yetkisiz Parent Task.");
+                throw new ArgumentException("GeÃ§ersiz veya yetkisiz Parent Task.");
         }
 
         var task = new TaskItem
@@ -216,7 +222,7 @@ public class TaskService : ITaskService
                 foreach (var assigneeId in distinctIds)
                 {
                     var isMember = await _teamAuth.IsTeamMemberOrCreatorAsync(task.TeamId.Value, assigneeId, cancellationToken);
-                    if (!isMember) throw new ArgumentException($"Geçersiz kullanıcı ataması: {assigneeId}");
+                    if (!isMember) throw new ArgumentException($"GeÃ§ersiz kullanÄ±cÄ± atamasÄ±: {assigneeId}");
                     newAssignees.Add(new TaskAssignee { TaskId = id, UserId = assigneeId });
                 }
             }
@@ -225,6 +231,7 @@ public class TaskService : ITaskService
         task.Title = dto.Title;
         task.Description = _descriptionSanitizer.Sanitize(dto.Description);
 
+        bool wasCompleted = task.IsCompleted;
         bool isCompleted = dto.Status == TaskFlow.API.Models.TaskStatus.Completed || dto.IsCompleted;
         task.IsCompleted = isCompleted;
         task.Status = dto.Status != 0 ? dto.Status : (isCompleted ? TaskFlow.API.Models.TaskStatus.Completed : TaskFlow.API.Models.TaskStatus.Backlog);
@@ -236,8 +243,14 @@ public class TaskService : ITaskService
         task.DueDate = dto.DueDate;
         task.CategoryId = dto.CategoryId;
 
+        List<int> newAssignedUserIds = new List<int>();
+
         if (newAssignees != null)
         {
+            var oldAssigneeIds = task.Assignees.Where(a => a.UserId.HasValue).Select(a => a.UserId.Value).ToList();
+            var incomingAssigneeIds = newAssignees.Where(a => a.UserId.HasValue).Select(a => a.UserId.Value).ToList();
+            newAssignedUserIds = incomingAssigneeIds.Except(oldAssigneeIds).Where(id => id != userId).ToList();
+
             task.Assignees.Clear();
             foreach (var a in newAssignees) task.Assignees.Add(a);
         }
@@ -245,8 +258,52 @@ public class TaskService : ITaskService
         var result = await _repository.UpdateTaskAsync(task, cancellationToken);
         if (result)
         {
-            await _activityLogService.LogAsync(userId, "Update Task", $"'{task.Title}' isimli görev güncellendi.", cancellationToken);
+            await _activityLogService.LogAsync(userId, "Update Task", $"'{task.Title}' isimli gÃ¶rev gÃ¼ncellendi.", cancellationToken);
             await _profileService.InvalidateProfileAsync(userId, cancellationToken);
+
+            var sender = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (sender != null)
+            {
+                if (newAssignedUserIds.Any())
+                {
+                    foreach (var assigneeId in newAssignedUserIds)
+                    {
+                        await _notificationService.SendNotificationAsync(
+                            assigneeId,
+                            "Yeni GÃ¶rev AtandÄ±",
+                            $"{sender.FullName} sizi '{task.Title}' gÃ¶revine atadÄ±.",
+                            "TaskAssignment",
+                            task.Id,
+                            saveChanges: false,
+                            cancellationToken);
+                    }
+                }
+
+                if (wasCompleted != task.IsCompleted && task.Assignees.Count > 1)
+                {
+                    var type = task.IsCompleted ? "TaskCompleted" : "TaskReopened";
+                    var title = task.IsCompleted ? "Ortak GÃ¶rev TamamlandÄ±" : "Ortak GÃ¶rev Yeniden AÃ§Ä±ldÄ±";
+                    var message = task.IsCompleted
+                        ? $"{sender.FullName} ortak Ã§alÄ±ÅŸtÄ±ÄŸÄ±nÄ±z '{task.Title}' gÃ¶revini tamamladÄ±."
+                        : $"{sender.FullName} ortak Ã§alÄ±ÅŸtÄ±ÄŸÄ±nÄ±z '{task.Title}' gÃ¶revini yeniden aÃ§tÄ±.";
+
+                    foreach (var assignee in task.Assignees)
+                    {
+                        if (assignee.UserId.HasValue && assignee.UserId.Value != userId && !newAssignedUserIds.Contains(assignee.UserId.Value))
+                        {
+                            await _notificationService.SendNotificationAsync(
+                                assignee.UserId.Value,
+                                title,
+                                message,
+                                type,
+                                task.Id,
+                                saveChanges: false,
+                                cancellationToken);
+                        }
+                    }
+                }
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             var updated = await _repository.GetByIdAsync(id, cancellationToken);
             return updated == null ? null : MapToDto(updated);
@@ -259,6 +316,7 @@ public class TaskService : ITaskService
         var task = await _repository.GetByIdTrackingAsync(id, cancellationToken);
         if (task == null || !await _teamAuth.CanManageTaskAsync(task, userId, isAdmin, cancellationToken)) return null;
 
+        bool wasCompleted = task.IsCompleted;
         task.IsCompleted = !task.IsCompleted;
         if (task.IsCompleted && task.CompletedDate == null) task.CompletedDate = DateTime.UtcNow;
         else if (!task.IsCompleted) task.CompletedDate = null;
@@ -268,8 +326,37 @@ public class TaskService : ITaskService
         var result = await _repository.UpdateTaskAsync(task, cancellationToken);
         if (result)
         {
-            await _activityLogService.LogAsync(userId, "Toggle Task", $"'{task.Title}' isimli görev durumu değiştirildi.", cancellationToken);
+            await _activityLogService.LogAsync(userId, "Toggle Task", $"'{task.Title}' isimli gÃ¶rev durumu deÄŸiÅŸtirildi.", cancellationToken);
             await _profileService.InvalidateProfileAsync(userId, cancellationToken);
+
+            if (wasCompleted != task.IsCompleted && task.Assignees != null && task.Assignees.Count > 1)
+            {
+                var sender = await _userRepository.GetByIdAsync(userId, cancellationToken);
+                if (sender != null)
+                {
+                    var type = task.IsCompleted ? "TaskCompleted" : "TaskReopened";
+                    var title = task.IsCompleted ? "Ortak GÃ¶rev TamamlandÄ±" : "Ortak GÃ¶rev Yeniden AÃ§Ä±ldÄ±";
+                    var message = task.IsCompleted
+                        ? $"{sender.FullName} ortak Ã§alÄ±ÅŸtÄ±ÄŸÄ±nÄ±z '{task.Title}' gÃ¶revini tamamladÄ±."
+                        : $"{sender.FullName} ortak Ã§alÄ±ÅŸtÄ±ÄŸÄ±nÄ±z '{task.Title}' gÃ¶revini yeniden aÃ§tÄ±.";
+
+                    foreach (var assignee in task.Assignees)
+                    {
+                        if (assignee.UserId.HasValue && assignee.UserId.Value != userId)
+                        {
+                            await _notificationService.SendNotificationAsync(
+                                assignee.UserId.Value,
+                                title,
+                                message,
+                                type,
+                                task.Id,
+                                saveChanges: false,
+                                cancellationToken);
+                        }
+                    }
+                }
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return task.IsCompleted;
         }
@@ -284,7 +371,7 @@ public class TaskService : ITaskService
         var result = await _repository.DeleteTaskAsync(task, cancellationToken);
         if (result)
         {
-            await _activityLogService.LogAsync(userId, "Delete Task", $"'{task.Title}' isimli görev silindi.", cancellationToken);
+            await _activityLogService.LogAsync(userId, "Delete Task", $"'{task.Title}' isimli gÃ¶rev silindi.", cancellationToken);
             await _profileService.InvalidateProfileAsync(userId, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
@@ -300,12 +387,32 @@ public class TaskService : ITaskService
         }
 
         var createdTask = await _repository.CreateAsync(task, cancellationToken);
+
+        var sender = await _userRepository.GetByIdAsync(task.UserId, cancellationToken);
+        if (sender != null && task.Assignees != null)
+        {
+            foreach (var assignee in task.Assignees)
+            {
+                if (assignee.UserId.HasValue && assignee.UserId.Value != task.UserId)
+                {
+                    await _notificationService.SendNotificationAsync(
+                        assignee.UserId.Value,
+                        "Yeni GÃ¶rev AtandÄ±",
+                        $"{sender.FullName} sizi '{task.Title}' gÃ¶revine atadÄ±.",
+                        "TaskAssignment",
+                        createdTask.Id,
+                        saveChanges: false,
+                        cancellationToken);
+                }
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _activityLogService.LogAsync(
             createdTask.UserId,
             "Create Task",
-            $"'{createdTask.Title}' isimli görev oluşturuldu.", cancellationToken);
+            $"'{createdTask.Title}' isimli gÃ¶rev oluÅŸturuldu.", cancellationToken);
 
         await _profileService.InvalidateProfileAsync(createdTask.UserId, cancellationToken);
 
@@ -522,7 +629,7 @@ public class TaskService : ITaskService
                     Category = missingTask.Category != null ? missingTask.Category.Name : "",
                     Rank = nextRank++,
                     Score = currentScore,
-                    Reasoning = "AI değerlendirmesine girmediği için standart önceliğe göre sıralandı."
+                    Reasoning = "AI deÄŸerlendirmesine girmediÄŸi iÃ§in standart Ã¶nceliÄŸe gÃ¶re sÄ±ralandÄ±."
                 });
             }
         }

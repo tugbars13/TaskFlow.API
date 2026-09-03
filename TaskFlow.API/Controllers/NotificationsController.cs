@@ -59,10 +59,25 @@ namespace TaskFlow.API.Controllers
                 if (result.Message == "Forbidden")
                     return Forbid();
 
-                return BadRequest(new { message = result.Message });
             }
 
             return NoContent();
+        }
+
+        [HttpGet("preferences")]
+        public async Task<IActionResult> GetPreferences(CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            var preferences = await _notificationService.GetPreferencesAsync(userId, cancellationToken);
+            return Ok(preferences);
+        }
+
+        [HttpPut("preferences")]
+        public async Task<IActionResult> UpdatePreferences([FromBody] UpdateNotificationPreferencesDto dto, CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            var preferences = await _notificationService.UpdatePreferencesAsync(userId, dto, cancellationToken);
+            return Ok(preferences);
         }
     }
 }

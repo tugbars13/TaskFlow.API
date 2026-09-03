@@ -12,24 +12,50 @@ import TaskFilters from "@/features/tasks/components/TaskFilters";
 import useTaskBoard from "@/features/tasks/hooks/useTaskBoard";
 import useTaskBoardData from "@/features/tasks/hooks/useTaskBoardData";
 import useTasks from "@/features/tasks/hooks/useTasks";
+import useTaskLoader from "@/features/tasks/hooks/useTaskLoader";
+import useTaskActions from "@/features/tasks/hooks/useTaskActions";
 
 export default function TasksPage() {
-  const {
-    tasks,
-    loading: tasksLoading,
-    error: tasksError,
-    loadTasks,
-    addTask,
-    removeTask,
-    toggleTaskStatus,
-    moveTaskColumn,
-  } = useTasks();
-
+  const globalTasksContext = useTasks();
   const { teamId } = useParams();
+  const isTeamBoard = Boolean(teamId);
+
+  const [localTasks, setLocalTasks] = useState([]);
+  const [localLoading, setLocalLoading] = useState(true);
+  const [localError, setLocalError] = useState(null);
+
+  const { loadTasks: loadLocalTasks } = useTaskLoader({
+    setTasks: setLocalTasks,
+    setLoading: setLocalLoading,
+    setError: setLocalError,
+  });
+
+  const localActions = useTaskActions({
+    tasks: localTasks,
+    setTasks: setLocalTasks,
+    setError: setLocalError,
+    notifyChange: () => {},
+    loadTasks: loadLocalTasks,
+    currentTeamId: teamId,
+  });
+
+  const tasks = isTeamBoard ? localTasks : globalTasksContext.tasks;
+  const tasksLoading = isTeamBoard ? localLoading : globalTasksContext.loading;
+  const tasksError = isTeamBoard ? localError : globalTasksContext.error;
+
+  const loadTasks = isTeamBoard ? loadLocalTasks : globalTasksContext.loadTasks;
+  const addTask = isTeamBoard ? localActions.addTask : globalTasksContext.addTask;
+  const removeTask = isTeamBoard ? localActions.removeTask : globalTasksContext.removeTask;
+  const toggleTaskStatus = isTeamBoard ? localActions.toggleTaskStatus : globalTasksContext.toggleTaskStatus;
+  const moveTaskColumn = isTeamBoard ? localActions.moveTaskColumn : globalTasksContext.moveTaskColumn;
 
   useEffect(() => {
-    loadTasks(teamId || null);
-  }, [teamId, loadTasks]);
+    if (isTeamBoard) {
+      loadLocalTasks(teamId);
+    } else {
+      globalTasksContext.loadTasks(null);
+    }
+  }, [teamId, isTeamBoard, loadLocalTasks, globalTasksContext.loadTasks]);
 
   const [crudError, setCrudError] = useState(null);
 
@@ -72,7 +98,6 @@ export default function TasksPage() {
     setSearchParams(new URLSearchParams());
   };
 
-  const isTeamBoard = Boolean(teamId);
   const { currentTeam, columns, totalCount, completedCount } = useTaskBoardData(
     {
       tasks,
@@ -190,10 +215,10 @@ export default function TasksPage() {
         handleOpenNewTaskModal={handleOpenNewTaskModal}
       />
 
-      <TaskFilters 
-        filters={filters} 
-        onFilterChange={handleFilterChange} 
-        onClearFilters={handleClearFilters} 
+      <TaskFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
         assigneeOptions={assigneeOptions}
         isTeamBoard={isTeamBoard}
       />

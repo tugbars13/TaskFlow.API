@@ -1,10 +1,26 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMySpace } from "../context/MySpaceContext";
 import FolderSection from "../components/FolderSection";
 
 export default function FoldersView() {
   const navigate = useNavigate();
-  const { folders, isLoading } = useMySpace();
+  const location = useLocation();
+  const { folders, isLoading, addFolder } = useMySpace();
+  const hasTriggered = useRef(false);
+
+  useEffect(() => {
+    // When navigated here with createFolder:true state (from Sidebar "Yeni Klasör"),
+    // trigger folder creation via existing context/API logic.
+    if (location.state?.createFolder && !hasTriggered.current) {
+      hasTriggered.current = true;
+      // Clear the navigation state so a page refresh doesn't re-trigger
+      navigate(location.pathname, { replace: true, state: {} });
+      addFolder().then((f) => {
+        if (f?.id) navigate("/myspace/folder/" + f.id);
+      });
+    }
+  }, [location.state, navigate, addFolder]);
 
   if (isLoading) return <div className="p-10 text-gray-500">Yükleniyor...</div>;
 
@@ -19,13 +35,13 @@ export default function FoldersView() {
                 <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Tüm Klasörler</h1>
               </div>
               <p className="text-[14px] text-gray-500 mt-1 pl-10">
-                Workspace'inizdeki tüm klasörler.
+                Workspace&apos;inizdeki tüm klasörler.
               </p>
             </div>
           </div>
-          <FolderSection 
-            folders={folders} 
-            onFolderClick={(f) => navigate("/myspace/folder/" + f.id)} 
+          <FolderSection
+            folders={folders}
+            onFolderClick={(f) => navigate("/myspace/folder/" + f.id)}
           />
         </div>
       </div>

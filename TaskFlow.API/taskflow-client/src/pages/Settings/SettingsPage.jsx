@@ -16,6 +16,7 @@ export default function SettingsPage() {
     error,
     saveStatus,
     updateProfile,
+    updateNotifications,
     refetch,
   } = useSettings();
 
@@ -55,7 +56,7 @@ export default function SettingsPage() {
           onSaveProfile={updateProfile}
         />
 
-        <NotificationSettings onSave={() => {}} />
+        <NotificationSettings onSave={updateNotifications} />
 
         <DangerZone />
       </div>

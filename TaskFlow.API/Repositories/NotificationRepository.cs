@@ -64,4 +64,21 @@ public class NotificationRepository : INotificationRepository
             .Where(n => n.RelatedId == teamId && n.Type == "TeamInvitation")
             .ExecuteDeleteAsync(cancellationToken);
     }
+
+    public async Task<NotificationPreference?> GetPreferenceByUserIdAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.NotificationPreferences
+            .FirstOrDefaultAsync(np => np.UserId == userId, cancellationToken);
+    }
+
+    public async Task AddPreferenceAsync(NotificationPreference preference, CancellationToken cancellationToken = default)
+    {
+        await _context.NotificationPreferences.AddAsync(preference, cancellationToken);
+    }
+
+    public async Task UpdatePreferenceAsync(NotificationPreference preference, CancellationToken cancellationToken = default)
+    {
+        _context.NotificationPreferences.Update(preference);
+        await Task.CompletedTask;
+    }
 }

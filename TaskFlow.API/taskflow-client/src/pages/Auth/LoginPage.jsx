@@ -8,10 +8,8 @@ import { validateEmail } from "@/features/auth/utils/validators";
 
 import {
   AuthHeader,
-  AuthDivider,
   AuthFooter,
   LoginForm,
-  SocialLoginButtons,
   AuthMobileLogo,
 } from "@/features/auth/components";
 export default function LoginPage() {
@@ -37,11 +35,7 @@ export default function LoginPage() {
         subtitle="Enter your details to access your workspace."
       />
 
-      {/* Social Login Buttons */}
-      <SocialLoginButtons />
 
-      {/* Divider */}
-      <AuthDivider text="Or sign in with email" />
 
       <LoginForm
         email={email}

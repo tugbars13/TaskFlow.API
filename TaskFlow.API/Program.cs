@@ -114,12 +114,16 @@ builder.Services.AddScoped<IUserBehaviorProfileRepository, UserBehaviorProfileRe
 builder.Services.AddScoped<ITeamAnalyticsSnapshotRepository, TeamAnalyticsSnapshotRepository>();
 builder.Services.AddScoped<ITeamAuthorizationService, TeamAuthorizationService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 // Validators klasöründeki tüm validator'ları otomatik bulur.
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskDtoValidator>();
 // appsettings.json içindeki JwtSettings bölümünü JwtSettings sınıfına bağlar.
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
+
+builder.Services.Configure<SmtpSettings>(
+    builder.Configuration.GetSection("SmtpSettings"));
 
 // Token üretme servisini ekler.
 builder.Services.AddScoped<ITokenService, TokenService>();

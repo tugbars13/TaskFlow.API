@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { createTask, updateTask, deleteTask } from "../api/taskService";
+import { createTask, updateTask, deleteTask, toggleTask } from "../api/taskService";
 import normalizeTask from "../utils/normalizeTask";
 import normalizeStatus from "../utils/normalizeStatus";
 
@@ -41,6 +41,7 @@ export default function useTaskActions({
 
       const fullTaskData = {
         ...targetTask,
+        assigneeIds: targetTask.assigneeIds || targetTask.assignees?.map(a => a.id) || [],
         ...updatedFields,
       };
 
@@ -87,12 +88,21 @@ export default function useTaskActions({
       const nextCompleted = !targetTask.isCompleted;
       const nextStatus = nextCompleted ? "completed" : "backlog";
 
-      await editTask(id, {
-        isCompleted: nextCompleted,
-        status: nextStatus,
-      });
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, isCompleted: nextCompleted, status: nextStatus } : t)),
+      );
+      notifyChange();
+
+      try {
+        await toggleTask(id);
+      } catch (err) {
+        console.error("Failed to toggle task, rolling back:", err);
+        setError("Failed to toggle task.");
+        await loadTasks(currentTeamId);
+        notifyChange();
+      }
     },
-    [tasks, editTask],
+    [tasks, currentTeamId, loadTasks, notifyChange, setError, setTasks],
   );
 
   const moveTaskColumn = useCallback(

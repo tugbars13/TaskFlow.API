@@ -88,4 +88,72 @@ public class NotificationService : INotificationService
 
         return (true, "Success");
     }
+
+    public async Task<TaskFlow.API.DTOs.NotificationPreferencesDto> GetPreferencesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var preference = await _repository.GetPreferenceByUserIdAsync(userId, cancellationToken);
+
+        if (preference == null)
+        {
+            preference = new NotificationPreference
+            {
+                UserId = userId,
+                EmailEnabled = true,
+                PushEnabled = true,
+                TaskAssignments = "Email & Push",
+                DueDateReminders = "Email & Push",
+                SystemUpdates = "Email Only"
+            };
+            await _repository.AddPreferenceAsync(preference, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        return new TaskFlow.API.DTOs.NotificationPreferencesDto
+        {
+            EmailEnabled = preference.EmailEnabled,
+            PushEnabled = preference.PushEnabled,
+            TaskAssignments = preference.TaskAssignments,
+            DueDateReminders = preference.DueDateReminders,
+            SystemUpdates = preference.SystemUpdates
+        };
+    }
+
+    public async Task<TaskFlow.API.DTOs.NotificationPreferencesDto> UpdatePreferencesAsync(int userId, TaskFlow.API.DTOs.UpdateNotificationPreferencesDto dto, CancellationToken cancellationToken = default)
+    {
+        var preference = await _repository.GetPreferenceByUserIdAsync(userId, cancellationToken);
+
+        if (preference == null)
+        {
+            preference = new NotificationPreference
+            {
+                UserId = userId,
+                EmailEnabled = dto.EmailEnabled,
+                PushEnabled = dto.PushEnabled,
+                TaskAssignments = dto.TaskAssignments,
+                DueDateReminders = dto.DueDateReminders,
+                SystemUpdates = dto.SystemUpdates
+            };
+            await _repository.AddPreferenceAsync(preference, cancellationToken);
+        }
+        else
+        {
+            preference.EmailEnabled = dto.EmailEnabled;
+            preference.PushEnabled = dto.PushEnabled;
+            preference.TaskAssignments = dto.TaskAssignments;
+            preference.DueDateReminders = dto.DueDateReminders;
+            preference.SystemUpdates = dto.SystemUpdates;
+            await _repository.UpdatePreferenceAsync(preference, cancellationToken);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new TaskFlow.API.DTOs.NotificationPreferencesDto
+        {
+            EmailEnabled = preference.EmailEnabled,
+            PushEnabled = preference.PushEnabled,
+            TaskAssignments = preference.TaskAssignments,
+            DueDateReminders = preference.DueDateReminders,
+            SystemUpdates = preference.SystemUpdates
+        };
+    }
 }

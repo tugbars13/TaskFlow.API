@@ -3,7 +3,12 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 
-export default function ChangeRoleModal({ isOpen, onClose, member, onChangeRole }) {
+export default function ChangeRoleModal({
+  isOpen,
+  onClose,
+  member,
+  onChangeRole,
+}) {
   const [selectedRole, setSelectedRole] = useState("Member");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,7 +23,8 @@ export default function ChangeRoleModal({ isOpen, onClose, member, onChangeRole 
 
   if (!isOpen || !member) return null;
 
-  const currentRoleNormalized = member.role === "Owner" ? "Admin" : (member.role || "Member");
+  const currentRoleNormalized =
+    member.role === "Owner" ? "Admin" : member.role || "Member";
   const hasChanged = selectedRole !== currentRoleNormalized;
 
   const handleSubmit = async (e) => {
@@ -27,7 +33,8 @@ export default function ChangeRoleModal({ isOpen, onClose, member, onChangeRole 
 
     setIsSubmitting(true);
     try {
-      // member.id is the TeamMember row PK (integer) — used for PUT /api/Team/{id}
+      // member.id is the TeamMember row PK (integer).
+      // The teamId is required for the team-scoped member endpoint.
       await onChangeRole?.(member.id, selectedRole);
       onClose();
     } catch (error) {
@@ -38,12 +45,22 @@ export default function ChangeRoleModal({ isOpen, onClose, member, onChangeRole 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Change Role — ${member.name}`}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Change Role — ${member.name}`}
+    >
       <form onSubmit={handleSubmit} className="space-y-lg w-full">
         <div className="p-md rounded-2xl bg-surface-container-low border border-outline-variant/10">
-          <span className="text-xs text-on-surface-variant font-medium block">Current Member:</span>
-          <span className="text-body-md font-bold text-on-surface">{member.name}</span>
-          <span className="ml-sm text-xs text-on-surface-variant">({member.role})</span>
+          <span className="text-xs text-on-surface-variant font-medium block">
+            Current Member:
+          </span>
+          <span className="text-body-md font-bold text-on-surface">
+            {member.name}
+          </span>
+          <span className="ml-sm text-xs text-on-surface-variant">
+            ({member.role})
+          </span>
         </div>
 
         <div className="space-y-xs w-full">
@@ -62,7 +79,12 @@ export default function ChangeRoleModal({ isOpen, onClose, member, onChangeRole 
         </div>
 
         <div className="flex items-center justify-end gap-md pt-md border-t border-outline-variant/10 w-full">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button

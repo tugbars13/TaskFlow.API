@@ -13,3 +13,13 @@ export const markAsRead = async (id) => {
   const response = await api.patch(`/notifications/${id}/read`);
   return unwrapResponse(response);
 };
+
+export const getNotificationPreferences = async () => {
+  const response = await api.get("/notifications/preferences");
+  return unwrapResponse(response);
+};
+
+export const updateNotificationPreferences = async (preferences) => {
+  const response = await api.put("/notifications/preferences", preferences);
+  return unwrapResponse(response);
+};
