@@ -2,13 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMySpace } from "../context/MySpaceContext";
 import PagesSection from "../components/PagesSection";
+import FolderSection from "../components/FolderSection";
 import NewMenu from "../components/NewMenu";
 import { Button } from "@/components/ui";
 
 export default function FolderView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { folders, pages, addPage, updateFolder, isLoading } = useMySpace();
+  const { folders, pages, addPage, addFolder, updateFolder, isLoading } = useMySpace();
   const [isNewMenuOpen, setIsNewMenuOpen] = useState(false);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -25,16 +26,24 @@ export default function FolderView() {
   if (isLoading)
     return <div className="p-10 text-gray-500 text-sm">Yükleniyor...</div>;
 
-  const folder = folders.find((f) => f.id === parseInt(id));
+  const folderIdInt = parseInt(id);
+  const folder = folders.find((f) => f.id === folderIdInt);
   if (!folder)
     return <div className="p-10 text-gray-500 text-sm">Klasör bulunamadı.</div>;
 
-  const folderPages = pages.filter((p) => p.folderId === folder.id);
+  const subfolders = folders.filter((f) => f.parentFolderId === folderIdInt);
+  const folderPages = pages.filter((p) => p.folderId === folderIdInt);
 
   const handleNewPage = async () => {
     setIsNewMenuOpen(false);
     const p = await addPage(folder.id);
     navigate("/myspace/page/" + p.id);
+  };
+
+  const handleNewFolder = async () => {
+    setIsNewMenuOpen(false);
+    const f = await addFolder("Yeni Klasör", folder.id);
+    if (f?.id) navigate("/myspace/folder/" + f.id);
   };
 
   const handleDoubleClick = () => {
@@ -113,13 +122,21 @@ export default function FolderView() {
                 <NewMenu
                   onClose={() => setIsNewMenuOpen(false)}
                   onNewPage={handleNewPage}
-                  onNewFolder={() =>
-                    alert("Klasör içinde klasör şu an desteklenmiyor.")
-                  }
+                  onNewFolder={handleNewFolder}
                 />
               )}
             </div>
           </div>
+
+          {subfolders.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wider">Alt Klasörler</h2>
+              <FolderSection
+                folders={subfolders}
+                onFolderClick={(f) => navigate("/myspace/folder/" + f.id)}
+              />
+            </div>
+          )}
 
           <PagesSection
             pages={folderPages}

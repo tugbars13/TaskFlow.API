@@ -4,6 +4,8 @@ import SlashMenu from "./SlashMenu";
 import LinkPopover from "./LinkPopover";
 import FloatingToolbar from "./FloatingToolbar";
 import { sanitizeHtml, stripHtml } from "../../utils/sanitizeHtml";
+import ShareModal from "../ShareModal";
+import { EditorContext } from "./EditorContext";
 
 const RICH_TEXT_BLOCK_TYPES = [
   BLOCK_TYPES.TEXT,
@@ -52,16 +54,18 @@ import FallbackBlock from "./blocks/FallbackBlock";
 
 export default function BlockEditor({
   page,
-  onBack,
   onChange,
-  onDelete,
   onDuplicate,
+  onDelete,
+  onBack,
+  readOnly = false,
 }) {
+  const [blocks, setBlocks] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [blocks, setBlocks] = useState([]);
+  const [icon, setIcon] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   // Slash menu state
   const [slashMenu, setSlashMenu] = useState({
     show: false,
@@ -85,7 +89,12 @@ export default function BlockEditor({
   const [floatingToolbar, setFloatingToolbar] = useState({
     show: false,
     position: { x: 0, y: 0 },
-    activeFormats: { isBold: false, isItalic: false, isUnderline: false, isLink: false },
+    activeFormats: {
+      isBold: false,
+      isItalic: false,
+      isUnderline: false,
+      isLink: false,
+    },
     blockId: null,
     contentEditableEl: null,
   });
@@ -119,7 +128,8 @@ export default function BlockEditor({
   const [focusedBlockId, setFocusedBlockId] = useState(null);
   const [openDropdownBlockId, setOpenDropdownBlockId] = useState(null);
 
-  const activeMenuBlockId = openDropdownBlockId || hoveredBlockId || focusedBlockId;
+  const activeMenuBlockId =
+    openDropdownBlockId || hoveredBlockId || focusedBlockId;
 
   useEffect(() => {
     if (page) {
@@ -160,7 +170,10 @@ export default function BlockEditor({
           try {
             const parsed = new URL(testUrl);
             if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-              if (!parsed.hostname.includes(".") && parsed.hostname !== "localhost") {
+              if (
+                !parsed.hostname.includes(".") &&
+                parsed.hostname !== "localhost"
+              ) {
                 return false;
               }
             }
@@ -175,13 +188,18 @@ export default function BlockEditor({
             let newNode = { ...node };
             if (newNode.type === BLOCK_TYPES.LINK) {
               if (newNode.url && !checkUrlValidity(newNode.url)) {
-                if (!newNode.content || newNode.content.trim() === "" || newNode.content === "Bağlantı") {
+                if (
+                  !newNode.content ||
+                  newNode.content.trim() === "" ||
+                  newNode.content === "Bağlantı"
+                ) {
                   newNode.content = newNode.url;
                   newNode.url = "";
                 }
               }
             }
-            if (newNode.children) newNode.children = normalizeLegacyData(newNode.children);
+            if (newNode.children)
+              newNode.children = normalizeLegacyData(newNode.children);
             return newNode;
           });
         };
@@ -227,8 +245,9 @@ export default function BlockEditor({
       pendingFocusRef.current = null;
 
       const focusTarget = () => {
-        const el = document.querySelector(`[data-block-id="${targetId}"]`) ||
-                   document.querySelector(`[data-block-id="${targetId}-content"]`);
+        const el =
+          document.querySelector(`[data-block-id="${targetId}"]`) ||
+          document.querySelector(`[data-block-id="${targetId}-content"]`);
         if (el) {
           if (document.activeElement && document.activeElement !== el) {
             document.activeElement.blur?.();
@@ -276,30 +295,36 @@ export default function BlockEditor({
     });
   }, [saveToBackend]);
 
-  const createSnapshot = useCallback(() => ({
-    title: stateRef.current.title,
-    description: stateRef.current.description,
-    blocks: JSON.parse(JSON.stringify(stateRef.current.blocks)),
-  }), []);
+  const createSnapshot = useCallback(
+    () => ({
+      title: stateRef.current.title,
+      description: stateRef.current.description,
+      blocks: JSON.parse(JSON.stringify(stateRef.current.blocks)),
+    }),
+    [],
+  );
 
-  const pushHistory = useCallback((customSnapshot = null) => {
-    if (isUndoRedoActionRef.current) return;
+  const pushHistory = useCallback(
+    (customSnapshot = null) => {
+      if (isUndoRedoActionRef.current) return;
 
-    const snap = customSnapshot || createSnapshot();
+      const snap = customSnapshot || createSnapshot();
 
-    const last = undoStackRef.current[undoStackRef.current.length - 1];
-    if (last && JSON.stringify(last.blocks) === JSON.stringify(snap.blocks)) {
-      return;
-    }
+      const last = undoStackRef.current[undoStackRef.current.length - 1];
+      if (last && JSON.stringify(last.blocks) === JSON.stringify(snap.blocks)) {
+        return;
+      }
 
-    undoStackRef.current.push(snap);
-    if (undoStackRef.current.length > 50) {
-      undoStackRef.current.shift();
-    }
+      undoStackRef.current.push(snap);
+      if (undoStackRef.current.length > 50) {
+        undoStackRef.current.shift();
+      }
 
-    // New change clears the redo stack
-    redoStackRef.current = [];
-  }, [createSnapshot]);
+      // New change clears the redo stack
+      redoStackRef.current = [];
+    },
+    [createSnapshot],
+  );
 
   const undo = useCallback(() => {
     if (undoStackRef.current.length === 0) return;
@@ -357,9 +382,13 @@ export default function BlockEditor({
         typeof navigator !== "undefined" &&
         /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
       const isUndo =
-        (isMac ? e.metaKey : e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "z";
+        (isMac ? e.metaKey : e.ctrlKey) &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === "z";
       const isRedo =
-        ((isMac ? e.metaKey : e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
+        ((isMac ? e.metaKey : e.ctrlKey) &&
+          e.shiftKey &&
+          e.key.toLowerCase() === "z") ||
         (!isMac && e.ctrlKey && e.key.toLowerCase() === "y");
 
       if (!isUndo && !isRedo) return;
@@ -428,6 +457,7 @@ export default function BlockEditor({
   };
 
   const updateBlock = (id, updates) => {
+    if (readOnly) return;
     if (updates.type !== undefined) {
       pushHistory();
     } else if (
@@ -460,14 +490,15 @@ export default function BlockEditor({
     // Slash menu trigger check on input
     if (updates.content !== undefined) {
       const currentBlock = findBlockDeep(stateRef.current.blocks, id);
-      
+
       const activeEl = document.activeElement;
       const isAdvancedInput =
         activeEl &&
         (activeEl.getAttribute("data-advanced-input") === "true" ||
-         activeEl.closest?.('[data-advanced-input="true"]'));
+          activeEl.closest?.('[data-advanced-input="true"]'));
 
-      const isCodeBlock = currentBlock && currentBlock.type === BLOCK_TYPES.CODE;
+      const isCodeBlock =
+        currentBlock && currentBlock.type === BLOCK_TYPES.CODE;
 
       if (isAdvancedInput) {
         // Do not trigger slash menu for advanced block inputs
@@ -482,14 +513,26 @@ export default function BlockEditor({
           if (selection && selection.rangeCount > 0) {
             const rect = selection.getRangeAt(0).getBoundingClientRect();
             if (rect.width > 0 || rect.height > 0 || rect.top > 0) {
-              position = { x: rect.left, y: rect.bottom + 8, caretTop: rect.top };
+              position = {
+                x: rect.left,
+                y: rect.bottom + 8,
+                caretTop: rect.top,
+              };
             } else if (activeEl) {
               const elRect = activeEl.getBoundingClientRect();
-              position = { x: elRect.left, y: elRect.bottom + 8, caretTop: elRect.top };
+              position = {
+                x: elRect.left,
+                y: elRect.bottom + 8,
+                caretTop: elRect.top,
+              };
             }
           } else if (activeEl) {
             const elRect = activeEl.getBoundingClientRect();
-            position = { x: elRect.left, y: elRect.bottom + 8, caretTop: elRect.top };
+            position = {
+              x: elRect.left,
+              y: elRect.bottom + 8,
+              caretTop: elRect.top,
+            };
           }
           setSlashMenu({
             show: true,
@@ -511,14 +554,26 @@ export default function BlockEditor({
           if (selection && selection.rangeCount > 0) {
             const rect = selection.getRangeAt(0).getBoundingClientRect();
             if (rect.width > 0 || rect.height > 0 || rect.top > 0) {
-              position = { x: rect.left, y: rect.bottom + 8, caretTop: rect.top };
+              position = {
+                x: rect.left,
+                y: rect.bottom + 8,
+                caretTop: rect.top,
+              };
             } else if (activeEl) {
               const elRect = activeEl.getBoundingClientRect();
-              position = { x: elRect.left, y: elRect.bottom + 8, caretTop: elRect.top };
+              position = {
+                x: elRect.left,
+                y: elRect.bottom + 8,
+                caretTop: elRect.top,
+              };
             }
           } else if (activeEl) {
             const elRect = activeEl.getBoundingClientRect();
-            position = { x: elRect.left, y: elRect.bottom + 8, caretTop: elRect.top };
+            position = {
+              x: elRect.left,
+              y: elRect.bottom + 8,
+              caretTop: elRect.top,
+            };
           }
           setSlashMenu({
             show: true,
@@ -566,7 +621,10 @@ export default function BlockEditor({
     }
 
     let formattedUrl = trimmedUrl;
-    if (!/^https?:\/\//i.test(formattedUrl) && !/^mailto:/i.test(formattedUrl)) {
+    if (
+      !/^https?:\/\//i.test(formattedUrl) &&
+      !/^mailto:/i.test(formattedUrl)
+    ) {
       formattedUrl = "https://" + formattedUrl;
     }
 
@@ -631,19 +689,25 @@ export default function BlockEditor({
 
   const updateFloatingToolbar = useCallback(() => {
     if (slashMenu.show || linkPopover.show || openDropdownBlockId) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
     const selectedText = selection.toString();
     if (!selectedText || selectedText.trim().length === 0) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
@@ -655,7 +719,9 @@ export default function BlockEditor({
         : anchorNode?.parentElement;
     const contentEditableEl = el?.closest?.('[contenteditable="true"]');
     if (!contentEditableEl) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
@@ -666,27 +732,39 @@ export default function BlockEditor({
       document.activeElement?.tagName === "INPUT" ||
       document.activeElement?.tagName === "TEXTAREA"
     ) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
     const blockId =
-      contentEditableEl.getAttribute("data-block-id")?.replace("-content", "") ||
-      contentEditableEl.closest?.("[data-block-id]")?.getAttribute("data-block-id");
+      contentEditableEl
+        .getAttribute("data-block-id")
+        ?.replace("-content", "") ||
+      contentEditableEl
+        .closest?.("[data-block-id]")
+        ?.getAttribute("data-block-id");
     if (!blockId) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
     const block = findBlockDeep(stateRef.current.blocks, blockId);
     if (!block || !RICH_TEXT_BLOCK_TYPES.includes(block.type)) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
     const rect = range.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) {
-      setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+      setFloatingToolbar((prev) =>
+        prev.show ? { ...prev, show: false } : prev,
+      );
       return;
     }
 
@@ -694,10 +772,12 @@ export default function BlockEditor({
     let isItalic = false;
     let isUnderline = false;
     let isLink = false;
+    let isStrike = false;
     try {
       isBold = document.queryCommandState("bold");
       isItalic = document.queryCommandState("italic");
       isUnderline = document.queryCommandState("underline");
+      isStrike = document.queryCommandState("strikeThrough");
 
       let n = selection.anchorNode;
       while (n && n !== contentEditableEl) {
@@ -722,16 +802,18 @@ export default function BlockEditor({
     setFloatingToolbar({
       show: true,
       position: { x: Math.round(left), y: Math.round(top) },
-      activeFormats: { isBold, isItalic, isUnderline, isLink },
+      activeFormats: { isBold, isItalic, isUnderline, isLink, isStrike },
+      blockType: block.type,
       blockId,
       contentEditableEl,
     });
   }, [slashMenu.show, linkPopover.show, openDropdownBlockId]);
 
   const applyFormat = useCallback(
-    (formatType) => {
+    (formatType, value = null) => {
       const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
+        return;
 
       const contentEditableEl =
         floatingToolbar.contentEditableEl ||
@@ -744,7 +826,7 @@ export default function BlockEditor({
       contentChangeTimerRef.current = null;
       typingBlockIdRef.current = null;
 
-      document.execCommand(formatType, false, null);
+      document.execCommand(formatType, false, value);
 
       const sanitized = sanitizeHtml(contentEditableEl.innerHTML);
       updateBlock(blockId, { content: sanitized });
@@ -754,20 +836,29 @@ export default function BlockEditor({
         updateFloatingToolbar();
       }, 20);
     },
-    [floatingToolbar.contentEditableEl, floatingToolbar.blockId, pushHistory, debouncedSave, updateFloatingToolbar]
+    [
+      floatingToolbar.contentEditableEl,
+      floatingToolbar.blockId,
+      pushHistory,
+      debouncedSave,
+      updateFloatingToolbar,
+    ],
   );
 
   const handleToolbarFormat = useCallback(
-    (formatType) => {
+    (formatType, value = null) => {
       if (formatType === "link") {
         const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
+          return;
 
         const range = selection.getRangeAt(0);
         savedRangeRef.current = range.cloneRange();
         const contentEditableEl =
           floatingToolbar.contentEditableEl ||
-          selection.anchorNode?.parentElement?.closest?.('[contenteditable="true"]');
+          selection.anchorNode?.parentElement?.closest?.(
+            '[contenteditable="true"]',
+          );
         const blockId = floatingToolbar.blockId;
         if (!contentEditableEl || !blockId) return;
 
@@ -784,7 +875,9 @@ export default function BlockEditor({
           n = n.parentElement;
         }
 
-        const initialUrl = existingLink ? existingLink.getAttribute("href") || "" : "";
+        const initialUrl = existingLink
+          ? existingLink.getAttribute("href") || ""
+          : "";
         const rect = range.getBoundingClientRect();
         const position = {
           x: Math.max(10, Math.min(window.innerWidth - 330, rect.left)),
@@ -804,14 +897,31 @@ export default function BlockEditor({
         return;
       }
 
-      applyFormat(formatType);
+      applyFormat(formatType, value);
     },
-    [floatingToolbar.contentEditableEl, floatingToolbar.blockId, applyFormat]
+    [floatingToolbar.contentEditableEl, floatingToolbar.blockId, applyFormat],
+  );
+
+  const handleBlockTypeChange = useCallback(
+    (newType) => {
+      const blockId = floatingToolbar.blockId;
+      if (!blockId) return;
+
+      pushHistory();
+      updateBlock(blockId, { type: newType });
+      debouncedSave();
+
+      setTimeout(() => {
+        updateFloatingToolbar();
+      }, 20);
+    },
+    [floatingToolbar.blockId, pushHistory, debouncedSave, updateFloatingToolbar],
   );
 
   useEffect(() => {
     const handleSelectionChange = () => {
-      if (selectionTimerRef.current) cancelAnimationFrame(selectionTimerRef.current);
+      if (selectionTimerRef.current)
+        cancelAnimationFrame(selectionTimerRef.current);
       selectionTimerRef.current = requestAnimationFrame(updateFloatingToolbar);
     };
 
@@ -820,7 +930,8 @@ export default function BlockEditor({
     document.addEventListener("keyup", handleSelectionChange);
 
     return () => {
-      if (selectionTimerRef.current) cancelAnimationFrame(selectionTimerRef.current);
+      if (selectionTimerRef.current)
+        cancelAnimationFrame(selectionTimerRef.current);
       document.removeEventListener("selectionchange", handleSelectionChange);
       document.removeEventListener("mouseup", handleSelectionChange);
       document.removeEventListener("keyup", handleSelectionChange);
@@ -835,7 +946,9 @@ export default function BlockEditor({
       const modKey = isMac ? e.metaKey : e.ctrlKey;
 
       if (e.key === "Escape") {
-        setFloatingToolbar((prev) => (prev.show ? { ...prev, show: false } : prev));
+        setFloatingToolbar((prev) =>
+          prev.show ? { ...prev, show: false } : prev,
+        );
         return;
       }
 
@@ -876,8 +989,12 @@ export default function BlockEditor({
 
       // 5. Block type must be in RICH_TEXT_BLOCK_TYPES
       const blockId =
-        contentEditableEl.getAttribute("data-block-id")?.replace("-content", "") ||
-        contentEditableEl.closest?.("[data-block-id]")?.getAttribute("data-block-id");
+        contentEditableEl
+          .getAttribute("data-block-id")
+          ?.replace("-content", "") ||
+        contentEditableEl
+          .closest?.("[data-block-id]")
+          ?.getAttribute("data-block-id");
       if (!blockId) return;
 
       const block = findBlockDeep(stateRef.current.blocks, blockId);
@@ -903,7 +1020,9 @@ export default function BlockEditor({
           n = n.parentElement;
         }
 
-        const initialUrl = existingLink ? existingLink.getAttribute("href") || "" : "";
+        const initialUrl = existingLink
+          ? existingLink.getAttribute("href") || ""
+          : "";
         const rect = range.getBoundingClientRect();
         const position = {
           x: Math.max(10, Math.min(window.innerWidth - 330, rect.left)),
@@ -972,6 +1091,7 @@ export default function BlockEditor({
   };
 
   const addBlockAfter = (id, type = BLOCK_TYPES.TEXT, initialContent = "") => {
+    if (readOnly) return;
     pushHistory();
     clearTimeout(contentChangeTimerRef.current);
     contentChangeTimerRef.current = null;
@@ -991,7 +1111,10 @@ export default function BlockEditor({
     );
 
     if (found) {
-      if (document.activeElement && typeof document.activeElement.blur === "function") {
+      if (
+        document.activeElement &&
+        typeof document.activeElement.blur === "function"
+      ) {
         document.activeElement.blur();
       }
 
@@ -1003,8 +1126,9 @@ export default function BlockEditor({
       pendingFocusRef.current = newBlock.id;
 
       const focusTarget = () => {
-        const el = document.querySelector(`[data-block-id="${newBlock.id}"]`) ||
-                   document.querySelector(`[data-block-id="${newBlock.id}-content"]`);
+        const el =
+          document.querySelector(`[data-block-id="${newBlock.id}"]`) ||
+          document.querySelector(`[data-block-id="${newBlock.id}-content"]`);
         if (el) {
           if (document.activeElement && document.activeElement !== el) {
             document.activeElement.blur?.();
@@ -1030,7 +1154,7 @@ export default function BlockEditor({
 
       return newBlock.id;
     }
-    
+
     return null;
   };
 
@@ -1052,28 +1176,32 @@ export default function BlockEditor({
     };
 
     let found = false;
-    
+
     const recursiveInsert = (nodes) => {
       const res = [];
       for (const node of nodes) {
         if (node.id === id) {
-           if (node.type === BLOCK_TYPES.TEXT && textBeforeDivider.trim() === "") {
-               // Replace empty text block with Divider
-               res.push(dividerBlock);
-               res.push(newTextBlock);
-               found = true;
-           } else {
-               // Keep current block, append Divider, append Text
-               const updatedNode = { ...node, content: textBeforeDivider };
-               res.push(updatedNode);
-               res.push(dividerBlock);
-               res.push(newTextBlock);
-               found = true;
-           }
+          if (
+            node.type === BLOCK_TYPES.TEXT &&
+            textBeforeDivider.trim() === ""
+          ) {
+            // Replace empty text block with Divider
+            res.push(dividerBlock);
+            res.push(newTextBlock);
+            found = true;
+          } else {
+            // Keep current block, append Divider, append Text
+            const updatedNode = { ...node, content: textBeforeDivider };
+            res.push(updatedNode);
+            res.push(dividerBlock);
+            res.push(newTextBlock);
+            found = true;
+          }
         } else {
-           let newNode = { ...node };
-           if (newNode.children) newNode.children = recursiveInsert(newNode.children);
-           res.push(newNode);
+          let newNode = { ...node };
+          if (newNode.children)
+            newNode.children = recursiveInsert(newNode.children);
+          res.push(newNode);
         }
       }
       return res;
@@ -1087,7 +1215,9 @@ export default function BlockEditor({
       debouncedSave();
 
       setTimeout(() => {
-        const el = document.querySelector(`[data-block-id="${newTextBlock.id}"]`);
+        const el = document.querySelector(
+          `[data-block-id="${newTextBlock.id}"]`,
+        );
         if (el) {
           el.focus();
           try {
@@ -1100,12 +1230,11 @@ export default function BlockEditor({
           } catch (err) {}
         }
       }, 50);
-      
+
       return newTextBlock.id;
     }
     return null;
   };
-
 
   const deepRemove = (nodes, targetId) => {
     let found = false;
@@ -1140,6 +1269,7 @@ export default function BlockEditor({
   };
 
   const removeBlock = (id) => {
+    if (readOnly) return;
     pushHistory();
     clearTimeout(contentChangeTimerRef.current);
     contentChangeTimerRef.current = null;
@@ -1157,7 +1287,7 @@ export default function BlockEditor({
 
     const index = allIds.indexOf(id);
     let targetFocusId = null;
-    
+
     if (index !== -1) {
       if (index < allIds.length - 1) {
         targetFocusId = allIds[index + 1];
@@ -1170,7 +1300,11 @@ export default function BlockEditor({
 
     if (found) {
       if (newNodes.length === 0) {
-        const fallbackBlock = { id: Date.now().toString(), type: BLOCK_TYPES.TEXT, content: "" };
+        const fallbackBlock = {
+          id: Date.now().toString(),
+          type: BLOCK_TYPES.TEXT,
+          content: "",
+        };
         newNodes = [fallbackBlock];
         targetFocusId = fallbackBlock.id;
       }
@@ -1181,8 +1315,10 @@ export default function BlockEditor({
 
       setTimeout(() => {
         if (targetFocusId) {
-          let el = document.querySelector(`[data-block-id="${targetFocusId}-content"]`) || 
-                   document.querySelector(`[data-block-id="${targetFocusId}"]`);
+          let el =
+            document.querySelector(
+              `[data-block-id="${targetFocusId}-content"]`,
+            ) || document.querySelector(`[data-block-id="${targetFocusId}"]`);
           if (el) {
             el.focus();
             const sel = window.getSelection();
@@ -1197,6 +1333,7 @@ export default function BlockEditor({
   };
 
   const duplicateBlock = (id) => {
+    if (readOnly) return;
     const originalBlock = findBlockDeep(stateRef.current.blocks, id);
     if (!originalBlock) return;
 
@@ -1206,7 +1343,10 @@ export default function BlockEditor({
     typingBlockIdRef.current = null;
 
     const generateNewIds = (block) => {
-      const newBlock = { ...block, id: Date.now().toString() + Math.random().toString(36).substr(2, 9) };
+      const newBlock = {
+        ...block,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      };
       if (newBlock.children) {
         newBlock.children = newBlock.children.map(generateNewIds);
       }
@@ -1217,16 +1357,23 @@ export default function BlockEditor({
     const clonedData = JSON.parse(JSON.stringify(originalBlock));
     const duplicatedBlock = generateNewIds(clonedData);
 
-    const { newNodes, found } = deepInsert(stateRef.current.blocks, id, duplicatedBlock);
-    
+    const { newNodes, found } = deepInsert(
+      stateRef.current.blocks,
+      id,
+      duplicatedBlock,
+    );
+
     if (found) {
       stateRef.current.blocks = newNodes;
       setBlocks(newNodes);
       debouncedSave();
 
       setTimeout(() => {
-        let el = document.querySelector(`[data-block-id="${duplicatedBlock.id}-content"]`) || 
-                 document.querySelector(`[data-block-id="${duplicatedBlock.id}"]`);
+        let el =
+          document.querySelector(
+            `[data-block-id="${duplicatedBlock.id}-content"]`,
+          ) ||
+          document.querySelector(`[data-block-id="${duplicatedBlock.id}"]`);
         if (el) {
           el.focus();
           const sel = window.getSelection();
@@ -1313,7 +1460,10 @@ export default function BlockEditor({
     const sampleY = isBottomLine
       ? Math.max(targetRect.top + 2, targetRect.bottom - 6)
       : Math.min(targetRect.bottom - 2, targetRect.top + 6);
-    const sampleX = Math.max(targetRect.left + 2, Math.min(targetRect.right - 2, x));
+    const sampleX = Math.max(
+      targetRect.left + 2,
+      Math.min(targetRect.right - 2, x),
+    );
 
     let placed = false;
     if (document.caretRangeFromPoint) {
@@ -1387,7 +1537,10 @@ export default function BlockEditor({
 
     if (targetNode) {
       const range = document.createRange();
-      range.setStart(targetNode, Math.min(nodeOffset, targetNode.textContent.length));
+      range.setStart(
+        targetNode,
+        Math.min(nodeOffset, targetNode.textContent.length),
+      );
       range.collapse(true);
       sel.removeAllRanges();
       sel.addRange(range);
@@ -1419,14 +1572,21 @@ export default function BlockEditor({
       el.tagName === "TEXTAREA";
 
     // 1. ArrowUp Navigation between blocks
-    if (e.key === "ArrowUp" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+    if (
+      e.key === "ArrowUp" &&
+      !e.shiftKey &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey
+    ) {
       if (!isSpecialInput && isCaretOnFirstLine(el)) {
         const ctx = findSiblingContext(stateRef.current.blocks, id);
         if (ctx && ctx.prev) {
           const prevBlock = ctx.prev;
           const prevEl =
-            document.querySelector(`[data-block-id="${prevBlock.id}-content"]`) ||
-            document.querySelector(`[data-block-id="${prevBlock.id}"]`);
+            document.querySelector(
+              `[data-block-id="${prevBlock.id}-content"]`,
+            ) || document.querySelector(`[data-block-id="${prevBlock.id}"]`);
 
           if (prevEl && prevEl.isContentEditable) {
             e.preventDefault();
@@ -1443,14 +1603,21 @@ export default function BlockEditor({
     }
 
     // 2. ArrowDown Navigation between blocks
-    if (e.key === "ArrowDown" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+    if (
+      e.key === "ArrowDown" &&
+      !e.shiftKey &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey
+    ) {
       if (!isSpecialInput && isCaretOnLastLine(el)) {
         const ctx = findSiblingContext(stateRef.current.blocks, id);
         if (ctx && ctx.next) {
           const nextBlock = ctx.next;
           const nextEl =
-            document.querySelector(`[data-block-id="${nextBlock.id}-content"]`) ||
-            document.querySelector(`[data-block-id="${nextBlock.id}"]`);
+            document.querySelector(
+              `[data-block-id="${nextBlock.id}-content"]`,
+            ) || document.querySelector(`[data-block-id="${nextBlock.id}"]`);
 
           if (nextEl && nextEl.isContentEditable) {
             e.preventDefault();
@@ -1534,7 +1701,10 @@ export default function BlockEditor({
         }
       }
 
-      if (document.activeElement && typeof document.activeElement.blur === "function") {
+      if (
+        document.activeElement &&
+        typeof document.activeElement.blur === "function"
+      ) {
         document.activeElement.blur();
       }
 
@@ -1563,8 +1733,9 @@ export default function BlockEditor({
 
         setTimeout(() => {
           const newEl =
-            document.querySelector(`[data-block-id="${newBlock.id}-content"]`) ||
-            document.querySelector(`[data-block-id="${newBlock.id}"]`);
+            document.querySelector(
+              `[data-block-id="${newBlock.id}-content"]`,
+            ) || document.querySelector(`[data-block-id="${newBlock.id}"]`);
           if (newEl) {
             newEl.focus();
             try {
@@ -1587,7 +1758,11 @@ export default function BlockEditor({
     // 4. Backspace / Delete
     if (e.key === "Backspace" || e.key === "Delete") {
       // If the target is the block wrapper itself (user selected the block externally, NOT typing inside ContentEditable)
-      if (!el.isContentEditable && (el.getAttribute("data-block-id") === id || el.getAttribute("data-block-wrapper-id") === id)) {
+      if (
+        !el.isContentEditable &&
+        (el.getAttribute("data-block-id") === id ||
+          el.getAttribute("data-block-wrapper-id") === id)
+      ) {
         e.preventDefault();
         removeBlock(id);
         return;
@@ -1598,7 +1773,13 @@ export default function BlockEditor({
         return;
       }
 
-      if (e.key === "Backspace" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      if (
+        e.key === "Backspace" &&
+        !e.shiftKey &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
         const block = findBlockDeep(stateRef.current.blocks, id);
         if (!block) return;
 
@@ -1659,7 +1840,9 @@ export default function BlockEditor({
             const preRange = range.cloneRange();
             preRange.selectNodeContents(el);
             preRange.setEnd(range.startContainer, range.startOffset);
-            const textBeforeCaret = preRange.toString().replace(/[\n\r\u200B\uFEFF]/g, "");
+            const textBeforeCaret = preRange
+              .toString()
+              .replace(/[\n\r\u200B\uFEFF]/g, "");
             const isAtStart = textBeforeCaret.length === 0;
 
             if (isAtStart) {
@@ -1687,7 +1870,7 @@ export default function BlockEditor({
               const currContent =
                 el.innerHTML !== undefined && el.innerHTML !== ""
                   ? el.innerHTML
-                  : (block.content || "");
+                  : block.content || "";
 
               const prevPlainText = stripHtml(prevContent);
               const currPlainText = stripHtml(currContent);
@@ -1700,7 +1883,7 @@ export default function BlockEditor({
                 !/^\s/.test(currPlainText);
 
               const mergedHtml = sanitizeHtml(
-                prevContent + (needsSpace ? " " : "") + currContent
+                prevContent + (needsSpace ? " " : "") + currContent,
               );
               const splitOffset = prevPlainText.length + (needsSpace ? 1 : 0);
 
@@ -1708,7 +1891,7 @@ export default function BlockEditor({
               const updatedNodes = updateBlockTree(
                 stateRef.current.blocks,
                 prevBlock.id,
-                { content: mergedHtml }
+                { content: mergedHtml },
               );
               const { newNodes } = deepRemove(updatedNodes, id);
 
@@ -1718,7 +1901,9 @@ export default function BlockEditor({
 
               setTimeout(() => {
                 const prevEl =
-                  document.querySelector(`[data-block-id="${prevBlock.id}-content"]`) ||
+                  document.querySelector(
+                    `[data-block-id="${prevBlock.id}-content"]`,
+                  ) ||
                   document.querySelector(`[data-block-id="${prevBlock.id}"]`);
                 if (prevEl) {
                   setCaretAtTextOffset(prevEl, splitOffset);
@@ -1740,8 +1925,12 @@ export default function BlockEditor({
 
     setActiveBlockType(BLOCK_TYPES.TEXT);
     if (slashMenu.blockId) {
-      const currentBlock = findBlockDeep(stateRef.current.blocks, slashMenu.blockId);
-      const isCodeBlock = currentBlock && currentBlock.type === BLOCK_TYPES.CODE;
+      const currentBlock = findBlockDeep(
+        stateRef.current.blocks,
+        slashMenu.blockId,
+      );
+      const isCodeBlock =
+        currentBlock && currentBlock.type === BLOCK_TYPES.CODE;
 
       if (isCodeBlock) {
         // Remove the "/query" part from the code block's content
@@ -1751,9 +1940,12 @@ export default function BlockEditor({
         let newCodeContent = currentBlock.content;
         if (match) {
           // slice off the matched part
-          newCodeContent = currentBlock.content.substring(0, currentBlock.content.length - match[0].length);
+          newCodeContent = currentBlock.content.substring(
+            0,
+            currentBlock.content.length - match[0].length,
+          );
         }
-        
+
         if (type === BLOCK_TYPES.DIVIDER) {
           insertDividerSequence(slashMenu.blockId, newCodeContent);
           setActiveBlockType(BLOCK_TYPES.TEXT);
@@ -1770,8 +1962,10 @@ export default function BlockEditor({
         let textBeforeDivider = currentBlock.content;
         if (match) {
           textBeforeDivider = currentBlock.content.replace(
-            new RegExp(`(?:^|\\s)\\/[a-zA-Z0-9\\u0131\\u011F\\u00FC\\u015F\\u00F6\\u00E7\\u0130\\u011E\\u00DC\\u015E\\u00D6\\u00C7]*$`),
-            ""
+            new RegExp(
+              `(?:^|\\s)\\/[a-zA-Z0-9\\u0131\\u011F\\u00FC\\u015F\\u00F6\\u00E7\\u0130\\u011E\\u00DC\\u015E\\u00D6\\u00C7]*$`,
+            ),
+            "",
           );
         }
 
@@ -1785,17 +1979,22 @@ export default function BlockEditor({
             children: currentBlock?.children || [],
             isOpen: true,
           });
-          
-          const oldEl = document.querySelector(`[data-block-id="${slashMenu.blockId}"]`);
-          if (oldEl && oldEl.getAttribute('contenteditable') === 'true') {
-             oldEl.innerHTML = textBeforeDivider;
+
+          const oldEl = document.querySelector(
+            `[data-block-id="${slashMenu.blockId}"]`,
+          );
+          if (oldEl && oldEl.getAttribute("contenteditable") === "true") {
+            oldEl.innerHTML = textBeforeDivider;
           }
-          
+
           setTimeout(() => {
-            const newEl = document.querySelector(`[data-block-id="${slashMenu.blockId}-content"]`) 
-                       || document.querySelector(`[data-block-id="${slashMenu.blockId}"]`);
-            if (newEl && typeof newEl.focus === 'function') {
-               newEl.focus();
+            const newEl =
+              document.querySelector(
+                `[data-block-id="${slashMenu.blockId}-content"]`,
+              ) ||
+              document.querySelector(`[data-block-id="${slashMenu.blockId}"]`);
+            if (newEl && typeof newEl.focus === "function") {
+              newEl.focus();
             }
           }, 50);
         } else if (type === BLOCK_TYPES.CANVAS) {
@@ -1806,24 +2005,32 @@ export default function BlockEditor({
           });
           setActiveBlockType(BLOCK_TYPES.TEXT);
           setTimeout(() => {
-            const ctx = findSiblingContext(stateRef.current.blocks, slashMenu.blockId);
+            const ctx = findSiblingContext(
+              stateRef.current.blocks,
+              slashMenu.blockId,
+            );
             if (!ctx || !ctx.next) {
               addBlockAfter(slashMenu.blockId, BLOCK_TYPES.TEXT, "");
             }
           }, 60);
         } else {
           updateBlock(slashMenu.blockId, { type, content: textBeforeDivider });
-          
-          const oldEl = document.querySelector(`[data-block-id="${slashMenu.blockId}"]`);
-          if (oldEl && oldEl.getAttribute('contenteditable') === 'true') {
-             oldEl.innerHTML = textBeforeDivider;
+
+          const oldEl = document.querySelector(
+            `[data-block-id="${slashMenu.blockId}"]`,
+          );
+          if (oldEl && oldEl.getAttribute("contenteditable") === "true") {
+            oldEl.innerHTML = textBeforeDivider;
           }
-          
+
           setTimeout(() => {
-            const newEl = document.querySelector(`[data-block-id="${slashMenu.blockId}-content"]`) 
-                       || document.querySelector(`[data-block-id="${slashMenu.blockId}"]`);
-            if (newEl && typeof newEl.focus === 'function') {
-               newEl.focus();
+            const newEl =
+              document.querySelector(
+                `[data-block-id="${slashMenu.blockId}-content"]`,
+              ) ||
+              document.querySelector(`[data-block-id="${slashMenu.blockId}"]`);
+            if (newEl && typeof newEl.focus === "function") {
+              newEl.focus();
             }
           }, 50);
           setActiveBlockType(BLOCK_TYPES.TEXT);
@@ -1864,7 +2071,12 @@ export default function BlockEditor({
     return nodes.map((node) => {
       let newNode = { ...node };
       if (newNode.children) {
-        newNode.children = reorderInTree(newNode.children, fromId, toId, position);
+        newNode.children = reorderInTree(
+          newNode.children,
+          fromId,
+          toId,
+          position,
+        );
       }
       return newNode;
     });
@@ -1889,6 +2101,7 @@ export default function BlockEditor({
   };
 
   const handleDragStart = (e, item, parentScope) => {
+    if (readOnly) return;
     window.getSelection()?.removeAllRanges();
 
     dragInfoRef.current = {
@@ -2019,26 +2232,30 @@ export default function BlockEditor({
         )}
 
         {/* Drag Handle - Notion style on the left */}
-        <div
-          className={`absolute -left-7 top-1.5 flex items-center transition-opacity duration-150 select-none z-20 ${
-            isHandleVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
-          contentEditable={false}
-        >
+        {!readOnly && (
           <div
-            role="button"
-            tabIndex={-1}
-            draggable={true}
-            onDragStart={(e) => handleDragStart(e, item, parentScope)}
-            onDragEnd={handleDragEnd}
-            className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing transition-colors flex items-center justify-center"
-            title="Taşımak için sürükleyin"
+            className={`absolute -left-7 top-1.5 flex items-center transition-opacity duration-150 select-none z-20 ${
+              isHandleVisible
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+            }`}
+            contentEditable={false}
           >
-            <span className="material-symbols-outlined text-[16px] leading-none select-none">
-              drag_indicator
-            </span>
+            <div
+              role="button"
+              tabIndex={-1}
+              draggable={!readOnly}
+              onDragStart={(e) => handleDragStart(e, item, parentScope)}
+              onDragEnd={handleDragEnd}
+              className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing transition-colors flex items-center justify-center"
+              title="Taşımak için sürükleyin"
+            >
+              <span className="material-symbols-outlined text-[16px] leading-none select-none">
+                drag_indicator
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Block Content */}
         {renderBlock(item, blocksArray)}
@@ -2178,11 +2395,11 @@ export default function BlockEditor({
 
   const renderBlock = (block, blocksArray) => {
     const isMenuVisible = activeMenuBlockId === block.id;
-    const props = { 
-      block, 
-      updateBlock, 
-      onKeyDown, 
-      removeBlock, 
+    const props = {
+      block,
+      updateBlock,
+      onKeyDown,
+      removeBlock,
       duplicateBlock,
       isMenuVisible,
       setMenuOpen: (isOpen) => setOpenDropdownBlockId(isOpen ? block.id : null),
@@ -2197,7 +2414,7 @@ export default function BlockEditor({
     props.renderBlocks = (childArray, scopeId = null) => (
       <div className="flex flex-col w-full">
         {childArray.map((cb) =>
-          renderBlockItem(cb, childArray, scopeId || `nested-${block.id}`)
+          renderBlockItem(cb, childArray, scopeId || `nested-${block.id}`),
         )}
       </div>
     );
@@ -2258,168 +2475,177 @@ export default function BlockEditor({
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setToast("Bağlantı kopyalandı");
+    setIsShareModalOpen(true);
     setShowMenu(false);
-    setTimeout(() => setToast(""), 3000);
   };
 
   if (!page) return null;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white relative">
-      {toast && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[13px] px-4 py-2 rounded-md shadow-lg z-50">
-          {toast}
-        </div>
-      )}
-      {slashMenu.show && (
-        <SlashMenu
-          query={slashMenu.query}
-          position={slashMenu.position}
-          onSelect={handleSlashSelect}
-          onClose={() => setSlashMenu((s) => ({ ...s, show: false }))}
-        />
-      )}
-      {linkPopover.show && (
-        <LinkPopover
-          initialUrl={linkPopover.initialUrl}
-          hasExistingLink={linkPopover.hasExistingLink}
-          position={linkPopover.position}
-          onApply={handleApplyLink}
-          onUnlink={handleUnlink}
-          onClose={() => setLinkPopover((prev) => ({ ...prev, show: false }))}
-        />
-      )}
-      {floatingToolbar.show && (
-        <FloatingToolbar
-          show={floatingToolbar.show}
-          position={floatingToolbar.position}
-          activeFormats={floatingToolbar.activeFormats}
-          onFormat={handleToolbarFormat}
-        />
-      )}
+    <EditorContext.Provider value={{ readOnly }}>
+      <div className="w-full h-full flex flex-col bg-white relative">
+        {toast && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[13px] px-4 py-2 rounded-md shadow-lg z-50">
+            {toast}
+          </div>
+        )}
+        {!readOnly && slashMenu.show && (
+          <SlashMenu
+            query={slashMenu.query}
+            position={slashMenu.position}
+            onSelect={handleSlashSelect}
+            onClose={() => setSlashMenu((s) => ({ ...s, show: false }))}
+          />
+        )}
+        {!readOnly && linkPopover.show && (
+          <LinkPopover
+            initialUrl={linkPopover.initialUrl}
+            hasExistingLink={linkPopover.hasExistingLink}
+            position={linkPopover.position}
+            onApply={handleApplyLink}
+            onUnlink={handleUnlink}
+            onClose={() => setLinkPopover((prev) => ({ ...prev, show: false }))}
+          />
+        )}
+        {!readOnly && floatingToolbar.show && (
+          <FloatingToolbar
+            show={floatingToolbar.show}
+            position={floatingToolbar.position}
+            activeFormats={floatingToolbar.activeFormats}
+            blockType={floatingToolbar.blockType}
+            onFormat={handleToolbarFormat}
+            onBlockTypeChange={handleBlockTypeChange}
+          />
+        )}
 
-      <div className="h-12 border-b border-gray-100 flex items-center justify-between px-6 shrink-0 sticky top-0 bg-white/80 backdrop-blur-sm z-10">
-        <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-          <button
-            onClick={onBack}
-            className="hover:bg-gray-100 p-1.5 rounded-md transition-colors text-gray-500 hover:text-gray-900 flex items-center justify-center"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              arrow_back
-            </span>
-          </button>
-          {isSaving && (
-            <span className="ml-2 text-[11px] text-indigo-400 font-medium flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] animate-spin">
-                sync
-              </span>{" "}
-              Kaydediliyor...
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 relative">
-          <button
-            onClick={handleShare}
-            className="text-[11px] font-medium text-gray-500 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
-          >
-            Paylaş
-          </button>
-          <div ref={menuRef} className="relative">
+        <div className="h-12 border-b border-gray-100 flex items-center justify-between px-6 shrink-0 sticky top-0 bg-white/80 backdrop-blur-sm z-10">
+          <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
             <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center justify-center"
+              onClick={onBack}
+              className="hover:bg-gray-100 p-1.5 rounded-md transition-colors text-gray-500 hover:text-gray-900 flex items-center justify-center"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                more_horiz
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
               </span>
             </button>
-            {showMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 py-1 z-50">
-                <button
-                  onClick={handleShare}
-                  className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Paylaş
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    if (onDuplicate) onDuplicate();
-                  }}
-                  className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Sayfayı çoğalt
-                </button>
-                <div className="h-px bg-gray-100 my-1 w-full"></div>
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    if (onDelete) onDelete();
-                  }}
-                  className="w-full text-left px-4 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  Sayfayı sil
-                </button>
-              </div>
+            {isSaving && (
+              <span className="ml-2 text-[11px] text-indigo-400 font-medium flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px] animate-spin">
+                  sync
+                </span>{" "}
+                Kaydediliyor...
+              </span>
             )}
           </div>
-        </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="w-full max-w-[900px] mx-auto pt-10 pb-32 px-8">
-          <div className="text-[40px] mb-4 text-gray-300">
-            <span
-              className="material-symbols-outlined text-[48px]"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              description
-            </span>
+          <div className="flex items-center gap-2 relative">
+            <div ref={menuRef} className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  more_horiz
+                </span>
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 py-1 z-50">
+                  <button
+                    onClick={handleShare}
+                    className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Paylaş
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      if (onDuplicate) onDuplicate();
+                    }}
+                    className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Sayfayı çoğalt
+                  </button>
+                  <div className="h-px bg-gray-100 my-1 w-full"></div>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      if (onDelete) onDelete();
+                    }}
+                    className="w-full text-left px-4 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Sayfayı sil
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
 
-          <div className="mb-6">
-            <input
-              type="text"
-              value={title}
-              onChange={handleTitleChange}
-              onBlur={handleTitleBlur}
-              placeholder="İsimsiz Sayfa"
-              className="w-full text-[32px] font-bold text-gray-900 border-none outline-none bg-transparent placeholder-gray-300 mb-2"
-            />
-            <input
-              type="text"
-              value={description}
-              onChange={handleDescChange}
-              onBlur={handleDescBlur}
-              placeholder="Açıklama ekle..."
-              className="w-full text-[14px] text-gray-400 border-none outline-none bg-transparent placeholder-gray-300"
+        <div className="flex-1 overflow-y-auto">
+          <div className="w-full max-w-[900px] mx-auto pt-10 pb-32 px-8">
+            <div className="text-[40px] mb-4 text-gray-300">
+              <span
+                className="material-symbols-outlined text-[48px]"
+                style={{ fontVariationSettings: "'FILL' 0" }}
+              >
+                description
+              </span>
+            </div>
+
+            <div className="mb-6">
+              <input
+                type="text"
+                value={title}
+                onChange={handleTitleChange}
+                onBlur={handleTitleBlur}
+                placeholder="İsimsiz Sayfa"
+                className="w-full text-[32px] font-bold text-gray-900 border-none outline-none bg-transparent placeholder-gray-300 mb-2"
+                readOnly={readOnly}
+              />
+              <input
+                type="text"
+                value={description}
+                onChange={handleDescChange}
+                onBlur={handleDescBlur}
+                placeholder="İsteğe bağlı bir açıklama ekleyin..."
+                className="w-full text-[14px] text-gray-500 border-none outline-none bg-transparent placeholder-gray-300"
+                readOnly={readOnly}
+              />
+            </div>
+
+            <div className="space-y-1 mt-8">{renderBlocksGrouped(blocks)}</div>
+            <div
+              className={`min-h-[140px] ${!readOnly ? "cursor-text" : ""}`}
+              onClick={() => {
+                if (readOnly) return;
+                const lastBlock = blocks[blocks.length - 1];
+                if (
+                  lastBlock &&
+                  lastBlock.type === BLOCK_TYPES.TEXT &&
+                  (!lastBlock.content || lastBlock.content.trim() === "")
+                ) {
+                  const el =
+                    document.querySelector(
+                      `[data-block-id="${lastBlock.id}"]`,
+                    ) ||
+                    document.querySelector(
+                      `[data-block-id="${lastBlock.id}-content"]`,
+                    );
+                  el?.focus();
+                } else if (lastBlock) {
+                  addBlockAfter(lastBlock.id, BLOCK_TYPES.TEXT, "");
+                }
+              }}
             />
           </div>
-
-          <div className="space-y-1 mt-8">{renderBlocksGrouped(blocks)}</div>
-          <div
-            className="min-h-[140px] cursor-text"
-            onClick={() => {
-              const lastBlock = blocks[blocks.length - 1];
-              if (
-                lastBlock &&
-                lastBlock.type === BLOCK_TYPES.TEXT &&
-                (!lastBlock.content || lastBlock.content.trim() === "")
-              ) {
-                const el =
-                  document.querySelector(`[data-block-id="${lastBlock.id}"]`) ||
-                  document.querySelector(`[data-block-id="${lastBlock.id}-content"]`);
-                el?.focus();
-              } else if (lastBlock) {
-                addBlockAfter(lastBlock.id, BLOCK_TYPES.TEXT, "");
-              }
-            }}
-          />
         </div>
+
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          pageId={page?.id}
+        />
       </div>
-    </div>
+    </EditorContext.Provider>
   );
 }

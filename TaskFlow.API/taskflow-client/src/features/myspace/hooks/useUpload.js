@@ -22,7 +22,7 @@ export default function useUpload({ type, onUploadSuccess }) {
       }
       onUploadSuccess({ url: finalUrl, source: "url" });
     } else {
-      setUrlError(type === 'image' ? "GeÃ§erli bir gÃ¶rsel URL'si girin." : "GeÃ§erli bir dosya URL'si girin.");
+      setUrlError(type === 'image' ? "Geçerli bir görsel URL'si girin." : "Geçerli bir dosya URL'si girin.");
     }
   };
 
@@ -32,16 +32,16 @@ export default function useUpload({ type, onUploadSuccess }) {
 
     if (type === 'image') {
       if (!file.type.startsWith("image/")) {
-        setUrlError("LÃ¼tfen geÃ§erli bir gÃ¶rsel seÃ§in.");
+        setUrlError("Lütfen geçerli bir görsel seçin.");
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        setUrlError("GÃ¶rsel 5MB'dan kÃ¼Ã§Ã¼k olmalÄ±dÄ±r.");
+        setUrlError("Görsel 5MB'dan küçük olmalıdır.");
         return;
       }
     } else {
       if (file.size > 25 * 1024 * 1024) {
-        setUrlError("Dosya 25MB'dan kÃ¼Ã§Ã¼k olmalÄ±dÄ±r.");
+        setUrlError("Dosya 25MB'dan küçük olmalıdır.");
         return;
       }
     }
@@ -65,11 +65,11 @@ export default function useUpload({ type, onUploadSuccess }) {
           size: responseData.size || file.size
         });
       } else {
-        setUrlError("YÃ¼kleme baÅŸarÄ±sÄ±z oldu.");
+        setUrlError("Yükleme başarısız oldu.");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      setUrlError(type === 'image' ? "GÃ¶rsel yÃ¼klenirken bir hata oluÅŸtu." : "Dosya yÃ¼klenirken bir hata oluÅŸtu veya format desteklenmiyor.");
+      setUrlError(type === 'image' ? "Görsel yüklenirken bir hata oluştu." : "Dosya yüklenirken bir hata oluştu veya format desteklenmiyor.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

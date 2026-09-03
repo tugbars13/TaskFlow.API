@@ -15,7 +15,7 @@ export default function FileBlock({ block, updateBlock, onKeyDown, removeBlock, 
   };
 
   const handleUploadSuccess = (data) => {
-    let defaultName = data.name || "BaÄŸlantÄ±dan Dosya";
+    let defaultName = data.name || "Bağlantıdan Dosya";
     let formattedSize = data.size ? formatSize(data.size) : "Bilinmiyor";
 
     if (data.source === "url" && !data.name) {
@@ -86,7 +86,7 @@ export default function FileBlock({ block, updateBlock, onKeyDown, removeBlock, 
         </div>
         <div className="flex-1 min-w-0 flex flex-col">
           <ContentEditable
-            className="text-[14px] font-medium text-gray-900 outline-none empty:before:content-['Dosya_AdÄ±'] empty:before:text-gray-400 truncate"
+            className="text-[14px] font-medium text-gray-900 outline-none empty:before:content-['Dosya_Adı'] empty:before:text-gray-400 truncate"
             value={block.content || block.name} // fallback for legacy data
             onChange={(val) => updateBlock(block.id, { content: val })}
             onKeyDown={(e) => onKeyDown && onKeyDown(e, block.id)}
@@ -110,7 +110,7 @@ export default function FileBlock({ block, updateBlock, onKeyDown, removeBlock, 
           <button
             onClick={openFile}
             className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-            title="AÃ§ / Ä°ndir"
+            title="Aç / İndir"
           >
             <span className="material-symbols-outlined text-[18px]">open_in_new</span>
           </button>
@@ -136,7 +136,7 @@ export default function FileBlock({ block, updateBlock, onKeyDown, removeBlock, 
           className={`flex-1 py-2 text-[13px] font-medium text-center ${activeTab === "upload" ? "bg-white text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:bg-gray-100"}`}
           onClick={(e) => { e.stopPropagation(); setActiveTab("upload"); setUrlError(""); }}
         >
-          Dosya YÃ¼kle
+          Dosya Yükle
         </button>
         <button
           className={`flex-1 py-2 text-[13px] font-medium text-center ${activeTab === "url" ? "bg-white text-red-600 border-b-2 border-red-600" : "text-gray-500 hover:bg-gray-100"}`}
@@ -151,7 +151,7 @@ export default function FileBlock({ block, updateBlock, onKeyDown, removeBlock, 
           <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-300 rounded-md bg-white">
             <span className="material-symbols-outlined text-[32px] text-gray-400 mb-2">upload_file</span>
             <span className="text-[13px] text-gray-600 mb-4">
-              {isUploading ? "YÃ¼kleniyor..." : "BilgisayarÄ±nÄ±zdan bir dosya seÃ§in"}
+              {isUploading ? "Yükleniyor..." : "Bilgisayarınızdan bir dosya seçin"}
             </span>
             <input
               type="file"
@@ -165,7 +165,7 @@ export default function FileBlock({ block, updateBlock, onKeyDown, removeBlock, 
               disabled={isUploading}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[13px] font-medium rounded-md disabled:opacity-50"
             >
-              Dosya SeÃ§
+              Dosya Seç
             </button>
           </div>
         )}

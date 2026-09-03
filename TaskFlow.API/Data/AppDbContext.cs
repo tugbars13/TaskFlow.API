@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<TeamAnalyticsSnapshot> TeamAnalyticsSnapshots { get; set; }
     public DbSet<MySpaceFolder> MySpaceFolders { get; set; }
     public DbSet<MySpacePage> MySpacePages { get; set; }
+    public DbSet<MySpacePageShare> MySpacePageShares { get; set; }
     public DbSet<NotificationPreference> NotificationPreferences { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -206,6 +207,16 @@ public class AppDbContext : DbContext
             .HasForeignKey(f => f.UserId)
             .OnDelete(DeleteBehavior.NoAction);
 
+        // ============================================================
+        // MY SPACE FOLDER -> FOLDER (SELF-REFERENCING)
+        // ============================================================
+
+        modelBuilder.Entity<MySpaceFolder>()
+            .HasOne(f => f.ParentFolder)
+            .WithMany(f => f.Children)
+            .HasForeignKey(f => f.ParentFolderId)
+            .OnDelete(DeleteBehavior.NoAction);
+
 
         // ============================================================
         // MY SPACE PAGE -> FOLDER
@@ -217,6 +228,20 @@ public class AppDbContext : DbContext
             .WithMany(f => f.Pages)
             .HasForeignKey(p => p.FolderId)
             .OnDelete(DeleteBehavior.NoAction);
+            
+        // ============================================================
+        // MY SPACE PAGE SHARE -> PAGE
+        // ============================================================
+        
+        modelBuilder.Entity<MySpacePageShare>()
+            .HasIndex(s => s.TokenHash)
+            .IsUnique();
+            
+        modelBuilder.Entity<MySpacePageShare>()
+            .HasOne(s => s.Page)
+            .WithMany(p => p.Shares)
+            .HasForeignKey(s => s.PageId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // ============================================================
         // NOTIFICATION PREFERENCE -> USER

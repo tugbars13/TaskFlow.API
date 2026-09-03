@@ -34,8 +34,8 @@ export default function QuickActionsList({ navigate, metrics }) {
       id: "new_task",
       icon: "task_alt",
       iconCls: "bg-primary/10 text-primary",
-      label: "Yeni GÃ¶rev",
-      sub: "GÃ¶rev ekle",
+      label: "Yeni Görev",
+      sub: "Görev ekle",
       onClick: () => navigate(ROUTES.TASKS),
     },
     {
@@ -50,8 +50,8 @@ export default function QuickActionsList({ navigate, metrics }) {
       id: "new_folder",
       icon: "create_new_folder",
       iconCls: "bg-amber-100 text-amber-600",
-      label: "Yeni KlasÃ¶r",
-      sub: "KlasÃ¶r oluÅŸtur",
+      label: "Yeni Klasör",
+      sub: "Klasör oluştur",
       onClick: () =>
         navigate(ROUTES.MY_SPACE + "/folders", {
           state: { createFolder: true },
@@ -62,7 +62,7 @@ export default function QuickActionsList({ navigate, metrics }) {
       icon: "event",
       iconCls: "bg-red-100 text-red-500",
       label: "Terminler",
-      sub: `${highPriorityTasks} risk altÄ±nda`,
+      sub: `${highPriorityTasks} risk altında`,
       onClick: () => navigate(ROUTES.CALENDAR),
     },
     {
@@ -77,8 +77,8 @@ export default function QuickActionsList({ navigate, metrics }) {
       id: "team",
       icon: "group",
       iconCls: "bg-emerald-100 text-emerald-600",
-      label: "TakÄ±m",
-      sub: "Ãœyeleri yÃ¶net",
+      label: "Takım",
+      sub: "Üyeleri yönet",
       onClick: () => navigate(ROUTES.TEAM),
     },
     {
@@ -125,7 +125,7 @@ export default function QuickActionsList({ navigate, metrics }) {
               bolt
             </span>
             <h2 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">
-              HÄ±zlÄ± EriÅŸim
+              Hızlı Erişim
             </h2>
           </div>
           <button
@@ -133,14 +133,14 @@ export default function QuickActionsList({ navigate, metrics }) {
             className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[14px]">edit</span>
-            DÃ¼zenle
+            Düzenle
           </button>
         </div>
 
         <div className="flex items-stretch justify-center flex-wrap gap-3 px-5 py-4">
           {activeActions.length === 0 ? (
             <div className="w-full text-center py-4 text-[12px] text-on-surface-variant/60">
-              HÄ±zlÄ± eriÅŸim bulunmuyor.
+              Hızlı erişim bulunmuyor.
             </div>
           ) : (
             activeActions.map((a) => (
@@ -151,7 +151,7 @@ export default function QuickActionsList({ navigate, metrics }) {
             icon="add"
             iconCls="bg-gray-100 text-gray-400"
             label="Ekle"
-            sub="HÄ±zlÄ± eriÅŸime ekle"
+            sub="Hızlı erişime ekle"
             onClick={() => setIsModalOpen(true)}
           />
         </div>

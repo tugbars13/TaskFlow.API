@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useMySpace } from "../context/MySpaceContext";
 
 export function PageListRow({ page, onClick }) {
@@ -7,12 +8,16 @@ export function PageListRow({ page, onClick }) {
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
+  const [menuPosition, setMenuPosition] = useState({});
   const menuRef = useRef(null);
+  const portalRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      const isOutsideMenu = menuRef.current && !menuRef.current.contains(event.target);
+      const isOutsidePortal = !portalRef.current || !portalRef.current.contains(event.target);
+      if (isOutsideMenu && isOutsidePortal) {
         setIsMenuOpen(false);
         setIsMoveOpen(false);
       }
@@ -22,6 +27,20 @@ export function PageListRow({ page, onClick }) {
   }, []);
 
   useEffect(() => {
+    function handleScroll(e) {
+      if (portalRef.current && portalRef.current.contains(e.target)) return;
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+        setIsMoveOpen(false);
+      }
+    }
+    if (isMenuOpen) {
+      window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    }
+    return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+  }, [isMenuOpen]);
+
+  useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.select();
     }
@@ -29,6 +48,20 @@ export function PageListRow({ page, onClick }) {
 
   const handleMenuToggle = (e) => {
     e.stopPropagation();
+    if (!isMenuOpen && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      if (rect.bottom + 250 > window.innerHeight) {
+        setMenuPosition({
+          bottom: `${window.innerHeight - rect.top + 4}px`,
+          right: `${window.innerWidth - rect.right}px`
+        });
+      } else {
+        setMenuPosition({
+          top: `${rect.bottom + 4}px`,
+          right: `${window.innerWidth - rect.right}px`
+        });
+      }
+    }
     setIsMenuOpen(!isMenuOpen);
     setIsMoveOpen(false);
   };
@@ -126,8 +159,12 @@ export function PageListRow({ page, onClick }) {
             </span>
           </button>
           
-          {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 overflow-visible text-[13px]">
+          {isMenuOpen && createPortal(
+            <div 
+              ref={portalRef}
+              style={menuPosition}
+              className="fixed w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-[9999] overflow-visible text-[13px]"
+            >
               <button 
                 onClick={handleRename}
                 className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:text-primary hover:bg-primary/5 transition-colors text-left group/item"
@@ -205,7 +242,8 @@ export function PageListRow({ page, onClick }) {
                 <span className="material-symbols-outlined text-[16px] text-red-500">delete</span>
                 Sil
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       </div>

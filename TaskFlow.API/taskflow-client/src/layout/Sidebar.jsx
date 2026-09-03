@@ -31,7 +31,6 @@ const MY_SPACE_NAV_ITEMS = [
 
 const TOP_ITEMS = [
   { path: ROUTES.DASHBOARD, label: "Dashboard", icon: "dashboard" },
-  { path: ROUTES.SETTINGS, label: "Settings", icon: "settings" },
 ];
 
 export default function Sidebar({ isCollapsed, onToggle }) {
@@ -63,6 +62,14 @@ export default function Sidebar({ isCollapsed, onToggle }) {
   // Per-item active logic for My Space sub-items
   const isMySpaceItemActive = (item) => {
     if (item.exact) return location.pathname === item.path;
+
+    // Override for pages (to differentiate root page vs folder page)
+    if (location.pathname.startsWith(ROUTES.MY_SPACE + "/page/")) {
+      const isFolderPage = !!location.state?.folderId;
+      if (item.label === "Klasörler") return isFolderPage;
+      if (item.label === "Sayfalar") return !isFolderPage;
+    }
+
     if (item.startsWith)
       return (
         location.pathname === item.path ||
@@ -202,7 +209,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
             {!isCollapsed && (
               <div className="flex flex-col items-center text-center w-full mt-4">
                 <span className="font-bold text-[18px] tracking-[0.18em] text-gray-900 uppercase leading-none">
-                  TaskFlow
+                  Tübitask
                 </span>
                 <span className="font-medium text-[11px] tracking-[0.16em] text-gray-500 uppercase mt-2">
                   Tübitak Destekli
@@ -216,6 +223,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
         <nav
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden",
+            "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
             isCollapsed ? "px-2 space-y-2 mt-4" : "px-[14px] space-y-1 mt-6",
           )}
         >
@@ -298,6 +306,16 @@ export default function Sidebar({ isCollapsed, onToggle }) {
             </div>
           )}
         </nav>
+
+        {/* Settings at the bottom */}
+        <div
+          className={cn(
+            "shrink-0 py-4 border-t border-[var(--color-sidebar-border)] mt-2",
+            isCollapsed ? "px-2" : "px-[14px]"
+          )}
+        >
+          {renderNavLink({ path: ROUTES.SETTINGS, label: "Settings", icon: "settings" })}
+        </div>
       </div>
     </aside>
   );

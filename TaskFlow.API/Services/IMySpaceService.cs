@@ -18,4 +18,8 @@ public interface IMySpaceService
     Task<MySpacePageDto> CreatePageAsync(int userId, CreateMySpacePageDto dto, CancellationToken cancellationToken = default);
     Task<MySpacePageDto> UpdatePageAsync(int id, int userId, UpdateMySpacePageDto dto, CancellationToken cancellationToken = default);
     Task DeletePageAsync(int id, int userId, CancellationToken cancellationToken = default);
+
+    Task<PageShareResponseDto> CreateShareLinkAsync(int pageId, int userId, CreatePageShareDto dto, CancellationToken cancellationToken = default);
+    Task<SharedPageDto> GetSharedPageAsync(string token, CancellationToken cancellationToken = default);
+    Task<SharedPageDto> UpdateSharedPageAsync(string token, int userId, UpdateSharedPageDto dto, CancellationToken cancellationToken = default);
 }

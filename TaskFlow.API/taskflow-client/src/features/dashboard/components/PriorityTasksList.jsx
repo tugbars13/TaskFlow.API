@@ -27,7 +27,7 @@ function PriorityRow({ task, navigate }) {
           {task.title}
         </div>
         <div className="text-[11px] text-on-surface-variant mt-0.5">
-          {task.teamName ?? task.category ?? "GÃ¶rev"}
+          {task.teamName ?? task.category ?? "Görev"}
           {task.dueDate && (
             <span className="ml-2 text-on-surface-variant/40">
               Â·{" "}
@@ -68,14 +68,14 @@ export default function PriorityTasksList({ recentTasks, navigate }) {
             today
           </span>
           <h2 className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">
-            BugÃ¼nÃ¼n Ã–ncelikleri
+            Bugünün Öncelikleri
           </h2>
         </div>
         <button
           onClick={() => navigate(ROUTES.TASKS)}
           className="text-[12px] font-semibold text-primary hover:underline"
         >
-          TÃ¼mÃ¼nÃ¼ GÃ¶r
+          Tümünü Gör
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export default function PriorityTasksList({ recentTasks, navigate }) {
               inventory_2
             </span>
             <p className="text-[13px] text-on-surface-variant/50">
-              Bekleyen Ã¶ncelikli gÃ¶rev yok
+              Bekleyen öncelikli görev yok
             </p>
           </div>
         ) : (

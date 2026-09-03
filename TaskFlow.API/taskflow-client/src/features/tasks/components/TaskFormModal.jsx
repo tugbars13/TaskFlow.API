@@ -1,11 +1,15 @@
-﻿import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
 import useTeam from "@/features/teams/hooks/useTeam";
-import { getCategories, createCategory } from "@/features/tasks/api/categoryService";
+import {
+  getCategories,
+  createCategory,
+} from "@/features/tasks/api/categoryService";
+import TaskDescriptionEditor from "./TaskDescriptionEditor";
 
 const DEFAULT_FORM_VALUES = Object.freeze({
   title: "",
@@ -16,10 +20,8 @@ const DEFAULT_FORM_VALUES = Object.freeze({
   assigneeIds: [],
 });
 
-
-
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Custom Category Combobox Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-// searchQuery (arama) ve value (seÃƒÂ§im) tamamen ayrÃ„Â± state'ler.
+// searchQuery (arama) ve value (seçim) tamamen ayrı state'ler.
 function CategoryCombobox({ value, onChange, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +66,7 @@ function CategoryCombobox({ value, onChange, disabled }) {
     : categories;
 
   const exactMatch = categories.some(
-    (cat) => cat.name.toLowerCase() === trimmed
+    (cat) => cat.name.toLowerCase() === trimmed,
   );
   const showCreateOption = trimmed.length > 0 && !exactMatch;
 
@@ -103,7 +105,7 @@ function CategoryCombobox({ value, onChange, disabled }) {
     }
   };
 
-  const selectedCategory = categories.find(c => c.id === value);
+  const selectedCategory = categories.find((c) => c.id === value);
   const displayValue = selectedCategory ? selectedCategory.name : "";
 
   return (
@@ -114,8 +116,12 @@ function CategoryCombobox({ value, onChange, disabled }) {
         onClick={() => setIsOpen((o) => !o)}
         className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50 flex items-center justify-between text-left gap-2"
       >
-        <span className={displayValue ? "text-on-surface truncate" : "text-outline/60"}>
-          {displayValue || "Kategori seÃ§..."}
+        <span
+          className={
+            displayValue ? "text-on-surface truncate" : "text-outline/60"
+          }
+        >
+          {displayValue || "Kategori seç..."}
         </span>
         <span
           className={`material-symbols-outlined text-[20px] shrink-0 transition-transform duration-150 ${
@@ -131,7 +137,8 @@ function CategoryCombobox({ value, onChange, disabled }) {
           className="absolute z-50 left-0 right-0 mt-1.5 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           style={{
             background: "var(--color-surface, #fff)",
-            border: "1px solid color-mix(in srgb, currentColor 10%, transparent)",
+            border:
+              "1px solid color-mix(in srgb, currentColor 10%, transparent)",
             maxHeight: "300px",
           }}
         >
@@ -139,7 +146,10 @@ function CategoryCombobox({ value, onChange, disabled }) {
             <div className="relative">
               <span
                 className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 select-none pointer-events-none text-outline/40"
-                style={{ fontSize: "15px", fontVariationSettings: "'FILL' 0, 'wght' 300" }}
+                style={{
+                  fontSize: "15px",
+                  fontVariationSettings: "'FILL' 0, 'wght' 300",
+                }}
               >
                 search
               </span>
@@ -153,7 +163,8 @@ function CategoryCombobox({ value, onChange, disabled }) {
                 className="w-full rounded-xl py-1.5 pl-8 pr-3 text-on-surface placeholder:text-outline/40 border-none outline-none"
                 style={{
                   fontSize: "13px",
-                  background: "color-mix(in srgb, currentColor 5%, transparent)",
+                  background:
+                    "color-mix(in srgb, currentColor 5%, transparent)",
                 }}
               />
             </div>
@@ -161,7 +172,10 @@ function CategoryCombobox({ value, onChange, disabled }) {
 
           <div
             className="shrink-0 mx-2"
-            style={{ height: "1px", background: "color-mix(in srgb, currentColor 8%, transparent)" }}
+            style={{
+              height: "1px",
+              background: "color-mix(in srgb, currentColor 8%, transparent)",
+            }}
           />
 
           {filtered.length > 0 && (
@@ -238,7 +252,7 @@ function CategoryCombobox({ value, onChange, disabled }) {
                   <strong className="text-primary font-semibold">
                     "{searchQuery.trim()}"
                   </strong>{" "}
-                  kategorisini oluÅŸtur
+                  kategorisini oluştur
                 </span>
               </button>
             </div>
@@ -333,7 +347,12 @@ export default function TaskFormModal({
     e.preventDefault();
     if (submitting) return;
 
-    setTouched({ title: true, priority: true, categoryId: true, dueDate: true });
+    setTouched({
+      title: true,
+      priority: true,
+      categoryId: true,
+      dueDate: true,
+    });
 
     if (!isFormValid) return;
 
@@ -342,7 +361,7 @@ export default function TaskFormModal({
 
     try {
       const payload = {
-          title: formData.title.trim(),
+        title: formData.title.trim(),
         description: formData.description.trim(),
         priority: formData.priority,
         categoryId: formData.categoryId,
@@ -351,7 +370,7 @@ export default function TaskFormModal({
       };
 
       console.log("CREATE TASK PAYLOAD:", JSON.stringify(payload, null, 2));
-        await onSubmit(payload);
+      await onSubmit(payload);
       onClose();
     } catch (err) {
       console.error("Task submission failed:", err);
@@ -401,13 +420,11 @@ export default function TaskFormModal({
           <label className="block font-label-md text-label-md font-semibold text-on-surface">
             Task Description
           </label>
-          <textarea
-            rows={3}
+          <TaskDescriptionEditor
             placeholder="Add detailed task description, acceptance criteria, or requirements..."
             value={formData.description}
-            onChange={(e) => handleFieldChange("description", e.target.value)}
+            onChange={(value) => handleFieldChange("description", value)}
             disabled={submitting}
-            className="w-full bg-surface-container-high/50 border-none rounded-2xl p-md text-body-md font-body-md text-on-surface placeholder:text-outline/60 apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
           />
         </div>
 
@@ -425,9 +442,9 @@ export default function TaskFormModal({
               disabled={submitting}
               className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
             >
-              <option value="High">ğŸ”´ High Priority</option>
-              <option value="Medium">ğŸŸ¡ Medium Priority</option>
-              <option value="Low">ğŸŸ¢ Low Priority</option>
+              <option value="High">🔴 High Priority</option>
+              <option value="Medium">🟡 Medium Priority</option>
+              <option value="Low">🟢 Low Priority</option>
             </select>
           </div>
 
@@ -467,9 +484,17 @@ export default function TaskFormModal({
               <div className="relative">
                 <div
                   className="w-full bg-surface-container-high/50 border-none rounded-2xl py-[14px] px-md text-body-md font-body-md text-on-surface apple-shadow focus:ring-2 focus:ring-primary/20 cursor-pointer flex justify-between items-center"
-                  onClick={() => setIsAssigneeDropdownOpen(!isAssigneeDropdownOpen)}
+                  onClick={() =>
+                    setIsAssigneeDropdownOpen(!isAssigneeDropdownOpen)
+                  }
                 >
-                  <span className={formData.assigneeIds.length === 0 ? "text-outline/60" : "text-on-surface"}>
+                  <span
+                    className={
+                      formData.assigneeIds.length === 0
+                        ? "text-outline/60"
+                        : "text-on-surface"
+                    }
+                  >
                     {formData.assigneeIds.length === 0
                       ? "Select users..."
                       : `${formData.assigneeIds.length} user(s) selected`}
@@ -485,19 +510,22 @@ export default function TaskFormModal({
                       .filter(
                         (v, i, a) =>
                           a.findIndex((t) => t.userId === v.userId) === i &&
-                          (v.status === "Active" || v.status === "Accepted" || v.status === 1) // Backend maps accepted members to "Active"
+                          (v.status === "Active" ||
+                            v.status === "Accepted" ||
+                            v.status === 1), // Backend maps accepted members to "Active"
                       )
                       .map((member) => {
                         const isSelected = formData.assigneeIds.includes(
-                          String(member.userId)
+                          String(member.userId),
                         );
                         return (
                           <label
                             key={member.id}
-                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${isSelected
+                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                              isSelected
                                 ? "bg-primary/10 text-primary"
                                 : "hover:bg-surface-container-high text-on-surface"
-                              }`}
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -507,7 +535,9 @@ export default function TaskFormModal({
                                 setFormData((prev) => {
                                   const newIds = e.target.checked
                                     ? [...prev.assigneeIds, idStr]
-                                    : prev.assigneeIds.filter((id) => id !== idStr);
+                                    : prev.assigneeIds.filter(
+                                        (id) => id !== idStr,
+                                      );
                                   return { ...prev, assigneeIds: newIds };
                                 });
                               }}
@@ -523,8 +553,11 @@ export default function TaskFormModal({
                     {teamMembers.filter(
                       (v, i, a) =>
                         a.findIndex((t) => t.userId === v.userId) === i &&
-                        (v.status === "Active" || v.status === "Accepted" || v.status === 1)
-                    ).length === 0 && !loadingMembers && (
+                        (v.status === "Active" ||
+                          v.status === "Accepted" ||
+                          v.status === 1),
+                    ).length === 0 &&
+                      !loadingMembers && (
                         <div className="text-center text-body-sm text-outline p-4">
                           No accepted team members available.
                         </div>
@@ -568,6 +601,3 @@ export default function TaskFormModal({
     </Modal>
   );
 }
-
-
-

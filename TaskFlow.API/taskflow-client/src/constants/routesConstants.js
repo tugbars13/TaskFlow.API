@@ -14,6 +14,7 @@ export const ROUTES = {
   MY_SPACE: "/myspace",
   SETTINGS: "/settings",
   PROFILE: "/profile",
+  SHARED_PAGE: "/myspace/share/:token",
 
   teamTasks: (teamId) => `/teams/${teamId}/tasks`,
 };

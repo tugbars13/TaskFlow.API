@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskFlow.API.Data;
 
@@ -11,9 +12,11 @@ using TaskFlow.API.Data;
 namespace TaskFlow.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260903054020_AddFolderHierarchy")]
+    partial class AddFolderHierarchy
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,41 +209,6 @@ namespace TaskFlow.API.Migrations
                     b.HasIndex("FolderId");
 
                     b.ToTable("MySpacePages");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.MySpacePageShare", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("PageId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Permission")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PageId");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.ToTable("MySpacePageShares");
                 });
 
             modelBuilder.Entity("TaskFlow.API.Models.Notification", b =>
@@ -704,17 +672,6 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("Folder");
                 });
 
-            modelBuilder.Entity("TaskFlow.API.Models.MySpacePageShare", b =>
-                {
-                    b.HasOne("TaskFlow.API.Models.MySpacePage", "Page")
-                        .WithMany("Shares")
-                        .HasForeignKey("PageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Page");
-                });
-
             modelBuilder.Entity("TaskFlow.API.Models.Notification", b =>
                 {
                     b.HasOne("TaskFlow.API.Models.User", "User")
@@ -849,11 +806,6 @@ namespace TaskFlow.API.Migrations
                     b.Navigation("Children");
 
                     b.Navigation("Pages");
-                });
-
-            modelBuilder.Entity("TaskFlow.API.Models.MySpacePage", b =>
-                {
-                    b.Navigation("Shares");
                 });
 
             modelBuilder.Entity("TaskFlow.API.Models.Team", b =>

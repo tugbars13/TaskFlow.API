@@ -1,4 +1,4 @@
-﻿namespace TaskFlow.API.Models;
+namespace TaskFlow.API.Models;
 
 public class MySpaceFolder
 {
@@ -11,6 +11,12 @@ public class MySpaceFolder
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
+
+    public int? ParentFolderId { get; set; }
+
+    public MySpaceFolder? ParentFolder { get; set; }
+
+    public ICollection<MySpaceFolder> Children { get; set; } = new List<MySpaceFolder>();
 
     public ICollection<MySpacePage> Pages { get; set; } = new List<MySpacePage>();
 }

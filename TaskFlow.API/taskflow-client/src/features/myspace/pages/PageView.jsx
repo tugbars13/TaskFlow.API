@@ -1,15 +1,25 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { useMySpace } from "../context/MySpaceContext";
 import BlockEditor from "../components/blockEditor/BlockEditor";
 
 export default function PageView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { pages, folders, updatePage, deletePage, duplicatePage, isLoading } = useMySpace();
   
-  if (isLoading) return <div className="p-10 text-gray-500">Yükleniyor...</div>;
-  
   const page = pages.find(p => p.id === parseInt(id));
+
+  useEffect(() => {
+    if (page && page.folderId !== undefined) {
+      if (location.state?.folderId !== page.folderId) {
+        navigate(".", { replace: true, state: { ...location.state, folderId: page.folderId } });
+      }
+    }
+  }, [page, navigate, location.state]);
+
+  if (isLoading) return <div className="p-10 text-gray-500">Yükleniyor...</div>;
   if (!page) return <div className="p-10 text-gray-500">Sayfa bulunamad.</div>;
 
 

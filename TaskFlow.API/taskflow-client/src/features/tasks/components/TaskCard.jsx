@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { formatDateDDMMYYYY } from "@/utils/dateUtils";
+import { stripHtml } from "@/features/myspace/utils/sanitizeHtml";
 const PRIORITY_BORDER = {
   high: "border-l-[4px] border-l-primary",
   3: "border-l-[4px] border-l-primary",
@@ -48,7 +49,7 @@ export default function TaskCard({
           {task.title}
         </h4>
         <p className="text-[11px] text-on-surface-variant mt-1 line-clamp-2 leading-tight">
-          {task.description || DEFAULT_DESCRIPTION}
+          {stripHtml(task.description) || DEFAULT_DESCRIPTION}
         </p>
       </div>
 

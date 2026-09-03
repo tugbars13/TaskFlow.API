@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { useEditorContext } from "../EditorContext";
 
 export function ContentEditable({
   value,
@@ -11,6 +12,7 @@ export function ContentEditable({
   dataAdvancedInput,
   isRichText = false,
 }) {
+  const { readOnly } = useEditorContext();
   const ref = useRef(null);
   const lastEmittedValue = useRef(value || "");
 
@@ -90,7 +92,7 @@ export function ContentEditable({
           ? "[&_a]:text-indigo-600 [&_a]:underline [&_a]:cursor-pointer [&_a]:hover:text-indigo-800 [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline"
           : ""
       }`}
-      contentEditable
+      contentEditable={!readOnly}
       suppressContentEditableWarning
       onInput={handleInput}
       onKeyDown={onKeyDown}

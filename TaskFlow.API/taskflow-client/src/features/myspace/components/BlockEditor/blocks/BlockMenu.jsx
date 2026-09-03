@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BLOCK_TYPES } from '../blockTypes';
+import { useEditorContext } from '../EditorContext';
 
 const CONVERT_OPTIONS = [
   { type: BLOCK_TYPES.TEXT, label: "Text", icon: "short_text" },
@@ -16,6 +17,7 @@ const CONVERT_OPTIONS = [
 ];
 
 export default function BlockMenu({ onRemove, onDuplicate, visible, onOpenChange, onChangeType, currentType }) {
+  const { readOnly } = useEditorContext();
   const [show, setShow] = useState(false);
   const [showTypeSubmenu, setShowTypeSubmenu] = useState(false);
   const [selectedSubmenuIndex, setSelectedSubmenuIndex] = useState(0);
@@ -105,7 +107,7 @@ export default function BlockMenu({ onRemove, onDuplicate, visible, onOpenChange
   };
 
   const isVisible = visible || show;
-  if (!isVisible) return null;
+  if (!isVisible || readOnly) return null;
 
   return (
     <div className="absolute top-2 right-2 z-10" ref={menuRef} contentEditable={false}>

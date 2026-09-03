@@ -12,7 +12,7 @@ export function sanitizeHtml(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
-  const allowedTags = new Set(["STRONG", "B", "EM", "I", "U", "A"]);
+  const allowedTags = new Set(["STRONG", "B", "EM", "I", "U", "A", "S", "STRIKE", "SPAN"]);
 
   function cleanNode(node) {
     const children = Array.from(node.childNodes);
@@ -50,6 +50,29 @@ export function sanitizeHtml(html) {
             child.setAttribute("target", "_blank");
             child.setAttribute("rel", "noopener noreferrer");
             child.classList.add("text-indigo-600", "underline");
+          } else if (tagName === "SPAN") {
+            const style = child.getAttribute("style");
+            // Remove all attributes first
+            const attrs = Array.from(child.attributes);
+            for (const attr of attrs) {
+              child.removeAttribute(attr.name);
+            }
+            if (style) {
+              // Parse styles carefully
+              const styles = style.split(';').map(s => s.trim()).filter(Boolean);
+              let safeStyle = '';
+              for (const s of styles) {
+                const [key, value] = s.split(':').map(part => part.trim().toLowerCase());
+                if ((key === 'color' || key === 'background-color') && value) {
+                  // Basic sanitization for color values
+                  const safeValue = value.replace(/[^a-z0-9#(),.\s-]/gi, '');
+                  if (safeValue) safeStyle += `${key}: ${safeValue}; `;
+                }
+              }
+              if (safeStyle) {
+                child.setAttribute("style", safeStyle.trim());
+              }
+            }
           } else {
             // Remove attributes on formatting tags
             const attrs = Array.from(child.attributes);

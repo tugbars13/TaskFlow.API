@@ -145,6 +145,30 @@ public class MySpaceController : ControllerBase
         });
     }
 
+    // POST /api/myspace/pages/{id}/share
+    [HttpPost("pages/{id}/share")]
+    public async Task<ActionResult<ApiResponse<PageShareResponseDto>>> CreateShareLink(
+        int id,
+        [FromBody] CreatePageShareDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var shareResponse = await _mySpaceService.CreateShareLinkAsync(id, userId, dto, cancellationToken);
+
+            return StatusCode(201, new ApiResponse<PageShareResponseDto>
+            {
+                Success = true,
+                Message = "Share link created successfully.",
+                Data = shareResponse
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return StatusCode(403, new ApiResponse<PageShareResponseDto> { Success = false, Message = ex.Message });
+        }
+    }
+
     // POST /api/myspace/pages
     [HttpPost("pages")]
     public async Task<ActionResult<ApiResponse<MySpacePageDto>>> CreatePage(

@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using TaskFlow.API.DTOs.MySpace;
 using TaskFlow.API.Models;
 using TaskFlow.API.Repositories;
@@ -13,15 +15,18 @@ public class MySpaceService : IMySpaceService
 {
     private readonly IMySpaceFolderRepository _folderRepository;
     private readonly IMySpacePageRepository _pageRepository;
+    private readonly IMySpacePageShareRepository _shareRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public MySpaceService(
         IMySpaceFolderRepository folderRepository,
         IMySpacePageRepository pageRepository,
+        IMySpacePageShareRepository shareRepository,
         IUnitOfWork unitOfWork)
     {
         _folderRepository = folderRepository;
         _pageRepository = pageRepository;
+        _shareRepository = shareRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -33,6 +38,7 @@ public class MySpaceService : IMySpaceService
         {
             Id = f.Id,
             Name = f.Name,
+            ParentFolderId = f.ParentFolderId,
             CreatedAt = f.CreatedAt,
             UpdatedAt = f.UpdatedAt
         });
@@ -42,10 +48,20 @@ public class MySpaceService : IMySpaceService
         int userId,
         CreateMySpaceFolderDto dto, CancellationToken cancellationToken = default)
     {
+        if (dto.ParentFolderId.HasValue)
+        {
+            var parent = await _folderRepository.GetByIdAsync(dto.ParentFolderId.Value, userId, cancellationToken);
+            if (parent == null)
+            {
+                throw new KeyNotFoundException($"Parent folder with ID {dto.ParentFolderId} not found.");
+            }
+        }
+
         var folder = new MySpaceFolder
         {
             Name = dto.Name,
             UserId = userId,
+            ParentFolderId = dto.ParentFolderId,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -56,6 +72,7 @@ public class MySpaceService : IMySpaceService
         {
             Id = created.Id,
             Name = created.Name,
+            ParentFolderId = created.ParentFolderId,
             CreatedAt = created.CreatedAt,
             UpdatedAt = created.UpdatedAt
         };
@@ -72,7 +89,21 @@ public class MySpaceService : IMySpaceService
             throw new KeyNotFoundException(
                 $"Folder with ID {id} not found.");
 
+        if (dto.ParentFolderId.HasValue && dto.ParentFolderId != folder.ParentFolderId)
+        {
+            if (dto.ParentFolderId == id)
+            {
+                throw new ArgumentException("A folder cannot be its own parent.");
+            }
+            var parent = await _folderRepository.GetByIdAsync(dto.ParentFolderId.Value, userId, cancellationToken);
+            if (parent == null)
+            {
+                throw new KeyNotFoundException($"Parent folder with ID {dto.ParentFolderId} not found.");
+            }
+        }
+
         folder.Name = dto.Name;
+        folder.ParentFolderId = dto.ParentFolderId;
         folder.UpdatedAt = DateTime.UtcNow;
 
         var updated = await _folderRepository.UpdateAsync(folder, cancellationToken);
@@ -82,6 +113,7 @@ public class MySpaceService : IMySpaceService
         {
             Id = updated.Id,
             Name = updated.Name,
+            ParentFolderId = updated.ParentFolderId,
             CreatedAt = updated.CreatedAt,
             UpdatedAt = updated.UpdatedAt
         };
@@ -103,6 +135,12 @@ public class MySpaceService : IMySpaceService
         {
             throw new ArgumentException(
                 "Cannot delete folder because it contains pages.");
+        }
+
+        var allFolders = await _folderRepository.GetAllByUserIdAsync(userId, cancellationToken);
+        if (allFolders.Any(f => f.ParentFolderId == id))
+        {
+            throw new ArgumentException("Cannot delete folder because it contains subfolders.");
         }
 
         await _folderRepository.DeleteAsync(folder, cancellationToken);
@@ -237,6 +275,112 @@ public class MySpaceService : IMySpaceService
             Content = page.Content,
             CreatedAt = page.CreatedAt,
             UpdatedAt = page.UpdatedAt
+        };
+    }
+
+    private string ComputeSha256Hash(string rawData)
+    {
+        using (SHA256 sha256Hash = SHA256.Create())
+        {
+            byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                builder.Append(bytes[i].ToString("x2"));
+            }
+            return builder.ToString();
+        }
+    }
+
+    public async Task<PageShareResponseDto> CreateShareLinkAsync(int pageId, int userId, CreatePageShareDto dto, CancellationToken cancellationToken = default)
+    {
+        var page = await _pageRepository.GetByIdAsync(pageId, userId, cancellationToken);
+        if (page == null)
+            throw new KeyNotFoundException($"Page with ID {pageId} not found or you don't have access.");
+
+        var rawToken = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"); // 64 chars
+        var tokenHash = ComputeSha256Hash(rawToken);
+
+        var share = new MySpacePageShare
+        {
+            PageId = pageId,
+            TokenHash = tokenHash,
+            Permission = dto.Permission,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _shareRepository.CreateAsync(share, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new PageShareResponseDto
+        {
+            Token = rawToken,
+            Permission = share.Permission,
+            ShareUrl = $"/myspace/share/{rawToken}"
+        };
+    }
+
+    public async Task<SharedPageDto> GetSharedPageAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = ComputeSha256Hash(token);
+        var share = await _shareRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+        
+        if (share == null || share.Page == null)
+            throw new KeyNotFoundException("Invalid or expired share token.");
+
+        if (share.ExpiresAt.HasValue && share.ExpiresAt.Value < DateTime.UtcNow)
+        {
+            await _shareRepository.DeleteAsync(share, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            throw new KeyNotFoundException("Share token has expired.");
+        }
+
+        return new SharedPageDto
+        {
+            Id = share.Page.Id,
+            Title = share.Page.Title,
+            Icon = share.Page.Icon,
+            Description = share.Page.Description,
+            Content = share.Page.Content,
+            Permission = share.Permission
+        };
+    }
+
+    public async Task<SharedPageDto> UpdateSharedPageAsync(string token, int userId, UpdateSharedPageDto dto, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = ComputeSha256Hash(token);
+        var share = await _shareRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+
+        if (share == null || share.Page == null)
+            throw new KeyNotFoundException("Invalid or expired share token.");
+
+        if (share.ExpiresAt.HasValue && share.ExpiresAt.Value < DateTime.UtcNow)
+        {
+            await _shareRepository.DeleteAsync(share, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            throw new KeyNotFoundException("Share token has expired.");
+        }
+
+        if (share.Permission != "Edit")
+            throw new UnauthorizedAccessException("You do not have permission to edit this page.");
+
+        share.Page.Title = dto.Title;
+        share.Page.Icon = dto.Icon;
+        share.Page.Description = dto.Description;
+        share.Page.Content = dto.Content;
+        share.Page.UpdatedAt = DateTime.UtcNow;
+
+        var updated = await _pageRepository.UpdateAsync(share.Page, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new SharedPageDto
+        {
+            Id = updated.Id,
+            Title = updated.Title,
+            Icon = updated.Icon,
+            Description = updated.Description,
+            Content = updated.Content,
+            Permission = share.Permission
         };
     }
 }

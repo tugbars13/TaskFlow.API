@@ -9,6 +9,8 @@ export default function FoldersView() {
   const { folders, isLoading, addFolder } = useMySpace();
   const hasTriggered = useRef(false);
 
+  const rootFolders = folders.filter(f => !f.parentFolderId);
+
   useEffect(() => {
     // When navigated here with createFolder:true state (from Sidebar "Yeni Klasör"),
     // trigger folder creation via existing context/API logic.
@@ -40,7 +42,7 @@ export default function FoldersView() {
             </div>
           </div>
           <FolderSection
-            folders={folders}
+            folders={rootFolders}
             onFolderClick={(f) => navigate("/myspace/folder/" + f.id)}
           />
         </div>

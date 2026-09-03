@@ -18,6 +18,7 @@ const Analytics = lazy(() => import("../pages/Analytics/AnalyticsPage"));
 const TeamPage = lazy(() => import("../pages/Team/TeamPage"));
 const SettingsPage = lazy(() => import("../pages/Settings/SettingsPage"));
 const MySpacePage = lazy(() => import("../features/myspace/pages/MySpacePage"));
+const SharedPageView = lazy(() => import("../features/myspace/pages/SharedPageView"));
 const MainLayout = lazy(() => import("../layout/MainLayout"));
 
 export default function AppRoutes() {
@@ -36,6 +37,7 @@ export default function AppRoutes() {
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
         <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
         <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+        <Route path={ROUTES.SHARED_PAGE} element={<SharedPageView />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

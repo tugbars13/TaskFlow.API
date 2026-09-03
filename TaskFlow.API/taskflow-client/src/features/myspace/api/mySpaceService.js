@@ -31,3 +31,17 @@ export const updatePage = async (id, data) => {
 export const deletePage = async (id) => {
   return await api.delete(`/myspace/pages/${id}`);
 };
+
+// --- Shared Pages ---
+
+export const createShare = async (pageId, permission) => {
+  return await api.post(`/myspace/pages/${pageId}/share`, { permission });
+};
+
+export const getSharedPage = async (token) => {
+  return await api.get(`/myspace/share/${token}`);
+};
+
+export const updateSharedPage = async (token, data) => {
+  return await api.put(`/myspace/share/${token}`, data);
+};

@@ -132,6 +132,7 @@ builder.Services.AddHostedService<DataLifecycleWorker>(); // Repository'yi DI co
 
 builder.Services.AddScoped<IMySpaceFolderRepository, MySpaceFolderRepository>();
 builder.Services.AddScoped<IMySpacePageRepository, MySpacePageRepository>();
+builder.Services.AddScoped<IMySpacePageShareRepository, MySpacePageShareRepository>();
 builder.Services.AddScoped<IMySpaceService, MySpaceService>();
 
 // AI configuration and services

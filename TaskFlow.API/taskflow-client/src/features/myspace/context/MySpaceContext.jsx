@@ -21,7 +21,7 @@ export function MySpaceProvider({ children }) {
       
     } catch (err) {
       console.error("Error loading MySpace data:", err);
-      setError("Veriler yÃ¼klenemedi.");
+      setError("Veriler yüklenemedi.");
     } finally {
       setIsLoading(false);
     }
@@ -31,10 +31,11 @@ export function MySpaceProvider({ children }) {
     fetchMySpaceData();
   }, [fetchMySpaceData]);
 
-  const addFolder = async () => {
+  const addFolder = async (name = "Yeni Klasör", parentFolderId = null) => {
     try {
       const response = await mySpaceService.createFolder({
-        name: "Yeni Klasör"
+        name,
+        parentFolderId
       });
       if (response.data?.success) {
         setFolders(prev => [...prev, response.data.data]);

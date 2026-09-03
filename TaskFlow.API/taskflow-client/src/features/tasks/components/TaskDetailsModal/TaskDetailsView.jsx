@@ -1,4 +1,5 @@
 import { formatDateDDMMYYYY } from "@/utils/dateUtils";
+import DOMPurify from 'dompurify';
 
 function DetailRow({ icon, label, value }) {
   if (!value) return null;
@@ -63,9 +64,10 @@ export default function TaskDetailsView({ task }) {
   return (
     <div className="space-y-md">
       {task.description && (
-        <p className="text-body-md text-on-surface-variant whitespace-pre-wrap">
-          {task.description}
-        </p>
+        <div 
+          className="text-body-md text-on-surface-variant task-description-content whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(task.description) }}
+        />
       )}
 
       <div className="divide-y divide-outline-variant/10 border-t border-outline-variant/10 pt-xs">

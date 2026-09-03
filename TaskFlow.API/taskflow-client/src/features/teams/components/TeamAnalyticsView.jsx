@@ -214,7 +214,7 @@ export default function TeamAnalyticsView({ team, onBack }) {
             }
           />
 
-          {/* 5. İLERLEME TRENDÃ„Â° */}
+          {/* 5. İLERLEME TRENDİ */}
           <div className="lg:col-span-3 bg-surface rounded-2xl border border-outline-variant/20 p-lg shadow-sm">
             <h3 className="text-lg font-bold text-on-surface mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">

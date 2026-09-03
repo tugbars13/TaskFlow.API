@@ -26,8 +26,8 @@ export default function ForgotPasswordPage() {
       await forgotPasswordRequest(email);
       setSuccess(true);
     } catch (err) {
-      // Network hatalarÄ± iÃ§in fallback
-      setError("Bir hata oluÅŸtu. LÃ¼tfen baÄŸlantÄ±nÄ±zÄ± kontrol edip tekrar deneyin.");
+      // Network hataları için fallback
+      setError("Bir hata oluştu. Lütfen bağlantınızı kontrol edip tekrar deneyin.");
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
       {success ? (
         <div className="space-y-lg mt-8">
           <div className="p-4 bg-success/10 text-success rounded-xl text-center font-medium">
-            Email adresiniz sistemimizde kayÄ±tlÄ±ysa, ÅŸifre sÄ±fÄ±rlama baÄŸlantÄ±sÄ± gÃ¶nderildi. LÃ¼tfen gelen kutunuzu kontrol edin.
+            Email adresiniz sistemimizde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi. Lütfen gelen kutunuzu kontrol edin.
           </div>
         </div>
       ) : (
